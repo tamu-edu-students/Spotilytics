@@ -1,2 +1,24 @@
-# CSCE606-Project2-Team-1
-Repository for the graduate software engineering (CSCE 606) project 2 - team 1. A ruby on rails application to track and display different spotify statistics by user.
+# README
+
+This README would normally document whatever steps are necessary to get the
+application up and running.
+
+Things you may want to cover:
+
+* Ruby version
+
+* System dependencies
+
+* Configuration
+
+* Database creation
+
+* Database initialization
+
+* How to run the test suite
+
+* Services (job queues, cache servers, search engines, etc.)
+
+* Deployment instructions
+
+* ...
