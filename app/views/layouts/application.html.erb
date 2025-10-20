@@ -18,11 +18,41 @@
     <link rel="apple-touch-icon" href="/icon.png">
 
     <%# Includes all stylesheet files in app/assets/stylesheets %>
-    <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+    <%= stylesheet_link_tag "application", media: "all" %>
     <%= javascript_importmap_tags %>
+    <%= yield :extra_css %>
   </head>
 
   <body>
+    <header>
+      <nav class="spotify-nav d-flex align-items-center justify-content-between px-3">
+        <!-- Left-aligned nav links -->
+        <div class="nav-left d-flex">
+          <a class="nav-link active" href="#">Home</a>
+          <%# Placeholder: check if user is signed in %>
+          <% if false %>
+            <a class="nav-link" href="#">Search</a>
+            <a class="nav-link" href="#">Your Library</a>
+            <a class="nav-link" href="#">Premium</a>
+          <% end %>
+          <%# Future left-aligned links can go here %>
+        </div>
+
+        <!-- Right-aligned user links -->
+        <div class="nav-right d-flex">
+          <%# Placeholder: check if user is signed in %>
+          <% if false %>
+            <a class="nav-link" href="#">My Profile</a>
+            <%= link_to 'Logout', home_path, method: :delete, class: 'nav-link' %>
+            <%# Future logout functionality placeholder %>
+          <% else %>
+            <%= link_to 'Login', home_path, class: 'nav-link' %>
+            <%= link_to 'Signup', home_path, class: 'nav-link' %>
+            <%# Future login/signup functionality placeholder %>
+          <% end %>
+        </div>
+      </nav>
+    </header>
     <%= yield %>
   </body>
 </html>
