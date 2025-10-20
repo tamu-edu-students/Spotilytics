@@ -13,4 +13,11 @@ Rails.application.routes.draw do
   # root "posts#index"
   get '/home', to: 'home#home'
   root 'home#home'
+
+  # Callback from Spotify
+  match '/auth/spotify/callback', to: 'sessions#create', via: %i[get post]
+  get    '/auth/failure',         to: "sessions#failure"  
+  get    '/login',                to: redirect("/auth/spotify"), as: :login
+
+  delete '/logout', to: 'sessions#destroy', as: :logout
 end
