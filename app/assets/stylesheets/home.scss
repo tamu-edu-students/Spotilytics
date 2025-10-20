@@ -1,2 +1,65 @@
 // Import spotify theme partial
 @import "partials/default-theme";
+
+body {
+  background-color: $darker-gray;
+  color: $light-gray;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+// ===== Hero Carousel =====
+.hero-carousel {
+  width: 100%;
+  height: 50vh;
+  min-height: 300px;
+  overflow: hidden;
+  position: relative;
+  border-radius: 0 0 20px 20px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+  margin: 0 auto;
+  padding: 0;
+}
+
+.hero-carousel .slides {
+  display: flex;
+  width: 300vw;
+  height: 100%;
+  animation: slide 15s infinite;
+  align-items: center;
+}
+
+.hero-carousel img {
+  width: 100vw; 
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  flex-shrink: 0;
+  display: block;
+  margin: 0;   
+}
+
+// Smooth loop animation
+@keyframes slide {
+  0%, 30%   { transform: translateX(0); }
+  33%, 63%  { transform: translateX(-100vw); }
+  66%, 96%  { transform: translateX(-200vw); }
+  100%      { transform: translateX(0); }
+}
+
+// ===== Description Section =====
+.home-description {
+  max-width: 800px;
+  margin: 3rem auto;
+  padding: 0 1rem;
+
+  h1 {
+    color: $spotify-green;
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+  }
+
+  p {
+    color: $light-gray;
+    font-size: 1.2rem;
+  }
+}
