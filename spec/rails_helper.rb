@@ -17,6 +17,7 @@ require 'rspec/rails'
 # run twice. It is recommended that you do not name files matching this glob to
 # end with _spec.rb. You can configure this pattern with the --pattern
 # option on the command line or in ~/.rspec, .rspec or `.rspec-local`.
+Dir[Rails.root.join('spec/support/**/*.rb')].sort.each { |f| require f }
 #
 # The following line is provided for convenience purposes. It has the downside
 # of increasing the boot-up time by auto-requiring all files in the support
@@ -62,8 +63,17 @@ RSpec.configure do |config|
   # /spec/models would pull in the same behaviour as `type: :model` but this
   # behaviour is considered legacy and will be removed in a future version.
   #
+
+  require 'capybara/rspec'
+  
   # To enable this behaviour uncomment the line below.
-  # config.infer_spec_type_from_file_location!
+  config.infer_spec_type_from_file_location!
+
+  # Include URL/path helpers
+  config.include Rails.application.routes.url_helpers
+ 
+  # Make OmniAuth test mode helpers available
+  OmniAuth.config.test_mode = true
 
   # Filter lines from Rails gems in backtraces.
   config.filter_rails_from_backtrace!
