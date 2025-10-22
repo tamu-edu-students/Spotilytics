@@ -5,4 +5,32 @@
 @import "partials/default-theme";
 
 // Additional global overrides can go here
+.flash-div {
+    position: absolute;
+    top: 30px;
+    width: 100vw;
+    font-size: 22px;
+}
 
+.nav-bar-logo {
+    object-fit: cover;
+    height: 50px;
+}
+
+.spotify-nav .nav-logo {
+  color: $light-gray;
+  font-weight: 500;
+  text-decoration: none;
+  margin-right: 10px;
+
+  &.active {
+    color: $spotify-green;
+    border-bottom: 2px solid $spotify-green;
+  }
+
+  &:hover {
+    color: $spotify-green;
+    background-color: $medium-gray;
+    border-radius: 4px 4px 0 0;
+  }
+}

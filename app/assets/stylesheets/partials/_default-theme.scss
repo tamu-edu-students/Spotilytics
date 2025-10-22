@@ -61,3 +61,26 @@ button {
 main {
   padding: 1rem;
 }
+
+.flash {
+  text-align: center;    
+  margin: 10px auto;       
+  padding: 12px 20px;
+  border-radius: 6px;
+  font-weight: 500;
+  width:  70vw;
+  min-width: 500px;
+}
+
+.flash-alert {
+  background-color: #ffeaea;
+  border: 1px solid #e74c3c;
+  color: #c0392b;
+  width: 70vw;
+}
+
+.flash-notice {
+  background-color: #e6ffed;
+  border: 1px solid #2ecc71;
+  color: #2e7d32;
+}

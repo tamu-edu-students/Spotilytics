@@ -28,7 +28,11 @@
       <nav class="spotify-nav d-flex align-items-center justify-content-between px-3">
         <!-- Left-aligned nav links -->
         <div class="nav-left d-flex">
-          <a class="nav-link active" href="#">Home</a>
+          <a class="nav-logo" href="<%= home_path %>">
+            <%= image_tag "spotilytics-logo-white.png", alt: "Spotilytics Logo", class: "nav-bar-logo" %>
+          </a>
+          <%= link_to 'Home', home_path, class: "nav-link #{'active' if current_page?(home_path)}" %>
+          <%= link_to 'Dashboard', dashboard_path, class: "nav-link #{'active' if current_page?(dashboard_path)}" %>
           <%# Placeholder: check if user is signed in %>
           <% if false %>
             <a class="nav-link" href="#">Search</a>
@@ -51,10 +55,18 @@
         </div>
       </nav>
     </header>
-    <div>
-      <p class="flash flash-alert"><%= alert %></p>
-      <p class="flash flash-notice"><%= notice %></p>
-    </div>
+    
+
+    <% if notice.present? || alert.present? %> 
+      <div class="flash-div"> 
+        <% if notice.present? %> 
+          <p class="flash flash-notice spotify-notice"><%= notice %></p> 
+        <% end %> 
+        <% if alert.present? %> 
+          <p class="flash flash-alert spotify-alert"><%= alert %></p> 
+        <% end %>
+      </div> 
+    <% end %>
     <%= yield %>
   </body>
 </html>
