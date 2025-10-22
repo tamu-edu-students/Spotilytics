@@ -41,18 +41,20 @@
         <!-- Right-aligned user links -->
         <div class="nav-right d-flex">
           <%# Placeholder: check if user is signed in %>
-          <% if false %>
-            <a class="nav-link" href="#">My Profile</a>
-            <%= link_to 'Logout', home_path, method: :delete, class: 'nav-link' %>
+          <% if current_user %>
+            <a class="nav-link" href="#">Logged in as <strong><%= current_user['display_name'] || current_user['email'] %></strong></a>
+            <%= button_to "Log out", logout_path, method: :delete, class: "nav-link" %>
             <%# Future logout functionality placeholder %>
           <% else %>
-            <%= link_to 'Login', home_path, class: 'nav-link' %>
-            <%= link_to 'Signup', home_path, class: 'nav-link' %>
-            <%# Future login/signup functionality placeholder %>
+            <%= link_to 'Login with Spotify', "/auth/spotify", class: 'nav-link' %>
           <% end %>
         </div>
       </nav>
     </header>
+    <div>
+      <p class="flash flash-alert"><%= alert %></p>
+      <p class="flash flash-notice"><%= notice %></p>
+    </div>
     <%= yield %>
   </body>
 </html>
