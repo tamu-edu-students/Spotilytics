@@ -119,3 +119,69 @@ body {
     100%      { transform: translateX(0); }
   }
 }
+
+.contributors-section {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+  color: $light-gray;
+
+  h2 {
+    color: $spotify-green;
+    font-size: 2rem;
+    font-weight: 600;
+  }
+
+  .contributor-card {
+    background-color: $dark-gray;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(255,255,255,0.4);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+    &:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 25px rgba(255,255,255,0.6);
+    }
+
+    .contributor-img {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid $spotify-green;
+    }
+
+    .contributor-name {
+      font-weight: 600;
+      color: $spotify-green;
+    }
+
+    .contributor-role {
+      font-size: 0.9rem;
+      color: $light-gray;
+    }
+  }
+}
+
+.spotify-footer {
+  background-color: $dark-gray;
+  color: $light-gray;
+  font-size: 0.9rem;
+  text-align: center;
+  border-top: 1px solid $medium-gray;
+
+  p {
+    margin: 0;
+    font-weight: 500;
+  }
+
+  a {
+    color: $spotify-green;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
