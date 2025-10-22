@@ -10,12 +10,11 @@ body {
 // ===== Hero Carousel =====
 .hero-carousel {
   width: 100%;
-  height: 50vh;
-  min-height: 300px;
+  height: 355px;
   overflow: hidden;
   position: relative;
-  border-radius: 0 0 20px 20px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+  border-radius: 20px;
+  box-shadow: 0 6px 20px rgba(255, 255, 255, 0.5);
   margin: 0 auto;
   padding: 0;
 }
@@ -28,23 +27,19 @@ body {
   align-items: center;
 }
 
-.hero-carousel img {
-  width: 100vw; 
-  height: 100%;
+.hero-carousel .carousel-image {
+  height: 355px;
+  width: 100%;
   object-fit: cover;
   object-position: center;
   flex-shrink: 0;
   display: block;
-  margin: 0;   
+  margin: 0;  
 }
 
-// Smooth loop animation
-@keyframes slide {
-  0%, 30%   { transform: translateX(0); }
-  33%, 63%  { transform: translateX(-100vw); }
-  66%, 96%  { transform: translateX(-200vw); }
-  100%      { transform: translateX(0); }
-}
+// .hero-carousel .carousel-image {
+//   flex: 0 0 100%;
+// }
 
 // ===== Description Section =====
 .home-description {
@@ -61,5 +56,66 @@ body {
   p {
     color: $light-gray;
     font-size: 1.2rem;
+  }
+}
+
+// Match Bootstrap container widths
+@media (min-width: 576px) {
+  .hero-carousel .carousel-image { max-width: 516px; }
+
+  // Smooth loop animation
+  @keyframes slide {
+    0%, 30%   { transform: translateX(0); }
+    33%, 63%  { transform: translateX(-516px); }
+    66%, 96%  { transform: translateX(-1032px); }
+    100%      { transform: translateX(0); }
+  }
+}
+
+@media (min-width: 768px) {
+  .hero-carousel .carousel-image { max-width: 696px; }
+
+  // Smooth loop animation
+  @keyframes slide {
+    0%, 30%   { transform: translateX(0); }
+    33%, 63%  { transform: translateX(-516px); }
+    66%, 96%  { transform: translateX(-1032px); }
+    100%      { transform: translateX(0); }
+  }
+}
+
+@media (min-width: 992px) {
+  .hero-carousel .carousel-image { max-width: 936px; }
+
+  // Smooth loop animation
+  @keyframes slide {
+    0%, 30%   { transform: translateX(0); }
+    33%, 63%  { transform: translateX(-936px); }
+    66%, 96%  { transform: translateX(-1872px); }
+    100%      { transform: translateX(0); }
+  }
+}
+
+@media (min-width: 1200px) {
+  .hero-carousel .carousel-image { max-width: 1116px; }
+
+  // Smooth loop animation
+  @keyframes slide {
+    0%, 30%   { transform: translateX(0); }
+    33%, 63%  { transform: translateX(-1116px); }
+    66%, 96%  { transform: translateX(-2232px); }
+    100%      { transform: translateX(0); }
+  }
+}
+
+@media (min-width: 1400px) {
+  .hero-carousel .carousel-image { max-width: 1296px; }
+
+  // Smooth loop animation
+  @keyframes slide {
+    0%, 30%   { transform: translateX(0); }
+    33%, 63%  { transform: translateX(-1296px); }
+    66%, 96%  { transform: translateX(-2592px); }
+    100%      { transform: translateX(0); }
   }
 }
