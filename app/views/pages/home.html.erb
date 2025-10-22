@@ -1,0 +1,50 @@
+<% content_for :extra_css do %>
+  <%= stylesheet_link_tag "home", media: "all" %>
+<% end %>
+
+<main class="container mt-4">
+  <h1 class="text-center">Welcome to Spotify Stats</h1>
+  <div class="hero-carousel">
+    <div class="slides">
+      <%= image_tag "spotify.png", alt: "Spotify Logo Placeholder", class: "carousel-image" %>
+      <%= image_tag "spotify.png", alt: "Spotify Logo Placeholder", class: "carousel-image" %>
+      <%= image_tag "spotify.png", alt: "Spotify Logo Placeholder", class: "carousel-image" %>
+    </div>
+  </div>
+
+  <section class="home-description text-center mt-5">
+    <h1>Discover Your Sound</h1>
+    <p>Stream your favorite artists, explore new music, and enjoy playlists made just for you.</p>
+  </section>
+</main>
+<% content_for :extra_css do %>
+  <%= stylesheet_link_tag "home", media: "all" %>
+<% end %>
+
+<main class="container mt-4">
+  <h1 class="text-center">Welcome to Spotify Stats</h1>
+  <div class="hero-carousel">
+    <div class="slides">
+      <%= image_tag "spotify.png", alt: "Spotify Logo Placeholder", class: "carousel-image" %>
+      <%= image_tag "spotify.png", alt: "Spotify Logo Placeholder", class: "carousel-image" %>
+      <%= image_tag "spotify.png", alt: "Spotify Logo Placeholder", class: "carousel-image" %>
+    </div>
+  </div>
+
+  <section class="home-description text-center mt-5">
+    <h1>Discover Your Sound</h1>
+    <p>Stream your favorite artists, explore new music, and enjoy playlists made just for you.</p>
+  </section>
+</main>
+
+<h1>Spotilytics</h1>
+
+<p class="flash flash-alert"><%= alert %></p>
+<p class="flash flash-notice"><%= notice %></p>
+
+<% if current_user %>
+  <p>Logged in as <strong><%= current_user['display_name'] || current_user['email'] %></strong></p>
+  <%= button_to "Log out", logout_path, method: :delete, class: "btn btn-secondary" %>
+<% else %>
+  <%= link_to "Sign in with Spotify", "/auth/spotify", class: "btn btn-primary" %>
+<% end %>
