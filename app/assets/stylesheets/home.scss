@@ -37,10 +37,6 @@ body {
   margin: 0;  
 }
 
-// .hero-carousel .carousel-image {
-//   flex: 0 0 100%;
-// }
-
 // ===== Description Section =====
 .home-description {
   max-width: 800px;
@@ -58,6 +54,22 @@ body {
     font-size: 1.2rem;
   }
 }
+
+.home-page-button {
+  display: inline-block; 
+  background-color: $spotify-green;
+  color: $darker-gray;
+  border: none;
+  border-radius: 4px;
+  padding: 1rem 2rem;
+  margin-top: 10px !important;
+
+  &:hover {
+    background-color: lighten($spotify-green, 10%);
+    text-decoration: none;
+  }
+}
+
 
 // Match Bootstrap container widths
 @media (min-width: 576px) {
@@ -120,6 +132,7 @@ body {
   }
 }
 
+// ===== Contributors Section =====
 .contributors-section {
   max-width: 1200px;
   margin: 0 auto;
@@ -163,6 +176,7 @@ body {
   }
 }
 
+// ===== Footer Carousel =====
 .spotify-footer {
   background-color: $dark-gray;
   color: $light-gray;
@@ -184,4 +198,3 @@ body {
     }
   }
 }
-
