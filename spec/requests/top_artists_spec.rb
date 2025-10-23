@@ -1,12 +1,11 @@
 require 'rails_helper'
+require 'ostruct'
 
 RSpec.describe "TopArtists", type: :request do
   include SpotifyStub
 
-  let!(:user) { FactoryBot.create(:user) }
-
   before do
-    sign_in user if respond_to?(:sign_in)
+    allow_any_instance_of(ApplicationController).to receive(:current_user).and_return(OpenStruct.new(email: 'test@example.com'))
     stub_spotify_top_artists(10)
   end
 
@@ -24,5 +23,17 @@ RSpec.describe "TopArtists", type: :request do
     else
       expect(html.text).to match(/Top Artist|Top Artists|top artist/i)
     end
+  end
+
+  it "returns the top artists page with 10 entries ordered" do
+    get top_artists_path
+    expect(last_spotify_top_artists_call).to include(limit: 10, time_range: 'long_term')
+
+    expect(response).to have_http_status(:ok)
+    html = Nokogiri::HTML(response.body)
+    items = html.css('.top-artist')
+    expect(items.size).to eq(10)
+    counts = html.css('.top-artist .artist-plays').map { |n| n.text.scan(/\d+/).first.to_i }
+    expect(counts).to eq(counts.sort.reverse)
   end
 end

@@ -11,3 +11,9 @@ Feature: Top artists
     Then I should see either a top-artist list or a top-artist placeholder
     And if a list exists the artists should be ordered by play count descending
 
+  Scenario: Navigate from dashboard to full top artists page
+    When I visit the dashboard page
+    And I click the View top 10 artists this year button
+    Then I should be on the top artists page
+    And I should see 10 top-artist entries ordered by play count descending
+    And Spotify should be asked for my long-term top artists
