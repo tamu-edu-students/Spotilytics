@@ -15,5 +15,12 @@
   <section class="home-description text-center mt-5">
     <h1>Discover Your Sound</h1>
     <p>Stream your favorite artists, explore new music, and enjoy playlists made just for you.</p>
+    <div class="mt-4">
+      <% if logged_in? %>
+        <%= link_to 'Go to your dashboard', dashboard_path, class: 'btn btn-spotify btn-lg' %>
+      <% else %>
+        <%= link_to 'Sign in with Spotify', login_path, class: 'btn btn-spotify btn-lg' %>
+      <% end %>
+    </div>
   </section>
 </main>

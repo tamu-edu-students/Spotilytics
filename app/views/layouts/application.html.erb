@@ -36,6 +36,12 @@
             <a class="nav-link" href="#">Premium</a>
           <% end %>
           <%# Future left-aligned links can go here %>
+
+          <!-- ✅ Added Top Tracks link (only visible when logged in) -->
+          <% if session[:spotify_user] %>
+            <%= link_to "Top Tracks", top_tracks_path, class: "nav-link" %>
+          <% end %>
+          <!-- ✅ End addition -->
         </div>
 
         <!-- Right-aligned user links -->
