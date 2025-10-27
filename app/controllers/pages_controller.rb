@@ -1,7 +1,38 @@
 class PagesController < ApplicationController
-    def home
-    end
+  before_action :require_spotify_auth!, only: %i[dashboard top_artists]
 
-    def dashboard
-    end
+  def home
+  end
+
+  def dashboard
+    @top_artists = fetch_top_artists(limit: 10)
+    @primary_artist = @top_artists.first
+  rescue SpotifyClient::UnauthorizedError
+    redirect_to login_path, alert: 'Please sign in with Spotify to view your dashboard.' and return
+  rescue SpotifyClient::Error => e
+    Rails.logger.warn "Failed to fetch Spotify top artists for dashboard: #{e.message}"
+    flash.now[:alert] = 'We were unable to load your Spotify data right now. Please try again later.'
+    @top_artists = []
+    @primary_artist = nil
+  end
+
+  def top_artists
+    @top_artists = fetch_top_artists(limit: 10)
+  rescue SpotifyClient::UnauthorizedError
+    redirect_to login_path, alert: 'Please sign in with Spotify to view your top artists.' and return
+  rescue SpotifyClient::Error => e
+    Rails.logger.warn "Failed to fetch Spotify top artists: #{e.message}"
+    flash.now[:alert] = 'We were unable to load your top artists from Spotify. Please try again later.'
+    @top_artists = []
+  end
+
+  private
+
+  def spotify_client
+    @spotify_client ||= SpotifyClient.new(session: session)
+  end
+
+  def fetch_top_artists(limit:)
+    spotify_client.top_artists(limit: limit, time_range: 'long_term')
+  end
 end
