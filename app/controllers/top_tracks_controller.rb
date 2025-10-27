@@ -1,27 +1,32 @@
+# app/controllers/top_tracks_controller.rb
 class TopTracksController < ApplicationController
-  def index
-    # basic auth guard: if there's no user info in session, bounce
-    if session[:spotify_user].nil?
-      redirect_to root_path, alert: "Please sign in with Spotify first."
-      return
-    end
+  before_action :require_spotify_auth!
 
+  def index
     client = SpotifyClient.new(session: session)
 
-    # For sprint-1, we want the data for the last 1 year
-    # For next sprint, we can add more data and different ranges.
-    @tracks = client.top_tracks(limit: 10, time_range: "short_term")
+    begin
+      # For sprint-1, we want the data for the last 1 year
+      # For next sprint, we can add more data and different ranges.
+      # Fetch top 10 long-term tracks (~past 1 year per Spotify API docs)
+      @tracks = client.top_tracks(limit: 10, time_range: "long_term")
+      @error  = nil
+    rescue SpotifyClient::UnauthorizedError => e
+      Rails.logger.error "Spotify unauthorized: #{e.message}"
+      redirect_to root_path, alert: "Session expired. Please sign in with Spotify again."
+      return
+    rescue SpotifyClient::Error => e
+      Rails.logger.error "Spotify error: #{e.message}"
+      @tracks = []
+      @error  = "Couldn't load your top tracks from Spotify."
+    end
+  end
 
-  rescue SpotifyClient::UnauthorizedError => e
-    Rails.logger.error "Spotify unauthorized: #{e.message}"
-    redirect_to root_path, alert: "Session expired. Please sign in with Spotify again."
-  rescue SpotifyClient::Error => e
-    Rails.logger.error "Spotify API error: #{e.message}"
-    @error = "Couldn't load your top tracks from Spotify."
-    @tracks = []
-  rescue => e
-    Rails.logger.error "Unexpected error in TopTracksController#index: #{e.message}"
-    @error = "Something went wrong."
-    @tracks = []
+  private
+
+  def require_spotify_auth!
+    unless session[:spotify_user].present?
+      redirect_to root_path, alert: "Please sign in with Spotify first."
+    end
   end
 end
