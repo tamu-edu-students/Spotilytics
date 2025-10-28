@@ -1,0 +1,92 @@
+<% content_for :extra_css do %>
+  <%= stylesheet_link_tag "dashboard", media: "all" %>
+<% end %>
+
+<main class="container mt-4">
+  <h1>Your Top Tracks (Past 1 year)</h1>
+
+  <div class="spotify-card p-3 me-3 mb-4">
+    <% if @error.present? %>
+      <div class="alert alert-warning">
+        <%= @error %>
+      </div>
+    <% end %>
+
+    <% if @tracks.present? %>
+      <div class="top-tracks-list">
+        <% @tracks.each do |track| %>
+          <div class="top-track d-flex align-items-center mb-3">
+
+            <!-- rank badge -->
+            <div class="text-center me-3">
+              <span class="badge bg-secondary fs-6">#<%= track.rank %></span>
+            </div>
+
+            <!-- album art -->
+            <% if track.album_image_url.present? %>
+              <div class="me-3">
+                <%= image_tag track.album_image_url,
+                              alt: track.album_name,
+                              class: 'rounded border',
+                              size: "64x64" %>
+              </div>
+            <% end %>
+
+            <!-- track info -->
+            <div class="flex-grow-1 me-3">
+              <div class="fw-semibold track-name">
+                <% if track.spotify_url.present? %>
+                  <%= link_to track.name,
+                              track.spotify_url,
+                              target: "_blank",
+                              rel: "noopener",
+                              class: "text-decoration-none" %>
+                <% else %>
+                  <%= track.name %>
+                <% end %>
+              </div>
+
+              <div class="small text-white">
+                  <%= track.artists %>
+              </div>
+
+              <div class="small text-white">
+                  Album: <%= track.album_name %>
+              </div>
+
+              <div class="small text-white">
+                  Popularity: <%= track.popularity %>/100
+              </div>
+            </div>
+
+            <!-- preview / play -->
+            <div class="track-preview text-end">
+              <% if track.preview_url.present? %>
+                <audio controls style="max-width:200px;">
+                  <source src="<%= track.preview_url %>" type="audio/mpeg">
+                </audio>
+              <% elsif track.spotify_url.present? %>
+                <%= link_to "Play on Spotify",
+                            track.spotify_url,
+                            target: "_blank",
+                            rel: "noopener",
+                            class: "btn btn-outline-primary btn-sm" %>
+              <% else %>
+                <span class="text-muted small">No preview</span>
+              <% end %>
+            </div>
+
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="text-secondary">
+        We don't have your top tracks yet. Connect your Spotify account or try again later.
+      </p>
+    <% end %>
+
+    <div class="mt-3">
+      <%= link_to 'Back to dashboard', dashboard_path, class: 'btn btn-secondary' %>
+    </div>
+  </div>
+</main>

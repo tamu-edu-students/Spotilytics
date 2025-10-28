@@ -21,4 +21,7 @@ Rails.application.routes.draw do
   get    '/auth/failure',         to: "sessions#failure"  
   get    '/login',                to: redirect("/auth/spotify"), as: :login
   delete '/logout', to: 'sessions#destroy', as: :logout
+
+  # GET /top_tracks
+  get "/top_tracks", to: "top_tracks#index", as: :top_tracks
 end

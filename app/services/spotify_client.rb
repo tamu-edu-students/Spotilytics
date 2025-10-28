@@ -36,6 +36,27 @@ class SpotifyClient
     end
   end
 
+  def top_tracks(limit:, time_range:)
+    access_token = ensure_access_token!
+    response = get('/me/top/tracks', access_token, limit: limit, time_range: time_range)
+    items = response.fetch('items', [])
+
+    items.map.with_index(1) do |item, index|
+      OpenStruct.new(
+        id: item['id'],
+        name: item['name'],
+        rank: index,
+        artists: (item['artists'] || []).map { |a| a['name'] }.join(', '),
+        album_name: item.dig('album', 'name'),
+        album_image_url: item.dig('album', 'images', 0, 'url'),
+        popularity: item['popularity'],
+        preview_url: item['preview_url'],
+        spotify_url: item.dig('external_urls', 'spotify'),
+        duration_ms: item['duration_ms']
+      )
+    end
+  end
+
   private
 
   attr_reader :session, :client_id, :client_secret
