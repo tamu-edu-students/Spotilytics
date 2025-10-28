@@ -32,6 +32,27 @@
                 <span class="text-light"><%= track.name %></span>
                 <div class="text-secondary small"><%= track.artists %></div>
               </div>
+  </div>
+  <div class="spotify-card p-3 me-3 mb-4">
+    <h5 class="text-light mb-1">Top Artists</h5>
+
+    <% if @primary_artist.present? %>
+      <div class="d-flex align-items-center mb-3">
+        <% if @primary_artist.image_url.present? %>
+          <%= image_tag @primary_artist.image_url, alt: @primary_artist.name, class: 'rounded-circle border me-3', size: "72x72" %>
+        <% end %>
+        <div>
+          <strong class="text-light fs-5"><%= @primary_artist.name %></strong>
+          <div class="text-secondary small">Plays: <%= @primary_artist.playcount %></div>
+        </div>
+      </div>
+
+      <% if @top_artists.second.present? %>
+        <ul class="list-unstyled text-secondary small mb-0">
+          <% @top_artists.first(5).each_with_index do |artist, idx| %>
+            <li>
+              <span class="badge bg-secondary me-2">#<%= idx + 1 %></span>
+              <%= artist.name %>
             </li>
           <% end %>
         </ul>
