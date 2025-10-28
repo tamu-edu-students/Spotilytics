@@ -31,22 +31,22 @@
           <a class="nav-logo" href="<%= home_path %>">
             <%= image_tag "spotilytics-logo-white.png", alt: "Spotilytics Logo", class: "nav-bar-logo" %>
           </a>
-          <%= link_to 'Home', home_path, class: "nav-link #{'active' if (current_page?(home_path) || current_page?(root_path))}" %>
-          <%# Future left-aligned links can go here %>
+          <%= link_to 'Home', home_path, class: "nav-link #{'active' if (current_page?(home_path) || current_page?(root_path))}"%>
 
-          <%# Placeholder: check if user is signed in %>
-          <% if current_user %>
+          <%# checks if user is signed in %>
+          <% if session[:spotify_user] %>
             <%= link_to 'Dashboard', dashboard_path, class: "nav-link #{'active' if current_page?(dashboard_path)}" %>
+            <%= link_to "Top Tracks", top_tracks_path, class: "nav-link #{'active' if current_page?(top_tracks_path)}" %>
+            <%= link_to "Top Artists", top_artists_path, class: "nav-link #{'active' if current_page?(top_artists_path)}" %>
           <% end %>
         </div>
 
         <!-- Right-aligned user links -->
         <div class="nav-right d-flex">
-          <%# Placeholder: check if user is signed in %>
-          <% if current_user %>
+          <%# checks if user is signed in %>
+          <% if session[:spotify_user] %>
             <a class="nav-link" href="#">Logged in as <strong><%= current_user['display_name'] || current_user['email'] %></strong></a>
             <%= button_to "Log out", logout_path, method: :delete, class: "nav-link" %>
-            <%# Future logout functionality placeholder %>
           <% else %>
             <%= link_to 'Login with Spotify', "/auth/spotify", class: 'nav-link' %>
           <% end %>

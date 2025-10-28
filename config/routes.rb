@@ -12,6 +12,7 @@ Rails.application.routes.draw do
   # Defines the root path route ("/")
   # root "posts#index"
   get '/dashboard', to: 'pages#dashboard'
+  get '/top-artists', to: 'pages#top_artists', as: :top_artists
   get '/home', to: 'pages#home'
   root 'pages#home'
 
@@ -20,4 +21,7 @@ Rails.application.routes.draw do
   get    '/auth/failure',         to: "sessions#failure"  
   get    '/login',                to: redirect("/auth/spotify"), as: :login
   delete '/logout', to: 'sessions#destroy', as: :logout
+
+  # GET /top_tracks
+  get "/top_tracks", to: "top_tracks#index", as: :top_tracks
 end

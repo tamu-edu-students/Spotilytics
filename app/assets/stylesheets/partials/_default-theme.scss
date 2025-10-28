@@ -40,6 +40,19 @@ button {
   }
 }
 
+.btn-spotify {
+  background-color: $spotify-green;
+  border-color: $spotify-green;
+  color: $darker-gray;
+
+  &:hover,
+  &:focus {
+    background-color: lighten($spotify-green, 5%);
+    border-color: lighten($spotify-green, 5%);
+    color: $darker-gray;
+  }
+}
+
 .spotify-nav .nav-link {
   color: $light-gray;
   font-weight: 500;
