@@ -72,25 +72,25 @@ end
 # WHEN: I go to the top tracks page
 #
 When("I go to the top tracks page") do
-  Rails.application.routes.draw do
-    # Cucumber-only test route
-    get "/cucumber_top_tracks", to: "cucumber_top_tracks#index"
+  # Rails.application.routes.draw do
+  #   # Cucumber-only test route
+  #   get "/cucumber_top_tracks", to: "cucumber_top_tracks#index"
 
-    # App routes needed for layout/partials to render without blowing up
-    get '/dashboard', to: 'pages#dashboard'
-    get '/home', to: 'pages#home'
-    root 'pages#home'
+  #   # App routes needed for layout/partials to render without blowing up
+  #   get '/dashboard', to: 'pages#dashboard'
+  #   get '/home', to: 'pages#home'
+  #   root 'pages#home'
 
-    match '/auth/spotify/callback', to: 'sessions#create', via: %i[get post]
-    get    '/auth/failure',         to: "sessions#failure"
-    get    '/login',                to: redirect("/auth/spotify"), as: :login
-    delete '/logout', to: 'sessions#destroy', as: :logout
+  #   match '/auth/spotify/callback', to: 'sessions#create', via: %i[get post]
+  #   get    '/auth/failure',         to: "sessions#failure"
+  #   get    '/login',                to: redirect("/auth/spotify"), as: :login
+  #   delete '/logout', to: 'sessions#destroy', as: :logout
 
-    # keep original /top_tracks route definition for completeness
-    get "/top_tracks", to: "top_tracks#index", as: :top_tracks
-  end
+  #   # keep original /top_tracks route definition for completeness
+  #   get "/top_tracks", to: "top_tracks#index", as: :top_tracks
+  # end
 
-  visit "/cucumber_top_tracks"
+  # visit "/cucumber_top_tracks"
 end
 
 #

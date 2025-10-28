@@ -74,26 +74,26 @@ end
 # We still redraw routes so that Capybara hits /cucumber_dashboard
 # instead of the real /dashboard (which has before_action :require_spotify_auth!).
 #
-When("I go to the dashboard") do
-  Rails.application.routes.draw do
-    # Cucumber test route we control:
-    get "/cucumber_dashboard", to: "cucumber_dashboard#index"
+# When("I go to the dashboard") do
+#   Rails.application.routes.draw do
+#     # Cucumber test route we control:
+#     get "/cucumber_dashboard", to: "cucumber_dashboard#index"
 
-    # Recreate baseline routes so internal links / partials still work:
-    get '/dashboard', to: 'pages#dashboard'
-    get '/home', to: 'pages#home'
-    root 'pages#home'
+#     # Recreate baseline routes so internal links / partials still work:
+#     get '/dashboard', to: 'pages#dashboard'
+#     get '/home', to: 'pages#home'
+#     root 'pages#home'
 
-    match '/auth/spotify/callback', to: 'sessions#create', via: %i[get post]
-    get    '/auth/failure',         to: "sessions#failure"
-    get    '/login',                to: redirect("/auth/spotify"), as: :login
-    delete '/logout', to: 'sessions#destroy', as: :logout
+#     match '/auth/spotify/callback', to: 'sessions#create', via: %i[get post]
+#     get    '/auth/failure',         to: "sessions#failure"
+#     get    '/login',                to: redirect("/auth/spotify"), as: :login
+#     delete '/logout', to: 'sessions#destroy', as: :logout
 
-    get "/top_tracks", to: "top_tracks#index", as: :top_tracks
-  end
+#     get "/top_tracks", to: "top_tracks#index", as: :top_tracks
+#   end
 
-  visit "/cucumber_dashboard"
-end
+#   visit "/cucumber_dashboard"
+# end
 
 
 #

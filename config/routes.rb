@@ -11,9 +11,9 @@ Rails.application.routes.draw do
 
   # Defines the root path route ("/")
   # root "posts#index"
-  get '/dashboard', to: 'pages#dashboard'
+  get '/dashboard', to: 'pages#dashboard', as: :dashboard
   get '/top-artists', to: 'pages#top_artists', as: :top_artists
-  get '/home', to: 'pages#home'
+  get '/home', to: 'pages#home', as: :home
   root 'pages#home'
 
   # Callback from Spotify
