@@ -1,4 +1,4 @@
-RSpec.describe "Pages Controller", type: :request do
+RSpec.describe "Dashboard Page Request", type: :request do
     describe "Dashboard" do
         it "correctly redirects when the user is not logged in" do
             get dashboard_path
@@ -7,7 +7,7 @@ RSpec.describe "Pages Controller", type: :request do
         it "correctly has a popup on home page when the user is not logged in" do
             get dashboard_path  
             follow_redirect!
-            expect(response.body).to include("You must log in with spotify to access the dashboard.")
+            expect(response.body).to include("You must log in with spotify to view this page.")
         end
     end
 end

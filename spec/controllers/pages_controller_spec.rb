@@ -94,12 +94,12 @@ RSpec.describe PagesController, type: :controller do
           .and_raise(SpotifyClient::UnauthorizedError.new("expired token"))
       end
 
-      it "redirects user to login_path and shows the re-auth alert" do
+      it "redirects user to home page and shows the re-auth alert" do
         get :dashboard
 
-        expect(response).to redirect_to(login_path)
+        expect(response).to redirect_to(home_path)
         expect(flash[:alert]).to eq(
-          "Please sign in with Spotify to view your dashboard."
+          "You must log in with spotify to access the dashboard."
         )
       end
     end

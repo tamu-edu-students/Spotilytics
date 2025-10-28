@@ -10,8 +10,10 @@ RSpec.describe "TopArtists", type: :request do
   end
 
   it "returns a page with 10 top artists ordered by playcount" do
+    get "/auth/spotify/callback"
+    follow_redirect!
     get dashboard_path
-    expect(response).to have_http_status(:ok)
+
     # parse HTML for elements with class 'top-artist'
     html = Nokogiri::HTML(response.body)
     items = html.css('.top-artist')

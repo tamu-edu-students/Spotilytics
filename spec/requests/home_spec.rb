@@ -1,4 +1,4 @@
-RSpec.describe "Pages Controller", type: :request do
+RSpec.describe "Home Page Request", type: :request do
     describe "Home Page" do
         it "successfully loads" do
             get "/home"
