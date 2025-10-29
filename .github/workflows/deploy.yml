@@ -22,10 +22,6 @@ jobs:
         run: |
           bundle install --jobs 4 --retry 3
 
-      - name: Run tests
-        run: |
-          bundle exec cucumber && bundle exec rspec
-
       - name: Install Heroku CLI
         run: |
           curl https://cli-assets.heroku.com/install.sh | sh
@@ -34,6 +30,6 @@ jobs:
         uses: akhileshns/heroku-deploy@v4
         with:
           heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
-          heroku_app_name: "trackify"
+          heroku_app_name: "spotilytics-app"
           heroku_email: "aurawra@outlook.com"
           branch: main

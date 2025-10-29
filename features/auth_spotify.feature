@@ -8,7 +8,7 @@ Feature: Spotify sign in/out
 
   Scenario: Successful Spotify sign-in
     Given I am on the home page
-    When I click "Sign in with Spotify"
+    When I click "Login with Spotify"
     Then I should be on the home page
     And I should see "Signed in with Spotify"
     And I should see "Test User"
@@ -19,7 +19,7 @@ Feature: Spotify sign in/out
     When I click "Log out"
     Then I should be on the home page
     And I should see "Signed out"
-    And I should see "Sign in with Spotify"
+    And I should see "Login with Spotify"
 
   Scenario: Failed Spotify sign-in
     Given OmniAuth will return "developer access not configured"

@@ -28,39 +28,43 @@
       <nav class="spotify-nav d-flex align-items-center justify-content-between px-3">
         <!-- Left-aligned nav links -->
         <div class="nav-left d-flex">
-          <a class="nav-link active" href="/">Home</a>
-          <%# Placeholder: check if user is signed in %>
-          <% if false %>
-            <a class="nav-link" href="#">Search</a>
-            <a class="nav-link" href="#">Your Library</a>
-            <a class="nav-link" href="#">Premium</a>
-          <% end %>
-          <%# Future left-aligned links can go here %>
+          <a class="nav-logo" href="<%= home_path %>">
+            <%= image_tag "spotilytics-logo-white.png", alt: "Spotilytics Logo", class: "nav-bar-logo" %>
+          </a>
+          <%= link_to 'Home', home_path, class: "nav-link #{'active' if (current_page?(home_path) || current_page?(root_path))}"%>
 
-          <!-- ✅ Added Top Tracks link (only visible when logged in) -->
+          <%# checks if user is signed in %>
           <% if session[:spotify_user] %>
-            <%= link_to "Top Tracks", top_tracks_path, class: "nav-link" %>
+            <%= link_to 'Dashboard', dashboard_path, class: "nav-link #{'active' if current_page?(dashboard_path)}" %>
+            <%= link_to "Top Tracks", top_tracks_path, class: "nav-link #{'active' if current_page?(top_tracks_path)}" %>
+            <%= link_to "Top Artists", top_artists_path, class: "nav-link #{'active' if current_page?(top_artists_path)}" %>
           <% end %>
-          <!-- ✅ End addition -->
         </div>
 
         <!-- Right-aligned user links -->
         <div class="nav-right d-flex">
-          <%# Placeholder: check if user is signed in %>
-          <% if current_user %>
+          <%# checks if user is signed in %>
+          <% if session[:spotify_user] %>
             <a class="nav-link" href="#">Logged in as <strong><%= current_user['display_name'] || current_user['email'] %></strong></a>
             <%= button_to "Log out", logout_path, method: :delete, class: "nav-link" %>
-            <%# Future logout functionality placeholder %>
           <% else %>
             <%= link_to 'Login with Spotify', "/auth/spotify", class: 'nav-link' %>
           <% end %>
         </div>
       </nav>
     </header>
-    <div>
-      <p class="flash flash-alert"><%= alert %></p>
-      <p class="flash flash-notice"><%= notice %></p>
-    </div>
+    
+
+    <% if notice.present? || alert.present? %> 
+      <div class="flash-div"> 
+        <% if notice.present? %> 
+          <p class="flash flash-notice spotify-notice"><%= notice %></p> 
+        <% end %> 
+        <% if alert.present? %> 
+          <p class="flash flash-alert spotify-alert"><%= alert %></p> 
+        <% end %>
+      </div> 
+    <% end %>
     <%= yield %>
   </body>
 </html>
