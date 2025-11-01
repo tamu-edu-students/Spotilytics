@@ -1,4 +1,3 @@
-# app/controllers/top_tracks_controller.rb
 class TopTracksController < ApplicationController
   before_action :require_spotify_auth!
 
@@ -6,19 +5,20 @@ class TopTracksController < ApplicationController
     client = SpotifyClient.new(session: session)
 
     begin
-      # For sprint-1, we want the data for the last 1 year
-      # For next sprint, we can add more data and different ranges.
-      # Fetch top 10 long-term tracks (~past 1 year per Spotify API docs)
-      @tracks = client.top_tracks(limit: 10, time_range: "long_term")
-      @error  = nil
+      @tracks_short  = client.top_tracks(limit: 10, time_range: "short_term")
+      @tracks_medium = client.top_tracks(limit: 10, time_range: "medium_term")
+      @tracks_long   = client.top_tracks(limit: 10, time_range: "long_term")
+      @error = nil
     rescue SpotifyClient::UnauthorizedError => e
       Rails.logger.error "Spotify unauthorized: #{e.message}"
       redirect_to root_path, alert: "Session expired. Please sign in with Spotify again."
       return
     rescue SpotifyClient::Error => e
       Rails.logger.error "Spotify error: #{e.message}"
-      @tracks = []
-      @error  = "Couldn't load your top tracks from Spotify."
+      @tracks_short  = []
+      @tracks_medium = []
+      @tracks_long   = []
+      @error = "Couldn't load your top tracks from Spotify."
     end
   end
 
