@@ -134,5 +134,71 @@ RSpec.describe TopTracksController, type: :controller do
         expect(response.body).to include("We don't have your top tracks yet").or include("We don&#39;t have your top tracks yet")
       end
     end
+
+    context "when logged in with a custom limit" do
+      render_views
+
+      let(:mock_tracks) { [] }
+      let(:mock_client) { instance_double(SpotifyClient) }
+
+      before do
+        session[:spotify_user] = session_user
+        allow(SpotifyClient).to receive(:new).with(session: anything).and_return(mock_client)
+        allow(mock_client).to receive(:top_tracks).and_return(mock_tracks)
+      end
+
+      it "calls Spotify with limit=25" do
+        get :index, params: { limit: "25" }
+
+        expect(mock_client).to have_received(:top_tracks)
+          .with(limit: 25, time_range: "long_term")
+        expect(response).to have_http_status(:ok)
+      end
+
+      it "calls Spotify with limit=50" do
+        get :index, params: { limit: "50" }
+
+        expect(mock_client).to have_received(:top_tracks)
+          .with(limit: 50, time_range: "long_term")
+        expect(response).to have_http_status(:ok)
+      end
+    end
+
+    context "when logged in with an invalid limit" do
+      let(:mock_tracks) { [] }
+      let(:mock_client) { instance_double(SpotifyClient) }
+
+      before do
+        session[:spotify_user] = session_user
+        allow(SpotifyClient).to receive(:new).with(session: anything).and_return(mock_client)
+        allow(mock_client).to receive(:top_tracks).and_return(mock_tracks)
+      end
+
+      it "falls back to limit=10" do
+        get :index, params: { limit: "999" }
+
+        expect(mock_client).to have_received(:top_tracks)
+          .with(limit: 10, time_range: "long_term")
+        expect(response).to have_http_status(:ok)
+      end
+    end
+
+    context "limit selector rendering" do
+      render_views
+
+      let(:mock_tracks) { [] }
+      let(:mock_client) { instance_double(SpotifyClient) }
+
+      before do
+        session[:spotify_user] = session_user
+        allow(SpotifyClient).to receive(:new).with(session: anything).and_return(mock_client)
+        allow(mock_client).to receive(:top_tracks).and_return(mock_tracks)
+      end
+
+      it "marks Top 25 as selected when limit=25 is passed" do
+        get :index, params: { limit: "25" }
+        expect(response.body).to include('<option selected="selected" value="25">')
+      end
+    end
   end
 end
