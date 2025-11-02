@@ -23,7 +23,7 @@
       <div class="col-12 col-lg-4 top-artists-column" data-range="<%= range[:key] %>">
         <div class="spotify-card h-100 p-3">
           <div class="d-flex justify-content-between align-items-center mb-2">
-            <h2 class="text-light fs-5 mb-0"><%= range[:label] %></h2>
+            <h2 class="text-light fs-5 mb-0 me-2"><%= range[:label] %></h2>
 
             <%= form_with url: top_artists_path, method: :get, local: true,
                           class: "d-flex align-items-center gap-2 mb-0" do %>
@@ -32,11 +32,12 @@
                 <%= hidden_field_tag "limit_#{r2[:key]}", @limits[r2[:key]] %>
               <% end %>
 
-              <label class="me-2 text-secondary fw-semibold">Show</label>
+              <label class="me-1 text-secondary fw-semibold">Show</label>
               <%= select_tag "limit_#{range[:key]}",
                     options_for_select([["Top 10", 10], ["Top 25", 25], ["Top 50", 50]], @limits[range[:key]]),
                     class: "form-select form-select-sm bg-dark text-white border-secondary",
                     onchange: "this.form.submit();" %>
+              <button class="btn btn-dark btn-sm js-hidden" type="submit">↻</button>
             <% end %>
           </div>
 
