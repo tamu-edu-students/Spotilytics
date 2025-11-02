@@ -25,7 +25,8 @@ class PagesController < ApplicationController
   end
 
   def top_artists
-    @top_artists = fetch_top_artists(limit: 10)
+    limit = normalize_limit(params[:limit])
+    @top_artists = fetch_top_artists(limit: limit)
   rescue SpotifyClient::UnauthorizedError
     redirect_to home_path, alert: 'You must log in with spotify to view your top artists.' and return
   rescue SpotifyClient::Error => e
@@ -35,7 +36,8 @@ class PagesController < ApplicationController
   end
 
   def top_tracks
-    @top_tracks = fetch_top_tracks(limit: 10)
+    limit = normalize_limit(params[:limit])
+    @top_tracks = fetch_top_tracks(limit: limit)
   rescue SpotifyClient::UnauthorizedError
     redirect_to home_path, alert: 'You must log in with spotify to view your top tracks.' and return
   rescue SpotifyClient::Error => e
@@ -56,5 +58,11 @@ class PagesController < ApplicationController
 
   def fetch_top_tracks(limit:)
     spotify_client.top_tracks(limit: limit, time_range: 'long_term')
+  end
+
+  # Accept only 10, 25, 50; default to 10
+  def normalize_limit(value)
+    v = value.to_i
+    [10, 25, 50].include?(v) ? v : 10
   end
 end
