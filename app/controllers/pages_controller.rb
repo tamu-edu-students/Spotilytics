@@ -33,9 +33,14 @@ class PagesController < ApplicationController
   def top_artists
     @time_ranges = TOP_ARTIST_TIME_RANGES
     @top_artists_by_range = {}
+    @limits               = {}
 
     @time_ranges.each do |range|
-      limit = normalize_limit(params[:limit])
+      key        = range[:key]                              # "long_term" | "medium_term" | "short_term"
+      param_name = "limit_#{key}"                           # "limit_long_term", etc.
+      limit      = normalize_limit(params[param_name])      # default to 10 when blank/invalid
+
+    @limits[key] = limit
     @top_artists_by_range[range[:key]] = fetch_top_artists(limit: limit, time_range: range[:key])
     end
   rescue SpotifyClient::UnauthorizedError
@@ -45,6 +50,7 @@ class PagesController < ApplicationController
     flash.now[:alert] = 'We were unable to load your top artists from Spotify. Please try again later.'
     @top_artists_by_range = TOP_ARTIST_TIME_RANGES.each_with_object({}) do |range, acc|
       acc[range[:key]] = []
+    @limits = TOP_ARTIST_TIME_RANGES.map { |r| [r[:key], 10] }.to_h
     end
     @time_ranges = TOP_ARTIST_TIME_RANGES
   end
