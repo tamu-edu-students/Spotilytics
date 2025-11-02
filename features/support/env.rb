@@ -11,6 +11,20 @@ require 'simplecov'
 require 'capybara/rails'
 require 'capybara/cucumber'
 require 'rspec/mocks'
+require 'simplecov'
+SimpleCov.command_name 'Cucumber'        # so RSpec + Cucumber reports merge
+SimpleCov.start 'rails' do
+  enable_coverage :branch
+  add_filter '/spec/'
+  add_filter '/features/'
+  add_filter '/config/'
+  add_filter '/vendor/'
+  add_filter '/db/'
+  add_group 'Models', 'app/models'
+  add_group 'Controllers', 'app/controllers'
+  add_group 'Helpers', 'app/helpers'
+  coverage_dir 'coverage'                # same folder as RSpec
+end
 
 World(RSpec::Mocks::ExampleMethods)
 

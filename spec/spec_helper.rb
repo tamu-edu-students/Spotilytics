@@ -15,6 +15,7 @@
 # See https://rubydoc.info/gems/rspec-core/RSpec/Core/Configuration
 
 require 'simplecov'
+require_relative 'simplecov_helper'
 SimpleCov.start 'rails' do
   add_filter '/spec/'
   add_filter '/config/'
