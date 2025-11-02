@@ -97,24 +97,46 @@
       <!-- Row 1: Time range headers -->
       <!-- ===================== -->
       <div class="row tracks-grid-row">
-        <div class="col-12 col-lg-4 tracks-col time-header-col">
-          <div class="text-light">Last 4 Weeks</div>
-          <%# <div class="text-secondary time-range-sub">(short term)</div> %>
-        </div>
-        <div class="col-12 col-lg-4 tracks-col time-header-col">
-          <div class="text-light">Last 6 Months</div>
-          <%# <div class="text-secondary time-range-sub">(medium term)</div> %>
-        </div>
-        <div class="col-12 col-lg-4 tracks-col time-header-col">
-          <div class="text-light">Last 1 Year</div>
-          <%# <div class="text-secondary time-range-sub">(long term)</div> %>
-        </div>
+        <% ranges = [
+            { key: 'short_term',  label: 'Last 4 Weeks'  },
+            { key: 'medium_term', label: 'Last 6 Months' },
+            { key: 'long_term',   label: 'Last 1 Year'   }
+          ] %>
+
+        <% ranges.each do |range| %>
+          <div class="col-12 col-lg-4 tracks-col time-header-col" data-range="<%= range[:key] %>">
+            <div class="d-flex justify-content-center align-items-center gap-5">
+              <div class="text-light"><%= range[:label] %></div>
+
+              <%= form_with url: top_tracks_path, method: :get, local: true,
+                            class: "d-flex align-items-center gap-2 mb-0" do %>
+
+                <%# Preserve the other two limits so only this column changes %>
+                <% @limits.each do |k, v| %>
+                  <% next if k == range[:key] %>
+                  <%= hidden_field_tag "limit_#{k}", v %>
+                <% end %>
+
+                <label class="me-1 text-secondary fw-semibold">Show</label>
+                <%= select_tag "limit_#{range[:key]}",
+                      options_for_select([['Top 10', 10], ['Top 25', 25], ['Top 50', 50]], @limits[range[:key]]),
+                      class: "form-select form-select-sm bg-dark text-white border-secondary",
+                      onchange: "this.form.submit();" %>
+
+                <button class="btn btn-dark btn-sm js-hidden" type="submit">↻</button>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
       </div>
 
       <!-- ===================== -->
       <!-- Rows 2 - 11: Ranks #1..#10 -->
       <!-- ===================== -->
-      <% 10.times do |i| %>
+      <%
+        max_rows = [@tracks_short.size, @tracks_medium.size, @tracks_long.size].max
+      %>
+      <% max_rows.times do |i| %>
         <div class="row tracks-grid-row">
           <!-- short_term col -->
           <div class="col-12 col-lg-4 tracks-col">
