@@ -19,6 +19,8 @@ class PagesController < ApplicationController
     @top_tracks = fetch_top_tracks(limit: 10)
     @primary_track = @top_tracks.first
 
+    build_genre_chart!(@top_artists)
+
   rescue SpotifyClient::UnauthorizedError
     redirect_to home_path, alert: 'You must log in with spotify to access the dashboard.' and return
   rescue SpotifyClient::Error => e
@@ -28,6 +30,7 @@ class PagesController < ApplicationController
     @primary_artist = nil
     @top_tracks = []
     @primary_track = nil
+    @genre_chart = nil
   end
 
   def top_artists
@@ -84,5 +87,46 @@ class PagesController < ApplicationController
   def normalize_limit(value)
     v = value.to_i
     [10, 25, 50].include?(v) ? v : 10
+  end
+
+  def build_genre_chart!(artists)
+    counts = Hash.new(0)
+
+    Array(artists).each do |a|
+      genres = a.respond_to?(:genres) ? a.genres : Array(a['genres'])
+      next if genres.blank?
+      genres.each do |g|
+        g = g.to_s.strip.downcase
+        next if g.empty?
+        counts[g] += 1         # count artists per genre
+      end
+    end
+
+    if counts.empty?
+      @genre_chart = nil
+      return
+    end
+
+    sorted = counts.sort_by { |(_, c)| -c }
+    top_n = 8
+    top   = sorted.first(top_n)
+    other = sorted.drop(top_n).sum { |(_, c)| c }
+
+    labels = top.map { |(g, _)| g.split.map(&:capitalize).join(' ') }
+    data   = top.map(&:last)
+    if other > 0
+      labels << "Other"
+      data   << other
+    end
+
+    @genre_chart = {
+      labels: labels,
+      datasets: [
+        {
+          label: "Top Artist Genres",
+          data: data
+        }
+      ]
+    }
   end
 end
