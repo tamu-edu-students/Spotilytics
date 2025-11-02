@@ -1,7 +1,47 @@
 require 'ostruct'
 
+def range_label_to_key(label)
+  {
+    "Past Year"      => "long_term",
+    "Past 6 Months"  => "medium_term",
+    "Past 4 Weeks"   => "short_term"
+  }.fetch(label)
+end
+
 Given("Spotify returns top artists data") do
-  stub_spotify_top_artists(10)
+  mock = instance_double(SpotifyClient)
+  allow(SpotifyClient).to receive(:new).and_return(mock)
+
+  allow(mock).to receive(:top_artists) do |args|
+    limit = (args[:limit] || 10).to_i
+    range = args[:time_range] || "long_term"
+
+    (1..limit).map do |i|
+      OpenStruct.new(
+        name:      "Artist #{range} #{i}",
+        playcount: 1_000 - i,    
+        image_url: nil
+      )
+    end
+  end
+
+  allow(mock).to receive(:top_tracks) do |args|
+    limit = (args[:limit] || 10).to_i
+    range = args[:time_range] || "long_term"
+
+    (1..limit).map do |i|
+      OpenStruct.new(
+        rank:              i,
+        name:              "Track #{range} #{i}",
+        artists:           "Artist #{i}",
+        album_name:        "Album #{i}",
+        album_image_url:   nil,
+        popularity:        50 + i,
+        preview_url:       nil,
+        spotify_url:       "https://open.spotify.com/track/#{i}"
+      )
+    end
+  end
 end
 
 Given("I am an authenticated user with spotify data") do
@@ -15,6 +55,34 @@ end
 
 When("I click the View Top Artists button") do
   click_link 'View Top Artists'
+end
+
+When("I go to the top artists page") do
+  visit top_artists_path
+end
+
+When('I choose {string} for {string} and click Update') do |label, range_label|
+  key = range_label_to_key(range_label)
+  within(%Q{.top-artists-column[data-range="#{key}"]}) do
+    select(label, from: "limit_#{key}")
+    find('button.js-hidden[type="submit"]', visible: :all).click
+  end
+end
+
+When('I choose {string} for {string} (auto submit)') do |label, range_label|
+  key = range_label_to_key(range_label)
+  within(%Q{.top-artists-column[data-range="#{key}"]}) do
+    select(label, from: "limit_#{key}") 
+  end
+end
+
+When('I visit the top artists page with limits {string} for {string} and {string} for {string}') do |val1, r1, val2, r2|
+  k1 = range_label_to_key(r1)
+  k2 = range_label_to_key(r2)
+  visit top_artists_path(
+    "limit_#{k1}" => val1,
+    "limit_#{k2}" => val2
+  )
 end
 
 Then("I should be on the top artists page") do
@@ -67,6 +135,20 @@ end
 
 Then("if a list exists the artists should be ordered by play count descending") do
   step "the artists should be ordered by play count descending"
+end
+
+Then('the {string} selector should have {string} selected') do |range_label, label|
+  key = range_label_to_key(range_label)
+  within(%Q{.top-artists-column[data-range="#{key}"]}) do
+    expect(page).to have_select("limit_#{key}", selected: label)
+  end
+end
+
+Then('the {string} column should list exactly {int} artists') do |range_label, n|
+  key = range_label_to_key(range_label)
+  within(%Q{.top-artists-column[data-range="#{key}"]}) do
+    expect(page.all(".top-artist").size).to eq(n)
+  end
 end
 
 Given("I am not authenticated") do
