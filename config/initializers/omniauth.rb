@@ -4,7 +4,7 @@ Rails.application.config.middleware.use OmniAuth::Builder do
   provider :spotify,
            ENV.fetch('SPOTIFY_CLIENT_ID'),
            ENV.fetch('SPOTIFY_CLIENT_SECRET'),
-           scope: "user-read-email user-top-read",
+           scope: "user-read-email user-top-read playlist-modify-private playlist-modify-public",
            authorize_params: { show_dialog: 'true' }
 end
 

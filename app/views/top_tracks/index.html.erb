@@ -1,102 +1,317 @@
 <% content_for :extra_css do %>
   <%= stylesheet_link_tag "dashboard", media: "all" %>
+
+  <style>
+    /* local-only helpers for this page */
+
+    .tracks-grid-row {
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .tracks-grid-row:last-of-type {
+      border-bottom: 0;
+    }
+
+    .tracks-col {
+      border-right: 1px solid rgba(255,255,255,0.08);
+      padding: 0.75rem 1rem;
+    }
+
+    .tracks-col:last-child {
+      border-right: 0;
+    }
+
+    .time-header-col {
+      text-align: center;
+      font-weight: 600;
+    }
+
+    .time-range-sub {
+      font-size: 0.8rem;
+      font-weight: 400;
+    }
+
+    .rank-badge {
+      display: inline-block;
+      min-width: 2rem;
+      text-align: center;
+      font-weight: 600;
+    }
+
+    .track-lineup {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
+
+    .track-details {
+      font-size: 0.8rem;
+      line-height: 1.3;
+    }
+
+    .track-details .track-name-link {
+      font-weight: 600;
+      word-break: break-word;
+      text-decoration: none;
+    }
+
+    .track-details .track-name-link:hover {
+      text-decoration: underline;
+    }
+
+    .track-secondary {
+      color: #b3b3b3; /* $light-gray */
+    }
+
+    .playlist-row .tracks-col {
+      text-align: center;
+    }
+
+    .playlist-row .btn {
+      min-width: 180px;
+    }
+
+    audio.track-audio {
+      max-width: 180px;
+      width: 100%;
+    }
+  </style>
 <% end %>
 
 <main class="container mt-4">
-  <div class="d-flex justify-content-between align-items-center mb-3 px-3 me-3">
-    <h1>
-      Your Top Tracks (Past 1 year)</span>
-    </h1>
-
-    <%= form_with url: top_tracks_path, method: :get, local: true,
-                  class: "d-flex align-items-center gap-2 mb-0" do %>
-      <label for="limit" class="me-2 text-secondary fw-semibold">Show</label>
-
-      <%= select_tag :limit,
-            options_for_select(
-              [["Top 10", 10], ["Top 25", 25], ["Top 50", 50]],
-              selected: (params[:limit].presence || 10)
-            ),
-            class: "form-select form-select-sm bg-dark text-white border-secondary",
-            onchange: "this.form.submit();" %>
-
-      <!--submit button: hidden when JS is enabled -->
-      <%= submit_tag "Update", class: "btn btn-sm btn-outline-light ms-2 js-hidden" %>
-    <% end %>
-  </div>
+  <h1 class="text-light">Your Top Tracks</h1>
+  <p class="text-secondary">
+    Short term (4 weeks) vs Medium (6 months) vs Long (1 year)
+  </p>
 
   <div class="spotify-card p-3 me-3 mb-4">
     <% if @error.present? %>
       <div class="alert alert-warning"><%= @error %></div>
     <% end %>
 
-    <% if @tracks.present? %>
-      <div class="top-tracks-list">
-        <% @tracks.each_with_index do |track, idx| %>
-          <div class="top-track d-flex align-items-center mb-3">
-            <div class="text-center me-3">
-              <span class="badge bg-secondary fs-6">
-                #<%= (track.respond_to?(:rank) && track.rank) || idx + 1 %>
-              </span>
-            </div>
+    <% has_any_tracks = @tracks_short.present? || @tracks_medium.present? || @tracks_long.present? %>
 
-            <!-- album art -->
-            <% if track.album_image_url.present? %>
-              <div class="me-3">
-                <%= image_tag track.album_image_url,
-                              alt: track.album_name,
-                              class: 'rounded border',
-                              size: "64x64" %>
-              </div>
-            <% end %>
+    <% if has_any_tracks %>
 
-            <!-- track info -->
-            <div class="flex-grow-1 me-3">
-              <div class="fw-semibold track-name">
-                <% if track.spotify_url.present? %>
-                  <%= link_to track.name,
-                              track.spotify_url,
-                              target: "_blank",
-                              rel: "noopener",
-                              class: "text-decoration-none" %>
-                <% else %>
-                  <%= track.name %>
-                <% end %>
-              </div>
-
-              <div class="small text-white">
-                  <%= track.artists %>
-              </div>
-
-              <div class="small text-white">
-                  Album: <%= track.album_name %>
-              </div>
-
-              <div class="small text-white">
-                  Popularity: <%= track.popularity %>/100
-              </div>
-            </div>
-
-            <!-- preview / play -->
-            <div class="track-preview text-end">
-              <% if track.preview_url.present? %>
-                <audio controls style="max-width:200px;">
-                  <source src="<%= track.preview_url %>" type="audio/mpeg">
-                </audio>
-              <% elsif track.spotify_url.present? %>
-                <%= link_to "Play on Spotify",
-                            track.spotify_url,
-                            target: "_blank",
-                            rel: "noopener",
-                            class: "btn btn-outline-primary btn-sm" %>
-              <% else %>
-                <span class="text-muted small">No preview</span>
-              <% end %>
-            </div>
-
-          </div>
-        <% end %>
+      <!-- ===================== -->
+      <!-- Row 1: Time range headers -->
+      <!-- ===================== -->
+      <div class="row tracks-grid-row">
+        <div class="col-12 col-lg-4 tracks-col time-header-col">
+          <div class="text-light">Last 4 Weeks</div>
+          <%# <div class="text-secondary time-range-sub">(short term)</div> %>
+        </div>
+        <div class="col-12 col-lg-4 tracks-col time-header-col">
+          <div class="text-light">Last 6 Months</div>
+          <%# <div class="text-secondary time-range-sub">(medium term)</div> %>
+        </div>
+        <div class="col-12 col-lg-4 tracks-col time-header-col">
+          <div class="text-light">Last 1 Year</div>
+          <%# <div class="text-secondary time-range-sub">(long term)</div> %>
+        </div>
       </div>
+
+      <!-- ===================== -->
+      <!-- Rows 2 - 11: Ranks #1..#10 -->
+      <!-- ===================== -->
+      <% 10.times do |i| %>
+        <div class="row tracks-grid-row">
+          <!-- short_term col -->
+          <div class="col-12 col-lg-4 tracks-col">
+            <% track = @tracks_short[i] %>
+            <% if track.present? %>
+              <div class="track-lineup">
+                <div class="text-center">
+                  <span class="badge bg-secondary rank-badge">#<%= track.rank %></span>
+                  <% if track.album_image_url.present? %>
+                    <div class="mt-2">
+                      <%= image_tag track.album_image_url,
+                                    alt: track.album_name,
+                                    class: 'rounded border',
+                                    size: "64x64" %>
+                    </div>
+                  <% end %>
+                </div>
+
+                <div class="track-details flex-grow-1">
+                  <div class="text-light">
+                    <% if track.spotify_url.present? %>
+                      <%= link_to track.name,
+                                  track.spotify_url,
+                                  target: "_blank",
+                                  rel: "noopener",
+                                  class: "track-name-link text-light" %>
+                    <% else %>
+                      <span class="text-light"><%= track.name %></span>
+                    <% end %>
+                  </div>
+
+                  <div class="track-secondary"><%= track.artists %></div>
+                  <div class="track-secondary">Album: <%= track.album_name %></div>
+                  <div class="track-secondary">Popularity: <%= track.popularity %>/100</div>
+
+                  <div class="mt-2">
+                    <% if track.preview_url.present? %>
+                      <audio controls class="track-audio">
+                        <source src="<%= track.preview_url %>" type="audio/mpeg">
+                      </audio>
+                    <% elsif track.spotify_url.present? %>
+                      <%= link_to "Play on Spotify",
+                                  track.spotify_url,
+                                  target: "_blank",
+                                  rel: "noopener",
+                                  class: "btn btn-outline-primary btn-sm" %>
+                    <% else %>
+                      <span class="text-muted small">No preview</span>
+                    <% end %>
+                  </div>
+                </div>
+              </div>
+            <% else %>
+              <span class="text-muted small">No track #<%= i+1 %></span>
+            <% end %>
+          </div>
+
+          <!-- medium_term col -->
+          <div class="col-12 col-lg-4 tracks-col">
+            <% track = @tracks_medium[i] %>
+            <% if track.present? %>
+              <div class="track-lineup">
+                <div class="text-center">
+                  <span class="badge bg-secondary rank-badge">#<%= track.rank %></span>
+                  <% if track.album_image_url.present? %>
+                    <div class="mt-2">
+                      <%= image_tag track.album_image_url,
+                                    alt: track.album_name,
+                                    class: 'rounded border',
+                                    size: "64x64" %>
+                    </div>
+                  <% end %>
+                </div>
+
+                <div class="track-details flex-grow-1">
+                  <div class="text-light">
+                    <% if track.spotify_url.present? %>
+                      <%= link_to track.name,
+                                  track.spotify_url,
+                                  target: "_blank",
+                                  rel: "noopener",
+                                  class: "track-name-link text-light" %>
+                    <% else %>
+                      <span class="text-light"><%= track.name %></span>
+                    <% end %>
+                  </div>
+
+                  <div class="track-secondary"><%= track.artists %></div>
+                  <div class="track-secondary">Album: <%= track.album_name %></div>
+                  <div class="track-secondary">Popularity: <%= track.popularity %>/100</div>
+
+                  <div class="mt-2">
+                    <% if track.preview_url.present? %>
+                      <audio controls class="track-audio">
+                        <source src="<%= track.preview_url %>" type="audio/mpeg">
+                      </audio>
+                    <% elsif track.spotify_url.present? %>
+                      <%= link_to "Play on Spotify",
+                                  track.spotify_url,
+                                  target: "_blank",
+                                  rel: "noopener",
+                                  class: "btn btn-outline-primary btn-sm" %>
+                    <% else %>
+                      <span class="text-muted small">No preview</span>
+                    <% end %>
+                  </div>
+                </div>
+              </div>
+            <% else %>
+              <span class="text-muted small">No track #<%= i+1 %></span>
+            <% end %>
+          </div>
+
+          <!-- long_term col -->
+          <div class="col-12 col-lg-4 tracks-col">
+            <% track = @tracks_long[i] %>
+            <% if track.present? %>
+              <div class="track-lineup">
+                <div class="text-center">
+                  <span class="badge bg-secondary rank-badge">#<%= track.rank %></span>
+                  <% if track.album_image_url.present? %>
+                    <div class="mt-2">
+                      <%= image_tag track.album_image_url,
+                                    alt: track.album_name,
+                                    class: 'rounded border',
+                                    size: "64x64" %>
+                    </div>
+                  <% end %>
+                </div>
+
+                <div class="track-details flex-grow-1">
+                  <div class="text-light">
+                    <% if track.spotify_url.present? %>
+                      <%= link_to track.name,
+                                  track.spotify_url,
+                                  target: "_blank",
+                                  rel: "noopener",
+                                  class: "track-name-link text-light" %>
+                    <% else %>
+                      <span class="text-light"><%= track.name %></span>
+                    <% end %>
+                  </div>
+
+                  <div class="track-secondary"><%= track.artists %></div>
+                  <div class="track-secondary">Album: <%= track.album_name %></div>
+                  <div class="track-secondary">Popularity: <%= track.popularity %>/100</div>
+
+                  <div class="mt-2">
+                    <% if track.preview_url.present? %>
+                      <audio controls class="track-audio">
+                        <source src="<%= track.preview_url %>" type="audio/mpeg">
+                      </audio>
+                    <% elsif track.spotify_url.present? %>
+                      <%= link_to "Play on Spotify",
+                                  track.spotify_url,
+                                  target: "_blank",
+                                  rel: "noopener",
+                                  class: "btn btn-outline-primary btn-sm" %>
+                    <% else %>
+                      <span class="text-muted small">No preview</span>
+                    <% end %>
+                  </div>
+                </div>
+              </div>
+            <% else %>
+              <span class="text-muted small">No track #<%= i+1 %></span>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+
+      <!-- ===================== -->
+      <!-- Row 12: Playlist create buttons -->
+      <!-- ===================== -->
+      <div class="row playlist-row">
+        <div class="col-12 col-lg-4 tracks-col">
+          <%= button_to "Create playlist (4 weeks)",
+                        create_playlist_path(time_range: "short_term"),
+                        method: :post,
+                        class: "btn btn-spotify btn-sm" %>
+        </div>
+
+        <div class="col-12 col-lg-4 tracks-col">
+          <%= button_to "Create playlist (6 months)",
+                        create_playlist_path(time_range: "medium_term"),
+                        method: :post,
+                        class: "btn btn-spotify btn-sm" %>
+        </div>
+
+        <div class="col-12 col-lg-4 tracks-col">
+          <%= button_to "Create playlist (1 year)",
+                        create_playlist_path(time_range: "long_term"),
+                        method: :post,
+                        class: "btn btn-spotify btn-sm" %>
+        </div>
+      </div>
+
     <% else %>
       <p class="text-secondary">
         We don't have your top tracks yet. Connect your Spotify account or try again later.
