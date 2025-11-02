@@ -4,43 +4,74 @@
 <% end %>
 
 <main class="container mt-4">
-  <h1>Your Top Artists</h1>
 
-  <div class="spotify-card p-3 me-3 mb-4">
-    <% if flash[:alert].present? %>
-      <div class="alert alert-warning">
-        <%= flash[:alert] %>
-      </div>
-    <% end %>
+  <div class="d-flex justify-content-between align-items-center mb-3 px-3 me-3">
+    <h1>
+      Your Top Artists</span>
+    </h1>
+  </div>
 
-    <% if @top_artists.present? %>
-      <div class="top-artists-list">
-        <% @top_artists.each_with_index do |artist, idx| %>
-          <div class="top-artist d-flex align-items-center mb-3">
-            <div class="text-center me-3">
-              <span class="badge bg-secondary fs-6">#<%= idx + 1 %></span>
-            </div>
-
-            <% image_url = artist.respond_to?(:image_url) ? artist.image_url : artist['image_url'] %>
-            <% if image_url.present? %>
-              <div class="me-3">
-                <%= image_tag image_url, alt: (artist.respond_to?(:name) ? artist.name : artist['name']), class: 'rounded-circle border', size: "64x64" %>
-              </div>
-            <% end %>
-
-            <div class="me-3">
-              <strong class="artist-name"><%= artist.respond_to?(:name) ? artist.name : artist['name'] %></strong>
-              <div class="text-muted artist-plays">Plays: <%= artist.respond_to?(:playcount) ? artist.playcount : artist['playcount'] %></div>
-            </div>
-          </div>
-        <% end %>
-      </div>
-    <% else %>
-      <p class="text-secondary">We don't have your top artists yet. Connect your Spotify account or try again later.</p>
-    <% end %>
-
-    <div class="mt-3">
-      <%= link_to 'Back to dashboard', dashboard_path, class: 'btn btn-secondary' %>
+  <% if flash[:alert].present? %>
+    <div class="alert alert-warning">
+      <%= flash[:alert] %>
     </div>
+  <% end %>
+
+  <div class="row g-4">
+    <% @time_ranges.each do |range| %>
+      <% artists = @top_artists_by_range[range[:key]] || [] %>
+      <div class="col-12 col-lg-4 top-artists-column" data-range="<%= range[:key] %>">
+        <div class="spotify-card h-100 p-3">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h2 class="text-light fs-5 mb-0 me-2"><%= range[:label] %></h2>
+
+            <%= form_with url: top_artists_path, method: :get, local: true,
+                          class: "d-flex align-items-center gap-2 mb-0" do %>
+              <% @time_ranges.each do |r2| %>
+                <% next if r2[:key] == range[:key] %>
+                <%= hidden_field_tag "limit_#{r2[:key]}", @limits[r2[:key]] %>
+              <% end %>
+
+              <label class="me-1 text-secondary fw-semibold">Show</label>
+              <%= select_tag "limit_#{range[:key]}",
+                    options_for_select([["Top 10", 10], ["Top 25", 25], ["Top 50", 50]], @limits[range[:key]]),
+                    class: "form-select form-select-sm bg-dark text-white border-secondary",
+                    onchange: "this.form.submit();" %>
+              <button class="btn btn-dark btn-sm js-hidden" type="submit">↻</button>
+            <% end %>
+          </div>
+
+          <% if artists.present? %>
+            <div class="top-artists-list">
+              <% artists.each_with_index do |artist, idx| %>
+                <div class="top-artist d-flex align-items-center mb-3">
+                  <div class="text-center me-3">
+                    <span class="badge bg-secondary fs-6">#<%= idx + 1 %></span>
+                  </div>
+
+                  <% image_url = artist.respond_to?(:image_url) ? artist.image_url : artist['image_url'] %>
+                  <% if image_url.present? %>
+                    <div class="me-3">
+                      <%= image_tag image_url, alt: (artist.respond_to?(:name) ? artist.name : artist['name']), class: 'rounded-circle border', size: "64x64" %>
+                    </div>
+                  <% end %>
+
+                  <div class="me-3">
+                    <strong class="artist-name"><%= artist.respond_to?(:name) ? artist.name : artist['name'] %></strong>
+                    <div class="text-muted artist-plays">Plays: <%= artist.respond_to?(:playcount) ? artist.playcount : artist['playcount'] %></div>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+          <% else %>
+            <p class="text-secondary mb-0">No listening data available for this period.</p>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="mt-4">
+    <%= link_to 'Back to dashboard', dashboard_path, class: 'btn btn-secondary' %>
   </div>
 </main>

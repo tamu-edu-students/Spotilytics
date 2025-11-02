@@ -57,6 +57,50 @@ class SpotifyClient
     end
   end
 
+  # Returns the Spotify account id of the current user (string).
+  def current_user_id
+    access_token = ensure_access_token!
+    me = get('/me', access_token)
+    uid = me['id']
+    raise Error, 'Could not determine Spotify user id' if uid.blank?
+    uid
+  end
+
+  # Create a new playlist in the given user's Spotify account.
+  # Returns the new playlist's Spotify ID (string).
+  def create_playlist_for(user_id:, name:, description:, public: false)
+    access_token = ensure_access_token!
+
+    payload = {
+      name:        name,
+      description: description,
+      public:      public
+    }
+
+    response = post_json("/users/#{user_id}/playlists", access_token, payload)
+    playlist_id = response["id"]
+
+    if playlist_id.blank?
+      raise Error, "Failed to create playlist"
+    end
+
+    playlist_id
+  end
+
+  # Add a set of track URIs to an existing playlist.
+  # uris: array of strings like "spotify:track:123abc"
+  def add_tracks_to_playlist(playlist_id:, uris:)
+    access_token = ensure_access_token!
+
+    payload = {
+      uris: uris
+    }
+
+    post_json("/playlists/#{playlist_id}/tracks", access_token, payload)
+    true
+  end
+
+
   private
 
   attr_reader :session, :client_id, :client_secret
@@ -153,5 +197,21 @@ class SpotifyClient
       'Authorization' => "Basic #{encoded}",
       'Content-Type' => 'application/x-www-form-urlencoded'
     }
+  end
+
+    # Build full Spotify track URIs that the playlist API expects
+  def track_uris_from_tracks(tracks)
+    tracks.map { |t| "spotify:track:#{t.id}" }
+  end
+
+  def post_json(path, access_token, body_hash)
+    uri = URI.parse("#{API_ROOT}#{path}")
+
+    request = Net::HTTP::Post.new(uri)
+    request['Authorization'] = "Bearer #{access_token}"
+    request['Content-Type']  = 'application/json'
+    request.body = JSON.dump(body_hash)
+
+    perform_request(uri, request)
   end
 end

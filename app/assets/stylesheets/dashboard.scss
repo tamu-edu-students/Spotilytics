@@ -23,3 +23,21 @@
   }
 }
 
+.form-select.form-select-sm {
+  width: auto;
+  min-width: 110px;
+  padding-right: 1.75rem;
+  background-color: #1e1e1e;
+  color: #fff;
+  border-color: #444;
+}
+
+.form-select.form-select-sm:focus {
+  border-color: #1db954; 
+  box-shadow: 0 0 0 0.15rem rgba(29, 185, 84, 0.25);
+}
+
+.js .js-hidden {
+  display: none !important;
+}
+
