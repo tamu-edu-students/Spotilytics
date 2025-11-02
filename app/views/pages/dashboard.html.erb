@@ -67,11 +67,11 @@
         </ul>
       <% end %>
     <% else %>
-      <p class="text-secondary mb-3">We couldn't load your top tracks right now. Please try again soon.</p>
+      <p class="text-secondary mb-3">We couldn't load your top artists right now. Please try again soon.</p>
     <% end %>
 
     <div class="mt-3">
-      <%= link_to 'View top 10 artists this year', "/top-artists" , class: 'btn btn-spotify' %>
+      <%= link_to 'View Top Artists', top_artists_path, class: 'btn btn-spotify' %>
     </div>
   </div>
 </main>

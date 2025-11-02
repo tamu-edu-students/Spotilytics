@@ -1,6 +1,12 @@
 class PagesController < ApplicationController
   before_action :require_spotify_auth!, only: %i[dashboard top_artists top_tracks]
 
+  TOP_ARTIST_TIME_RANGES = [
+    { key: 'long_term', label: 'Past Year' },
+    { key: 'medium_term', label: 'Past 6 Months' },
+    { key: 'short_term', label: 'Past 4 Weeks' }
+  ].freeze
+
   def home
   end
 
@@ -25,14 +31,22 @@ class PagesController < ApplicationController
   end
 
   def top_artists
-    limit = normalize_limit(params[:limit])
-    @top_artists = fetch_top_artists(limit: limit)
+    @time_ranges = TOP_ARTIST_TIME_RANGES
+    @top_artists_by_range = {}
+
+    @time_ranges.each do |range|
+      limit = normalize_limit(params[:limit])
+    @top_artists_by_range[range[:key]] = fetch_top_artists(limit: limit, time_range: range[:key])
+    end
   rescue SpotifyClient::UnauthorizedError
     redirect_to home_path, alert: 'You must log in with spotify to view your top artists.' and return
   rescue SpotifyClient::Error => e
     Rails.logger.warn "Failed to fetch Spotify top artists: #{e.message}"
     flash.now[:alert] = 'We were unable to load your top artists from Spotify. Please try again later.'
-    @top_artists = []
+    @top_artists_by_range = TOP_ARTIST_TIME_RANGES.each_with_object({}) do |range, acc|
+      acc[range[:key]] = []
+    end
+    @time_ranges = TOP_ARTIST_TIME_RANGES
   end
 
   def top_tracks
@@ -52,8 +66,8 @@ class PagesController < ApplicationController
     @spotify_client ||= SpotifyClient.new(session: session)
   end
 
-  def fetch_top_artists(limit:)
-    spotify_client.top_artists(limit: limit, time_range: 'long_term')
+  def fetch_top_artists(limit:, time_range: 'long_term')
+    spotify_client.top_artists(limit: limit, time_range: time_range)
   end
 
   def fetch_top_tracks(limit:)
