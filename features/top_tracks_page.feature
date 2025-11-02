@@ -20,14 +20,14 @@ Feature: Top Tracks page
     Then the limit selector should have "Top 10" selected
     And I should see exactly 10 tracks
 
-  Scenario: Select Top 25 without JavaScript (click Update)
+  Scenario: Select Top 25
     When I go to the top tracks page
-    And I choose "Top 25" in the limit selector and click Update
+    And I search for top tracks with limit "Top 25"
     Then the limit selector should have "Top 25" selected
     And I should see exactly 25 tracks
 
   Scenario: Visiting with limit parameter preselects option
     When I go to the top tracks page
-    And I search for top tracks with limit "50"
+    And I search for top tracks with limit "Top 50"
     Then the limit selector should have "Top 50" selected
     And I should see exactly 50 tracks

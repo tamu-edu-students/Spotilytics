@@ -90,7 +90,6 @@ Then("I should be on the top artists page") do
 end
 
 Then("I should see either a top-artist list or a top-artist placeholder") do
-  # The dashboard may show a short placeholder until the feature is implemented
   if page.has_css?('.top-artist')
     expect(page).to have_css('.top-artist')
   else
@@ -103,7 +102,6 @@ Then("the artists should be ordered by play count descending") do
     counts = page.all('.top-artist .artist-plays').map { |el| el.text.scan(/\d+/).first.to_i }
     expect(counts).to eq(counts.sort.reverse)
   else
-    # If no explicit counts are rendered, pass but warn in the output
     warn "Top artists present but no '.artist-plays' nodes found to assert ordering"
   end
 end
@@ -152,7 +150,6 @@ Then('the {string} column should list exactly {int} artists') do |range_label, n
 end
 
 Given("I am not authenticated") do
-  # Ensure no user is signed in
   if respond_to?(:sign_out)
     sign_out(:user)
   else

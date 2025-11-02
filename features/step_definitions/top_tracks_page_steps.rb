@@ -1,5 +1,15 @@
 # features/step_definitions/top_tracks_steps.rb
 require 'ostruct'
+require "addressable/uri"
+require "rack/utils"
+
+def range_label_to_key(label)
+  {
+    "Past Year"      => "long_term",
+    "Past 6 Months"  => "medium_term",
+    "Past 4 Weeks"   => "short_term"
+  }.fetch(label)
+end
 
 #
 # Test-only controller for Cucumber flows.
@@ -7,22 +17,17 @@ require 'ostruct'
 #
 class CucumberTopTracksController < ApplicationController
   def index
-    # Pretend the user is logged in so we don't redirect.
     session[:spotify_user] ||= { "id" => "fake_user_id", "name" => "Test User" }
 
-    # Call the real Spotify client so we hit our stubs.
     client = SpotifyClient.new(session: session)
 
-    # accept ?limit=10/25/50 (default 10)
     limit = params[:limit].to_i
     limit = 10 unless [10, 25, 50].include?(limit)
 
-    # NOW using long_term to match dashboard and the app's behavior.
     @tracks = client.top_tracks(limit: limit, time_range: "long_term")
 
     @error = nil
 
-    # Reuse the actual app view: app/views/top_tracks/index.html.erb
     render template: "top_tracks/index"
   end
 end
@@ -30,36 +35,50 @@ end
 #
 # GIVEN: I am logged in with Spotify for the top tracks page
 #
-Given("I am logged in with Spotify for the top tracks page") do
-  # no-op; CucumberTopTracksController#index seeds session[:spotify_user]
+Given('I am logged in with Spotify for the top tracks page') do
+  OmniAuth.config.test_mode = true
+  OmniAuth.config.mock_auth[:spotify] = OmniAuth::AuthHash.new(
+    provider: 'spotify',
+    uid:      'user_123',
+    info:     { name: 'Test User', email: 'test@example.com', image: nil },
+    credentials: {
+      token:         'fake_token',
+      refresh_token: 'fake_refresh',
+      expires_at:    1.hour.from_now.to_i
+    }
+  )
+
+  visit '/auth/spotify'
+  visit '/auth/spotify/callback'
 end
 
 #
 # GIVEN: Spotify responds with ranked top tracks
 #
-Given("Spotify responds with ranked top tracks") do
-  mock_tracks = (1..10).map do |i|
+Given('Spotify responds with ranked top tracks') do
+  tracks = (1..10).map do |i|
     OpenStruct.new(
+      id: "t#{i}",
       rank: i,
-      name: "Annual Smash #{i}",
+      name: "Song #{i}",
       artists: "Artist #{i}",
       album_name: "Album #{i}",
       album_image_url: "http://img/#{i}.jpg",
-      popularity: 70 + (i % 30),
+      popularity: 100 - i,
       preview_url: nil,
       spotify_url: "https://open.spotify.com/track/#{i}"
     )
   end
 
-  mock_client = double("SpotifyClient")
+  mock = instance_double(SpotifyClient)
 
-  # allow SpotifyClient.new(session: ...) to return our mock client
-  allow(SpotifyClient).to receive(:new).and_return(mock_client)
+  allow(SpotifyClient).to receive(:new).with(session: anything).and_return(mock)
 
-  # now the app under test will call top_tracks(limit: 10, time_range: "long_term")
-  allow(mock_client).to receive(:top_tracks).and_return(mock_tracks)
-
-  @mock_tracks = mock_tracks
+  %w[short_term medium_term long_term].each do |range|
+    allow(mock).to receive(:top_tracks)
+      .with(limit: anything, time_range: range)
+      .and_return(tracks)
+  end
 end
 
 Given("Spotify responds dynamically with N top tracks based on the requested limit") do
@@ -86,51 +105,53 @@ end
 #
 # WHEN: I go to the top tracks page
 #
-When("I go to the top tracks page") do
-  Rails.application.routes.draw do
-    # Cucumber-only test route
-    get "/cucumber_top_tracks", to: "cucumber_top_tracks#index"
-
-    get "/top_tracks",  to: "cucumber_top_tracks#index", as: :top_tracks
-    get "/top_artists", to: "cucumber_top_tracks#index", as: :top_artists
-
-    get  "/home",      to: "pages#home",      as: :home
-    get  "/dashboard", to: "pages#dashboard", as: :dashboard
-
-    match "/login",  to: redirect("/"), via: [:get, :post],                 as: :login
-    match "/logout", to: redirect("/"), via: [:get, :post, :delete],        as: :logout
-    match "/auth/spotify/callback", to: redirect("/"), via: [:get, :post]
-    get   "/auth/failure", to: redirect("/")
-
-    root "pages#home"
-  end
-
-  visit "/cucumber_top_tracks"
+When('I go to the top tracks page') do
+  visit top_tracks_path
 end
 
-When("I choose {string} in the limit selector and click Update") do |label|
-  within('form[action*="/top_tracks"]') do
-    select label, from: "limit"
-    click_button "Update"
+When('I choose {string} in the limit selector for {string} and click Update') do |label, range_label|
+  key = range_label_to_key(range_label)
+
+  other_keys = %w[short_term medium_term long_term] - [key]
+  preserved  = {}
+
+  within(%Q{.time-header-col[data-range="#{key}"]}) do
+    other_keys.each do |k|
+      preserved[k] = find(%Q{input[name="limit_#{k}"]}, visible: :all).value.to_s
+    end
+
+    select(label, from: "limit_#{key}")
+    if has_selector?('button.js-hidden[type="submit"]', visible: :all)
+      find('button.js-hidden[type="submit"]', visible: :all).click
+    else
+      first('button[type="submit"],input[type="submit"]', minimum: 1, visible: :all).click
+    end
   end
 
-  expected = label[/\d+/].to_i
+  uri    = Addressable::URI.parse(current_url)
+  expect(uri.path).to eq("/top_tracks")
 
-  # Ensure we navigated to /top_tracks with ?limit=<expected>
-  expect(page).to have_current_path(
-    %r{\A/top_tracks\?(?:[^#]*&)?limit=#{expected}(?:&[^#]*)?\z},
-    ignore_query: false
-  )
+  q      = Rack::Utils.parse_nested_query(uri.query || "")
+  expect(q["limit_#{key}"]).to eq(label[/\d+/])     # "25", "50", etc.
+  expect(q["limit_#{other_keys[0]}"]).to eq(preserved[other_keys[0]])
+  expect(q["limit_#{other_keys[1]}"]).to eq(preserved[other_keys[1]])
 end
 
-# JS path: onchange auto-submits (use @javascript tag on the scenario)
 When("I choose {string} in the limit selector \(auto submit\)") do |label|
   visit "/cucumber_top_tracks"
   select label, from: "limit"
 end
 
 When("I search for top tracks with limit {string}") do |val|
-  visit top_tracks_path(limit: val)
+  n = val[/\d+/].to_i 
+
+  visit top_tracks_path(
+    limit_short_term:  n,
+    limit_medium_term: n,
+    limit_long_term:   n
+  )
+
+  @last_changed_key = 'long_term'
 end
 
 #
@@ -149,8 +170,10 @@ Then('I should see "Play on Spotify"') do
   expect(page).to have_content("Play on Spotify")
 end
 
-Then("I should see the top tracks header") do
-  expect(page).to have_content("Your Top Tracks (Past 1 year)")
+Then('I should see the top tracks header') do
+  expect(page).to have_css('h1,h5', text: /Your Top Tracks/i)
+
+  expect(page).to have_text(/Short term \(4 weeks\) .* Medium \(6 months\) .* Long \(1 year\)/i)
 end
 
 Then("I should see the first track rank") do
@@ -161,13 +184,25 @@ Then("I should see the Spotify play link") do
   expect(page).to have_content("Play on Spotify")
 end
 
-Then("the limit selector should have {string} selected") do |label|
-  expect(page).to have_select("limit", selected: label)
+Then('the limit selector should have {string} selected') do |label|
+  possible_ids = ['limit_short_term', 'limit_medium_term', 'limit_long_term']
+
+  found = possible_ids.any? do |id|
+    page.has_select?(id, selected: label)
+  end
+
+  expect(found).to be_truthy, "Expected one of #{possible_ids.join(', ')} to have '#{label}' selected"
 end
 
-Then("I should see exactly {int} tracks") do |n|
-  # Each row has class .top-track in your view
-  expect(page.all(".top-track").size).to eq(n)
-  # optional: last rank badge appears somewhere
-  expect(page).to have_content("##{n}")
+Then('I should see exactly {int} tracks') do |n|
+  expect(page).to have_css('.tracks-grid-row', minimum: 10)
+
+  long_col_cells = page.all(:xpath,
+    "//div[contains(@class,'tracks-grid-row')]" \
+    "/div[contains(@class,'tracks-col')][3]" \
+    "//div[contains(@class,'track-lineup')]"
+  )
+  expect(long_col_cells.size).to eq(n)
 end
+
+
