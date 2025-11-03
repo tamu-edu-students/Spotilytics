@@ -1,11 +1,19 @@
 class PagesController < ApplicationController
-  before_action :require_spotify_auth!, only: %i[dashboard top_artists top_tracks view_profile]
+  before_action :require_spotify_auth!, only: %i[dashboard top_artists top_tracks view_profile clear]
 
   TOP_ARTIST_TIME_RANGES = [
     { key: 'long_term', label: 'Past Year' },
     { key: 'medium_term', label: 'Past 6 Months' },
     { key: 'short_term', label: 'Past 4 Weeks' }
   ].freeze
+
+  def clear
+    spotify_client.clear_user_cache()
+    redirect_to home_path, notice: 'Data refreshed successfully' and return
+
+    rescue SpotifyClient::UnauthorizedError
+      redirect_to home_path, alert: 'You must log in with spotify to access the dashboard.' and return
+  end
 
   def home
   end

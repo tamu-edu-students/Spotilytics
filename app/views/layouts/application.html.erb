@@ -50,6 +50,7 @@
         <div class="nav-right d-flex">
           <%# checks if user is signed in %>
           <% if session[:spotify_user] %>
+            <%= link_to 'Refresh Data', clear_path, class: "refresh-button" %>
             <%= link_to  view_profile_path, class: "nav-link #{'active' if current_page?(view_profile_path)}", rel: "noopener noreferrer" do %>
               <p style="margin-bottom: 0 !important;">Logged in as <strong><%= current_user['display_name'] || current_user['email'] %></strong></p>
             <% end %>
