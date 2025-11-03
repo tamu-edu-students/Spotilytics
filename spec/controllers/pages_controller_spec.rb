@@ -53,6 +53,12 @@ RSpec.describe PagesController, type: :controller do
 
         # dashboard also fetches top artists; stub it to something harmless
         allow(mock_client).to receive(:top_artists).and_return([])
+        
+        # dashboard also fetches followed; stub it to something harmless
+        allow(mock_client).to receive(:followed_artists).and_return([])
+
+        # dashboard also fetches new releases; stub it to something harmless
+        allow(mock_client).to receive(:new_releases).and_return([])
       end
 
       it "assigns top tracks and primary track for the preview card" do
@@ -139,6 +145,8 @@ RSpec.describe PagesController, type: :controller do
     before do
       allow(SpotifyClient).to receive(:new).with(session: anything).and_return(mock_client)
       allow(mock_client).to receive(:top_tracks).with(limit: 10, time_range: "long_term").and_return([])
+      allow(mock_client).to receive(:followed_artists).and_return([])
+      allow(mock_client).to receive(:new_releases).and_return([])
     end
 
     context "when SpotifyClient returns artists with genres" do
@@ -164,6 +172,8 @@ RSpec.describe PagesController, type: :controller do
         allow(SpotifyClient).to receive(:new).with(session: anything).and_return(mock_client)
         allow(mock_client).to receive(:top_tracks).with(limit: 10, time_range: "long_term").and_return([])
         allow(mock_client).to receive(:top_artists).and_return(mock_artists)
+        allow(mock_client).to receive(:followed_artists).and_return([])
+        allow(mock_client).to receive(:new_releases).and_return([])
       end
 
       it "assigns @genre_chart with an 'Other' bucket" do
@@ -326,11 +336,11 @@ RSpec.describe PagesController, type: :controller do
 
       expect(response).to redirect_to(home_path)
       expect(flash[:alert]).to eq("You must log in with spotify to view your top tracks.")
+      end
     end
   end
-end
 
-describe 'GET #top_tracks' do
+  describe 'GET #top_tracks' do
     before do
       routes.draw do
         get '/top_tracks' => 'pages#top_tracks'
@@ -356,6 +366,119 @@ describe 'GET #top_tracks' do
 
       expect(flash.now[:alert]).to eq('We were unable to load your top tracks from Spotify. Please try again later.')
       expect(assigns(:top_tracks)).to eq([])
+    end
+  end
+
+  describe "GET #view_profile" do
+    include_context "logged in user"
+    
+    context "when SpotifyClient returns profile successfully" do
+      render_views
+
+      let(:mock_profile) do
+        OpenStruct.new(
+          id: "user123",
+          display_name: "Test Listener",
+          image_url: "http://example.com/user.jpg",
+          followers: 42,
+          spotify_url: "https://open.spotify.com/user/user123"
+        )
+      end
+
+      before do
+        mock_client = instance_double(SpotifyClient)
+        allow(SpotifyClient).to receive(:new)
+          .with(session: anything)
+          .and_return(mock_client)
+        allow(mock_client).to receive(:profile).and_return(mock_profile)
+      end
+
+      it "assigns @profile and renders the view" do
+        get :view_profile
+
+        expect(assigns(:profile)).to eq(mock_profile)
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to include("Test Listener")
+      end
+    end
+
+    context "when SpotifyClient raises UnauthorizedError when fetching profile" do
+      before do
+        mock_client = instance_double(SpotifyClient)
+        allow(SpotifyClient).to receive(:new)
+          .with(session: anything)
+          .and_return(mock_client)
+        allow(mock_client).to receive(:profile)
+          .and_raise(SpotifyClient::UnauthorizedError.new("expired token"))
+      end
+
+      it "redirects to home with the re-auth alert" do
+        get :view_profile
+        expect(response).to redirect_to(home_path)
+        expect(flash[:alert]).to eq("You must log in with spotify to view your profile.")
+      end
+    end
+
+    context "when SpotifyClient raises a generic Error" do
+      before do
+        mock_client = instance_double(SpotifyClient)
+        allow(SpotifyClient).to receive(:new)
+          .with(session: anything)
+          .and_return(mock_client)
+        allow(mock_client).to receive(:profile)
+          .and_raise(SpotifyClient::Error.new("rate limited"))
+      end
+
+      it "renders 200, sets flash.now alert, and assigns @profile to nil" do
+        get :view_profile
+        expect(assigns(:profile)).to be_nil
+        expect(flash.now[:alert]).to eq("We were unable to load your Spotify data right now. Please try again later.")
+        expect(response).to have_http_status(:ok)
+      end
+    end
+  end
+
+  describe "Refresh Data" do
+    include_context "logged in user"
+
+    context "when SpotifyClient successfully clears cache" do
+      before do
+        mock_client = instance_double(SpotifyClient)
+        allow(SpotifyClient).to receive(:new)
+          .with(session: anything)
+          .and_return(mock_client)
+        allow(mock_client).to receive(:clear_user_cache).and_return([])
+      end
+
+      it "redirects to home path" do
+        get :clear
+
+        expect(response).to redirect_to(home_path)
+      end
+
+      it "flashes the correct notice" do
+        get :clear
+
+        expect(flash[:notice]).to eq('Data refreshed successfully')
+      end
+    end
+
+    context "when SpotifyClient raises UnauthorizedError when refreshing data" do
+      before do
+        mock_client = instance_double(SpotifyClient)
+        allow(SpotifyClient).to receive(:new)
+          .with(session: anything)
+          .and_return(mock_client)
+        allow(mock_client).to receive(:clear_user_cache)
+        .and_raise(SpotifyClient::UnauthorizedError.new("expired token"))
+      end
+
+      it "redirects to home with re-auth alert" do
+        get :clear
+
+        expect(response).to redirect_to(home_path)
+        expect(flash[:alert]).to eq("You must log in with spotify to refresh your data.")
+      end
     end
   end
 end

@@ -3,135 +3,211 @@
 <% end %>
 
 <main class="container mt-4">
-  <h1>Your Dashboard</h1>
-  <div class="spotify-card p-3 me-3 mb-4">
-    <h5 class="text-light mb-1">Top Tracks</h5>
-
-    <% if @primary_track.present? %>
-      <div class="d-flex align-items-center mb-3">
-        <% if @primary_track.album_image_url.present? %>
-          <%= image_tag @primary_track.album_image_url, 
-                        alt: @primary_track.album_name, 
-                        class: 'rounded border me-3', 
-                        size: "72x72" %>
-        <% end %>
-        <div>
-          <strong class="text-light fs-5"><%= @primary_track.name %></strong>
-          <div class="text-secondary small"><%= @primary_track.artists %></div>
-          <div class="text-secondary small">Album: <%= @primary_track.album_name %></div>
-          <div class="text-secondary small">Popularity: <%= @primary_track.popularity %>/100</div>
-        </div>
-      </div>
-
-      <% if @top_tracks.second.present? %>
-        <ul class="list-unstyled text-secondary small mb-0">
-          <% @top_tracks.first(5).each_with_index do |track, idx| %>
-            <li class="d-flex align-items-start">
-              <span class="badge bg-secondary me-2">#<%= idx + 1 %></span>
-              <div>
-                <span class="text-light"><%= track.name %></span>
-                <div class="text-secondary small"><%= track.artists %></div>
-              </div>
-            </li>
-          <% end %>
-        </ul>
-      <% end %>
-    <% end %>
-
-    <div class="mt-3">
-      <%= link_to 'View top 10 tracks this year', top_tracks_path , class: 'btn btn-spotify' %>
-    </div>
-  </div>
-  <div class="spotify-card p-3 me-3 mb-4">
-  <h5 class="text-light mb-1">Top Artists & Genres</h5>
-
-  <div class="row g-4 align-items-start">
-
-    <div class="col-12 col-lg-6">
-      <% if @primary_artist.present? %>
-        <div class="d-flex align-items-center mb-3">
-          <% if @primary_artist.image_url.present? %>
-            <%= image_tag @primary_artist.image_url,
-                          alt: @primary_artist.name,
-                          class: 'rounded-circle border me-3',
-                          size: "72x72" %>
-          <% end %>
-          <div>
-            <strong class="text-light fs-5"><%= @primary_artist.name %></strong>
-            <div class="text-secondary small">Plays: <%= @primary_artist.playcount %></div>
+  <h1 class="text-light">Your Dashboard</h1>
+  <div class="d-flex flex-col align-items-center justify-content-between" style="min-width: 1300px; width: 100%;">
+    <div class="spotify-card p-3 mb-4 top-tracks-container" style="min-height: 290px; height: 40vh;">
+      <h5 class="text-light mb-1">Your Top Tracks This Year</h5>
+      <div class="d-flex flex-row align-items-center justify-content-evenly">
+        <% if @primary_track.present? %>
+          <div class="d-flex align-items-center mb-3 mt-3 p-3 top-track">
+            <% if @primary_track.album_image_url.present? %>
+              <%= image_tag @primary_track.album_image_url, 
+                            alt: @primary_track.album_name, 
+                            class: 'rounded border border-dark me-3', 
+                            size: "96x96" %>
+            <% end %>
+            <div>
+              <strong class="text-light fs-5"><%= @primary_track.name %></strong>
+              <div class="text-secondary small"><%= @primary_track.artists %></div>
+              <div class="text-secondary small">Album: <%= @primary_track.album_name %></div>
+              <div class="text-secondary small">Popularity: <%= @primary_track.popularity %>/100</div>
+            </div>
+            <p class="first-track-badge badge me-2 text-dark">#1</p>
           </div>
-        </div>
+        <% else %>
+          <p class="text-secondary mb-3">
+            We couldn't load your top tracks right now. Please try again soon.
+          </p>
+        <% end %>
 
-        <% if @top_artists.second.present? %>
+        <% if @top_tracks.drop(1).any? %>
           <ul class="list-unstyled text-secondary small mb-0">
-            <% @top_artists.first(5).each_with_index do |artist, idx| %>
-              <li class="mb-1">
-                <span class="badge bg-secondary me-2">#<%= idx + 1 %></span>
-                <%= artist.name %>
+            <% @top_tracks.drop(1).first(4).each_with_index do |track, idx| %>
+              <% next if track.blank? %>
+              <li class="d-flex align-items-start">
+                <span class="badge bg-secondary me-2">#<%= idx + 2 %></span>
+                <div>
+                  <span class="text-light"><%= track.name %></span>
+                  <div class="text-secondary small"><%= track.artists %></div>
+                </div>
               </li>
             <% end %>
           </ul>
         <% end %>
-      <% else %>
-        <p class="text-secondary mb-3">
-          We couldn't load your top artists right now. Please try again soon.
-        </p>
-      <% end %>
+      </div>
 
-      <div class="mt-3">
-        <%= link_to 'View Top Artists', top_artists_path, class: 'btn btn-spotify btn-sm' %>
+      <div class="mt-3 text-center">
+        <%= link_to 'View Top Tracks', top_tracks_path , class: 'btn btn-spotify' %>
       </div>
     </div>
 
-    <div class="col-12 col-lg-6">
-      <% if @genre_chart.present? %>
-        <div class="d-flex flex-wrap align-items-start gap-3">
-          <div class="flex-shrink-0">
-            <canvas id="genrePie" width="220" height="220"
-                    aria-label="Top genres chart" role="img"></canvas>
+    <div class="spotify-card p-3 mb-4 top-genre-container" style="min-height: 290px; height: 40vh;">
+      <h5 class="text-light mb-2">Your Top Genres This Year</h5>
+      <div>
+        <% if @genre_chart.present? %>
+          <div class="d-flex flex-row align-items-center justify-content-evenly">
+            <div>
+              <canvas id="genrePie" width="220" height="220"
+                      aria-label="Top genres chart" role="img"></canvas>
 
-            <!-- No-JS static pie fallback -->
-            <% colors = spotify_colors %>
-            <noscript>
-              <% total = @genre_chart[:datasets][0][:data].sum.to_f %>
-              <% start_angle = 0.0 %>
-              <% gradient_segments = @genre_chart[:datasets][0][:data].map.with_index do |val, i|
-                  pct = total.zero? ? 0.0 : val.to_f / total
-                  end_angle = start_angle + (pct * 360.0)
-                  color = colors[i % colors.length]
-                  seg = "#{color} #{start_angle.round(1)}deg #{end_angle.round(1)}deg"
-                  start_angle = end_angle
-                  seg
-                end.join(', ') %>
+              <!-- No-JS static pie fallback -->
+              <% colors = spotify_colors %>
+              <noscript>
+                <% total = @genre_chart[:datasets][0][:data].sum.to_f %>
+                <% start_angle = 0.0 %>
+                <% gradient_segments = @genre_chart[:datasets][0][:data].map.with_index do |val, i|
+                    pct = total.zero? ? 0.0 : val.to_f / total
+                    end_angle = start_angle + (pct * 360.0)
+                    color = colors[i % colors.length]
+                    seg = "#{color} #{start_angle.round(1)}deg #{end_angle.round(1)}deg"
+                    start_angle = end_angle
+                    seg
+                  end.join(', ') %>
 
-              <div class="static-pie" style="
-                  width: 260px; height: 260px;
-                  border-radius: 50%;
-                  background: conic-gradient(<%= gradient_segments.html_safe %>);
-                  border: 1px solid rgba(255,255,255,0.1);
-                ">
-              </div>
-            </noscript>
+                <div class="static-pie" style="
+                    width: 260px; height: 260px;
+                    border-radius: 50%;
+                    background: conic-gradient(<%= gradient_segments.html_safe %>);
+                    border: 1px solid rgba(255,255,255,0.1);
+                  ">
+                </div>
+              </noscript>
+            </div>
+
+            <div class="genre-list">
+              <ul class="list-unstyled mt-1 small">
+                <% @genre_chart[:labels].each_with_index do |label, i| %>
+                  <li class="text-secondary mb-1">
+                    <span class="text-light fw-semibold"><%= label %></span>
+                    — <%= @genre_chart[:datasets][0][:data][i] %>
+                  </li>
+                <% end %>
+              </ul>
+            </div>
           </div>
+        <% else %>
+          <p class="text-secondary text-center mb-0">No genre data available.</p>
+        <% end %>
+      </div>
+    </div>
+  </div>
 
-          <div class="flex-grow-1">
-            <ul class="list-unstyled mt-1 small">
-              <% @genre_chart[:labels].each_with_index do |label, i| %>
-                <li class="text-secondary mb-1">
-                  <span class="text-light fw-semibold"><%= label %></span>
-                  — <%= @genre_chart[:datasets][0][:data][i] %>
-                </li>
-              <% end %>
-            </ul>
+  <div class="d-flex flex-col align-items-center justify-content-between" style="min-width: 1300px; width: 100%;">
+    <div class="spotify-card p-3 mb-4 top-artists-container">
+      <h5 class="text-light mb-1">Your Top Artists This Year</h5>
+      <div class="d-flex flex-row align-items-center justify-content-evenly">
+        <% if @primary_artist.present? %>
+          <div class="d-flex align-items-center mb-3 mt-3 p-3 top-track">
+            <% if @primary_artist.image_url.present? %>
+              <%= image_tag @primary_artist.image_url, 
+                            alt: @primary_artist.name, 
+                            class: 'rounded-circle border me-3', 
+                            size: "96x96" %>
+            <% end %>
+            <div>
+              <strong class="text-light fs-5"><%= @primary_artist.name %></strong>
+              <div class="text-secondary small">Plays: <%= @primary_artist.playcount %></div>
+            </div>
+            <p class="first-track-badge badge me-2 text-dark">#1</p>
           </div>
-        </div>
-      <% else %>
-        <p class="text-secondary mb-0">No genre data available.</p>
-      <% end %>
+        <% else %>
+          <p class="text-secondary mb-3">
+            We couldn't load your top artists right now. Please try again soon.
+          </p>
+        <% end %>
+
+        <% if @top_artists.drop(1).any? %>
+          <ul class="list-unstyled text-secondary small mb-0">
+            <% @top_artists.drop(1).first(4).each_with_index do |artist, idx| %>
+              <% next if artist.blank? %>
+              <li class="d-flex align-items-start">
+                <span class="badge bg-secondary me-2">#<%= idx + 2 %></span>
+                <div>
+                  <span class="text-light"><%= artist.name %></span>
+                </div>
+              </li>
+            <% end %>
+          </ul>
+        <% end %>
+      </div>
+      <div class="mt-3 text-center">
+        <%= link_to 'View Top Artists', top_artists_path, class: 'btn btn-spotify' %>
+      </div>
     </div>
 
+    <div class="spotify-card p-3 mb-4 followed-artists-container ms-2 me-2">
+      <h5 class="text-light mb-2">Followed Artists (20)</h5>
+      <div class="followed-artists-wrapper">
+        <% if @followed_artists.present? %>
+          <% @followed_artists.each do |artist| %>
+            <% next if artist.blank? %>
+            <div class="followed-artists-card">
+              <% if artist.image_url.present? %>
+                <%= image_tag artist.image_url, 
+                              alt: artist.name, 
+                              class: 'rounded-circle border me-3 ms-3', 
+                              size: "40x40" %>
+              <% end %>
+              <div class="d-flex flex-column justify-content-start">
+                <p class="text-light fw-bold me-3" style="margin-bottom: 0 !important; "><%= artist.name %></p>
+                <%= link_to artist.spotify_url , class: 'd-flex flex-row align-items-center text-primary', style: "margin-bottom: 0 !important; font-size: 12px;", target: "_blank", rel: "noopener noreferrer" do %>
+                  <p class="text-primary me-1" style="margin-bottom: 0 !important; font-size: 12px;">View in Spotify</p>
+                  <svg xmlns="http://www.w3.org/2000/svg" height="16" viewBox="0 0 24 24" width="16"><path d="M0 0h24v24H0z" fill="none"/><path fill="rgb(13,110,253)" d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+        <% else %>  
+          <p class="followed-artists-card text-center">
+            We couldn't load your followed artists right now. Please try again soon.
+          </p>
+        <% end %>
+      </div>
+    </div>
+
+    <div class="spotify-card p-3 mb-4 new-releases-container">
+      <h5 class="text-light mb-1">Featured Releases</h5>
+      <div class="d-flex flex-column justify-content-evenly" style="height: 250px;">
+        <% if @new_releases.present? %>
+          <% @new_releases.each do |release| %>
+            <% next if release.blank? %>
+            <div class="d-flex flex-row align-items-center justify-content-start">
+              <% if release.image_url.present? %>
+                <%= image_tag release.image_url, 
+                              alt: release.name, 
+                              class: 'rounded border border-dark me-3', 
+                              size: "100x100" %>
+              <% end %>
+              <div class="text-sm">
+                <p class="text-light" style="margin-bottom: 0 !important; font-weight: 700;"> <%= release.name %> </p>
+                <p style="margin-bottom: 0 !important;"> Artist(s): <%= release.artists.join(', ') %> </p>
+                <p style="margin-bottom: 0 !important;"> Total Tracks: <%= release.total_tracks %> </p>
+                <p style="margin-bottom: 0 !important;"> Release Date: <%= release.release_date %> </p>
+                <%= link_to release.spotify_url , class: 'd-flex flex-row align-items-center text-primary', style: "margin-bottom: 0 !important; font-size: 14px;", target: "_blank", rel: "noopener noreferrer" do %>
+                  <p class="text-primary me-1" style="margin-bottom: 0 !important; font-size: 12px;">View in Spotify</p>
+                  <svg xmlns="http://www.w3.org/2000/svg" height="16" viewBox="0 0 24 24" width="16"><path d="M0 0h24v24H0z" fill="none"/><path fill="rgb(13,110,253)" d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+        <% else %>
+          <p class="text-secondary mb-3 text-center">
+            We couldn't load new releases right now. Please try again soon.
+          </p>
+        <% end %>
+      </div>
+    </div>
   </div>
-</div>
 
 <%# Load Chart.js and render ONLY if data present %>
 <% if @genre_chart.present? %>

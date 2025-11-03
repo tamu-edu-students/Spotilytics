@@ -34,3 +34,26 @@
     border-radius: 4px 4px 0 0;
   }
 }
+
+.refresh-button {
+  color: white;
+  background-color: $spotify-green;
+  font-weight: 700;
+  text-decoration: none !important;
+  height: 30px;
+  width: 125px;
+  border: solid;
+  border-width: 1px;
+  border-radius: 10px;
+  border-color: $spotify-green;
+  margin-top: 10px;
+  text-align: center;
+  line-height: 30px;
+  margin-right: 10px;
+}
+
+.refresh-button:hover {
+  color: $spotify-green;
+  background-color: white;
+  text-decoration: none !important;
+}

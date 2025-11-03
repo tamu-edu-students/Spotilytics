@@ -1,0 +1,54 @@
+.main-full {
+    height: calc(100vh - 50px); 
+    overflow: hidden; 
+}
+
+.spotify-card-profile {
+  background-color: #212121;
+  border: 1px solid #2e2e2e;
+  border-radius: 1rem;
+  width: 350px;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.spotify-card-profile:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 0 25px rgba(29, 185, 84, 0.4);
+}
+
+.profile-img {
+  width: 140px;
+  height: 140px;
+  object-fit: cover;
+  border: 3px solid #1db954;
+  box-shadow: 0 0 10px rgba(29, 185, 84, 0.3);
+}
+
+.profile-placeholder {
+  width: 140px;
+  height: 140px;
+  background-color: #535353;
+  color: #b3b3b3;
+  border: 3px solid #1db954;
+  font-size: 3rem;
+}
+
+.profile-btn {
+  background-color: #1db954;
+  border: none;
+  color: #121212;
+  border-radius: 50px;
+  padding: 0.6rem 1.4rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05rem;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.profile-btn:hover {
+  background-color: lighten(#1db954, 8%);
+  transform: scale(1.03);
+}
+
+.profile-content {
+    transform: translateY(-25%);
+}

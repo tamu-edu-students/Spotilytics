@@ -11,6 +11,8 @@ end
 Given("Spotify returns top artists data") do
   mock = instance_double(SpotifyClient)
   allow(SpotifyClient).to receive(:new).and_return(mock)
+  allow(mock).to receive(:followed_artists).and_return([])
+  allow(mock).to receive(:new_releases).and_return([])
 
   allow(mock).to receive(:top_artists) do |args|
     limit = (args[:limit] || 10).to_i
