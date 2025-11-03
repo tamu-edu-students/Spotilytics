@@ -137,9 +137,10 @@ class SpotifyClient
 
   # Returns the Spotify account id of the current user (string).
   def current_user_id
-    access_token = ensure_access_token!
-    me = get('/me', access_token)
-    uid = me['id']
+    # access_token = ensure_access_token!
+    # me = get('/me', access_token)
+    # uid = me['id']
+    uid = session[:spotify_user]&.[](:id)
     raise Error, 'Could not determine Spotify user id' if uid.blank?
     uid
   end
