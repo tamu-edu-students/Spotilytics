@@ -24,11 +24,9 @@ class TopTracksController < ApplicationController
       @tracks_long   = client.top_tracks(limit: @limits['long_term'],   time_range: 'long_term')
       @error = nil
     rescue SpotifyClient::UnauthorizedError => e
-      Rails.logger.error "Spotify unauthorized: #{e.message}"
       redirect_to root_path, alert: "Session expired. Please sign in with Spotify again."
       return
     rescue SpotifyClient::Error => e
-      Rails.logger.error "Spotify error: #{e.message}"
       @tracks_short  = []
       @tracks_medium = []
       @tracks_long   = []

@@ -14,6 +14,8 @@ class RecommendationsController < ApplicationController
         search_queries = sampled_seeds.join(' OR ')
 
         @recommendations = spotify_client.search_tracks(search_queries, limit: 15)
+    rescue SpotifyClient::UnauthorizedError
+        redirect_to home_path, alert: 'You must log in with spotify to view your reccomendations.' and return
     rescue SpotifyClient::Error => e
         flash[:alert] = "Failed to fetch recommendations: #{e.message}"
         @recommendations = []

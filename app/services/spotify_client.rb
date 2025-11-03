@@ -152,7 +152,6 @@ class SpotifyClient
     access_token = ensure_access_token!
     me = get('/me', access_token)
     uid = me['id']
-    Rails.logger.info "Session user: #{session[:spotify_user].inspect}"
     uid = session.dig('spotify_user', 'id')
 
     if uid.blank?
@@ -218,10 +217,8 @@ class SpotifyClient
 
     # Build a stable cache key like "spotify_12345_top_tracks_medium_term_20"
     key = ['spotify', user_id, *Array(key_parts)].join('_')
-    Rails.logger.info "Cache hit for #{key}" if Rails.cache.exist?(key)
-    
+
     Rails.cache.fetch(key, expires_in: expires_in) do
-      Rails.logger.info "Caching miss for #{key}, fetching from Spotify API..."
       yield
     end
   end

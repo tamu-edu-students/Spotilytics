@@ -32,7 +32,6 @@ class PagesController < ApplicationController
   rescue SpotifyClient::UnauthorizedError
     redirect_to home_path, alert: 'You must log in with spotify to access the dashboard.' and return
   rescue SpotifyClient::Error => e
-    Rails.logger.warn "Failed to fetch Spotify data for dashboard: #{e.message}"
     flash.now[:alert] = 'We were unable to load your Spotify data right now. Please try again later.'
     @top_artists = []
     @primary_artist = nil
@@ -49,7 +48,6 @@ class PagesController < ApplicationController
   rescue SpotifyClient::UnauthorizedError
     redirect_to home_path, alert: 'You must log in with spotify to view your profile.' and return
   rescue SpotifyClient::Error => e
-    Rails.logger.warn "Failed to fetch Spotify profile data: #{e.message}"
     flash.now[:alert] = 'We were unable to load your Spotify data right now. Please try again later.'
 
     @profile = nil
@@ -71,7 +69,6 @@ class PagesController < ApplicationController
   rescue SpotifyClient::UnauthorizedError
     redirect_to home_path, alert: 'You must log in with spotify to view your top artists.' and return
   rescue SpotifyClient::Error => e
-    Rails.logger.warn "Failed to fetch Spotify top artists: #{e.message}"
     flash.now[:alert] = 'We were unable to load your top artists from Spotify. Please try again later.'
     @top_artists_by_range = TOP_ARTIST_TIME_RANGES.each_with_object({}) do |range, acc|
       acc[range[:key]] = []
@@ -86,7 +83,6 @@ class PagesController < ApplicationController
   rescue SpotifyClient::UnauthorizedError
     redirect_to home_path, alert: 'You must log in with spotify to view your top tracks.' and return
   rescue SpotifyClient::Error => e
-    Rails.logger.warn "Failed to fetch Spotify top tracks: #{e.message}"
     flash.now[:alert] = 'We were unable to load your top tracks from Spotify. Please try again later.'
     @top_tracks = []
   end
