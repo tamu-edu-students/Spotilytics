@@ -1,5 +1,6 @@
 # spec/controllers/pages_controller_dashboard_top_tracks_spec.rb
 require "rails_helper"
+require "set"
 
 RSpec.describe PagesController, type: :controller do
   shared_context "logged in user" do
@@ -265,6 +266,7 @@ RSpec.describe PagesController, type: :controller do
         expect(mock_client).to receive(:top_artists).with(limit: 25, time_range: "short_term").and_return(artists_stub)
         expect(mock_client).to receive(:top_artists).with(limit: 50, time_range: "medium_term").and_return(artists_stub)
         expect(mock_client).to receive(:top_artists).with(limit: 10, time_range: "long_term").and_return(artists_stub)
+        expect(mock_client).to receive(:followed_artist_ids).with(["a1"]).and_return(Set.new(["a1"]))
 
         get :top_artists, params: { limit_short_term: "25", limit_medium_term: "50", limit_long_term: "abc" }
 
@@ -272,6 +274,7 @@ RSpec.describe PagesController, type: :controller do
         expect(assigns(:top_artists_by_range)["short_term"]).to eq(artists_stub)
         expect(assigns(:top_artists_by_range)["medium_term"]).to eq(artists_stub)
         expect(assigns(:top_artists_by_range)["long_term"]).to eq(artists_stub)
+        expect(assigns(:followed_artist_ids)).to eq(Set.new(["a1"]))
         expect(assigns(:time_ranges)).to eq(PagesController::TOP_ARTIST_TIME_RANGES)
         expect(response).to have_http_status(:ok)
       end

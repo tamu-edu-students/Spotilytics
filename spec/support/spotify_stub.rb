@@ -1,4 +1,5 @@
 require 'ostruct'
+require 'set'
 require Rails.root.join('app/services/spotify_client')
 
 module SpotifyStub
@@ -9,6 +10,11 @@ module SpotifyStub
     artists_by_range = ALLOWED_TIME_RANGES.each_with_object({}) do |range, acc|
       acc[range] = build_stubbed_artists(n, prefix: range)
     end
+
+    @_followed_artist_ids = Set.new
+    @_follow_calls = []
+    @_unfollow_calls = []
+    @_followed_artist_ids_requests = []
 
     RSpec.current_example.metadata[:stubbed_spotify_top_artists] = artists_by_range if defined?(RSpec) && RSpec.respond_to?(:current_example)
     @_stubbed_spotify_top_artists = artists_by_range
@@ -30,6 +36,28 @@ module SpotifyStub
       artists_by_range[time_range]
     end
 
+    allow_any_instance_of(SpotifyClient).to receive(:followed_artist_ids) do |_, ids|
+      ids = Array(ids).map(&:to_s)
+      @_followed_artist_ids_requests << ids
+      ids.each_with_object(Set.new) do |id, acc|
+        acc << id if @_followed_artist_ids.include?(id)
+      end
+    end
+
+    allow_any_instance_of(SpotifyClient).to receive(:follow_artists) do |_, ids|
+      ids = Array(ids).map(&:to_s)
+      @_follow_calls << ids
+      ids.each { |id| @_followed_artist_ids << id }
+      true
+    end
+
+    allow_any_instance_of(SpotifyClient).to receive(:unfollow_artists) do |_, ids|
+      ids = Array(ids).map(&:to_s)
+      @_unfollow_calls << ids
+      ids.each { |id| @_followed_artist_ids.delete(id) }
+      true
+    end
+
     artists_by_range[DEFAULT_TIME_RANGE]
   end
 
@@ -39,6 +67,26 @@ module SpotifyStub
 
   def all_spotify_top_artists_calls
     @_spotify_top_artist_calls || []
+  end
+
+  def stubbed_followed_artist_ids
+    @_followed_artist_ids || Set.new
+  end
+
+  def follow_calls
+    @_follow_calls || []
+  end
+
+  def unfollow_calls
+    @_unfollow_calls || []
+  end
+
+  def set_stub_followed_artists(ids)
+    @_followed_artist_ids = Set.new(Array(ids).map(&:to_s))
+  end
+
+  def followed_artist_ids_requests
+    @_followed_artist_ids_requests || []
   end
 
   private
