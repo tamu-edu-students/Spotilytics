@@ -5,6 +5,10 @@ on:
   push:
     branches: [ main, feature/custom_top_tracks_no ]
 
+env:
+  SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
+  SPOTIFY_CLIENT_SECRET: ${{ secrets.SPOTIFY_CLIENT_SECRET }}
+
 jobs:
   scan_ruby:
     runs-on: ubuntu-latest
