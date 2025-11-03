@@ -223,6 +223,7 @@ When("I unfollow the first artist in the {string} column") do |range_key|
   end
 end
 
+
 Given("I am not authenticated") do
   if respond_to?(:sign_out)
     sign_out(:user)

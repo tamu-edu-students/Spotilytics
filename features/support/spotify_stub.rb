@@ -15,6 +15,8 @@ module SpotifyStub
     @stubbed_top_artists_calls = []
     @stubbed_followed_artist_ids = Set.new
     @stubbed_followed_artist_ids_requests = []
+    @stubbed_follow_error = nil
+    @stubbed_unfollow_error = nil
 
     allow_any_instance_of(SpotifyClient).to receive(:followed_artist_ids) do |_, ids|
       ids = Array(ids).map(&:to_s)
@@ -41,12 +43,22 @@ module SpotifyStub
     end
 
     allow_any_instance_of(SpotifyClient).to receive(:follow_artists) do |_, ids|
+      if @stubbed_follow_error
+        error = @stubbed_follow_error
+        @stubbed_follow_error = nil
+        raise error
+      end
       ids = Array(ids).map(&:to_s)
       ids.each { |id| @stubbed_followed_artist_ids << id }
       true
     end
 
     allow_any_instance_of(SpotifyClient).to receive(:unfollow_artists) do |_, ids|
+      if @stubbed_unfollow_error
+        error = @stubbed_unfollow_error
+        @stubbed_unfollow_error = nil
+        raise error
+      end
       ids = Array(ids).map(&:to_s)
       ids.each { |id| @stubbed_followed_artist_ids.delete(id) }
       true
@@ -69,6 +81,14 @@ module SpotifyStub
     ids = Array(ids).map(&:to_s)
     @stubbed_followed_artist_ids ||= Set.new
     ids.each { |id| @stubbed_followed_artist_ids << id }
+  end
+
+  def stub_follow_error!(message)
+    @stubbed_follow_error = SpotifyClient::Error.new(message)
+  end
+
+  def stub_unfollow_error!(message)
+    @stubbed_unfollow_error = SpotifyClient::Error.new(message)
   end
 
   private

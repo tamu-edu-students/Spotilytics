@@ -83,4 +83,12 @@ RSpec.describe "TopArtists", type: :request do
     expect(requests.length).to eq(1)
     expect(requests.first).to eq(requests.first.uniq)
   end
+
+  it "renders placeholder text when no artists are returned" do
+    stub_spotify_top_artists(0)
+
+    get top_artists_path
+
+    expect(response.body).to include('No listening data available for this period.')
+  end
 end

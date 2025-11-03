@@ -314,6 +314,25 @@ RSpec.describe PagesController, type: :controller do
         expect(assigns(:time_ranges)).to eq(PagesController::TOP_ARTIST_TIME_RANGES)
       end
     end
+
+    context "when SpotifyClient raises insufficient scope error" do
+      it "redirects to login and clears tokens" do
+        session[:spotify_token] = 'token'
+        session[:spotify_refresh_token] = 'refresh'
+        session[:spotify_expires_at] = 123
+
+        allow(mock_client).to receive(:top_artists)
+          .and_raise(SpotifyClient::Error.new('Insufficient client scope'))
+
+        get :top_artists
+
+        expect(response).to redirect_to(login_path)
+        expect(flash[:alert]).to eq('Spotify now needs permission to manage your follows. Please sign in again.')
+        expect(session[:spotify_token]).to be_nil
+        expect(session[:spotify_refresh_token]).to be_nil
+        expect(session[:spotify_expires_at]).to be_nil
+      end
+    end
   end
 
   describe "GET #top_tracks (PagesController)" do
