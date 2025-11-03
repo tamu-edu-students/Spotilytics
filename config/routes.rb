@@ -26,4 +26,7 @@ Rails.application.routes.draw do
   # GET /top_tracks
   get "/top_tracks", to: "top_tracks#index", as: :top_tracks
   post "/create_playlist", to: "playlists#create", as: :create_playlist
+
+  # Get Reccomendations
+  get '/reccomendations', to: 'reccomendations#reccomendations', as: :reccomendations
 end
