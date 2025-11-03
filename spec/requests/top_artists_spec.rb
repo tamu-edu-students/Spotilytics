@@ -9,15 +9,24 @@ RSpec.describe "TopArtists", type: :request do
     stub_spotify_top_artists(10)
   end
 
+  # require 'webmock/rspec'
+
   it "returns a page with 10 top artists ordered by playcount" do
+    stub_request(:any, /api\.spotify\.com/).to_return(
+      status: 200,
+      body: '{}',
+      headers: { 'Content-Type' => 'application/json' }
+    )
+
+
+    # Now you can run your normal flow
     get "/auth/spotify/callback"
     follow_redirect!
     get dashboard_path
 
-    # parse HTML for elements with class 'top-artist'
     html = Nokogiri::HTML(response.body)
     items = html.css('.top-artist')
-    # Dashboard may not yet render a full list; if it does, expect 10
+
     if items.any?
       expect(items.size).to eq(10)
       counts = html.css('.top-artist .artist-plays').map { |n| n.text.scan(/\d+/).first.to_i }
@@ -26,6 +35,7 @@ RSpec.describe "TopArtists", type: :request do
       expect(html.text).to match(/Top Artist|Top Artists|top artist/i)
     end
   end
+
 
   it "returns the top artists page with ordered entries for each time range" do
     get top_artists_path
