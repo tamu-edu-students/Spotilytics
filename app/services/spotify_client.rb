@@ -218,9 +218,14 @@ class SpotifyClient
     # Build a stable cache key like "spotify_12345_top_tracks_medium_term_20"
     key = ['spotify', user_id, *Array(key_parts)].join('_')
 
-    Rails.cache.fetch(key, expires_in: expires_in) do
+    Rails.logger.info "[SpotifyCache] Looking for key: #{key}"   # Always prints
+    result = Rails.cache.fetch(key, expires_in: expires_in) do
+      Rails.logger.info "[SpotifyCache] Cache miss! Fetching from Spotify API for key: #{key}"
       yield
     end
+
+    Rails.logger.info "[SpotifyCache] Cache hit! Key found: #{key}" if result
+    result
   end
 
   def ensure_access_token!
