@@ -12,18 +12,6 @@
     Short term (4 weeks) vs Medium (6 months) vs Long (1 year)
   </p>
 
-  <% if flash[:notice].present? %>
-    <div class="alert alert-success">
-      <%= flash[:notice] %>
-    </div>
-  <% end %>
-
-  <% if flash[:alert].present? %>
-    <div class="alert alert-warning">
-      <%= flash[:alert] %>
-    </div>
-  <% end %>
-
   <div class="row g-4">
     <% @time_ranges.each do |range| %>
       <% artists = @top_artists_by_range[range[:key]] || [] %>

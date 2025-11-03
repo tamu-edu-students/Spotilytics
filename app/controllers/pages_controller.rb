@@ -74,12 +74,17 @@ class PagesController < ApplicationController
   rescue SpotifyClient::UnauthorizedError
     redirect_to home_path, alert: 'You must log in with spotify to view your top artists.' and return
   rescue SpotifyClient::Error => e
-    Rails.logger.warn "Failed to fetch Spotify top artists: #{e.message}"
-    flash.now[:alert] = 'We were unable to load your top artists from Spotify. Please try again later.'
-    @top_artists_by_range = TOP_ARTIST_TIME_RANGES.each_with_object({}) { |range, acc| acc[range[:key]] = [] }
-    @limits = TOP_ARTIST_TIME_RANGES.to_h { |range| [range[:key], 10] }
-    @followed_artist_ids = Set.new
-    @time_ranges = TOP_ARTIST_TIME_RANGES
+    if insufficient_scope?(e)
+      reset_spotify_session!
+      redirect_to login_path, alert: 'Spotify now needs permission to manage your follows. Please sign in again.'
+    else
+      Rails.logger.warn "Failed to fetch Spotify top artists: #{e.message}"
+      flash.now[:alert] = 'We were unable to load your top artists from Spotify. Please try again later.'
+      @top_artists_by_range = TOP_ARTIST_TIME_RANGES.each_with_object({}) { |range, acc| acc[range[:key]] = [] }
+      @limits = TOP_ARTIST_TIME_RANGES.to_h { |range| [range[:key], 10] }
+      @followed_artist_ids = Set.new
+      @time_ranges = TOP_ARTIST_TIME_RANGES
+    end
   end
 
   def top_tracks
@@ -172,5 +177,15 @@ class PagesController < ApplicationController
     elsif artist.respond_to?(:[])
       artist['id'] || artist[:id]
     end
+  end
+
+  def insufficient_scope?(error)
+    error.message.to_s.downcase.include?('insufficient client scope')
+  end
+
+  def reset_spotify_session!
+    session.delete(:spotify_token)
+    session.delete(:spotify_refresh_token)
+    session.delete(:spotify_expires_at)
   end
 end
