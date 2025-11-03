@@ -1,11 +1,19 @@
 class PagesController < ApplicationController
-  before_action :require_spotify_auth!, only: %i[dashboard top_artists top_tracks]
+  before_action :require_spotify_auth!, only: %i[dashboard top_artists top_tracks view_profile clear]
 
   TOP_ARTIST_TIME_RANGES = [
     { key: 'long_term', label: 'Past Year' },
     { key: 'medium_term', label: 'Past 6 Months' },
     { key: 'short_term', label: 'Past 4 Weeks' }
   ].freeze
+
+  def clear
+    spotify_client.clear_user_cache()
+    redirect_to home_path, notice: 'Data refreshed successfully' and return
+
+    rescue SpotifyClient::UnauthorizedError
+      redirect_to home_path, alert: 'You must log in with spotify to refresh your data.' and return
+  end
 
   def home
   end
@@ -32,7 +40,6 @@ class PagesController < ApplicationController
   rescue SpotifyClient::UnauthorizedError
     redirect_to home_path, alert: 'You must log in with spotify to access the dashboard.' and return
   rescue SpotifyClient::Error => e
-    Rails.logger.warn "Failed to fetch Spotify data for dashboard: #{e.message}"
     flash.now[:alert] = 'We were unable to load your Spotify data right now. Please try again later.'
     @top_artists = []
     @primary_artist = nil
@@ -41,6 +48,19 @@ class PagesController < ApplicationController
     @genre_chart = nil
     @followed_artists = []
     @new_releases = []
+  end
+
+  def view_profile
+    @profile=fetch_profile()
+
+  rescue SpotifyClient::UnauthorizedError
+    Rails.logger.warn "Unauthorized dashboard access"
+    redirect_to home_path, alert: 'You must log in with spotify to view your profile.' and return
+  rescue SpotifyClient::Error => e
+    Rails.logger.warn "Failed to fetch Spotify data for dashboard: #{e.message}"
+    flash.now[:alert] = 'We were unable to load your Spotify data right now. Please try again later.'
+
+    @profile = nil
   end
 
   def top_artists
@@ -83,6 +103,10 @@ class PagesController < ApplicationController
 
   def spotify_client
     @spotify_client ||= SpotifyClient.new(session: session)
+  end
+
+  def fetch_profile()
+    spotify_client.profile()
   end
 
   def fetch_new_releases(limit:)

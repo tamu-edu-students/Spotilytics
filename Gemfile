@@ -53,6 +53,7 @@ gem 'dotenv-rails', groups: [:development, :test]
 # gem "image_processing", "~> 1.2"
 group :production do
   gem 'pg'
+  gem 'redis'
 end
 
 group :development, :test do
@@ -94,5 +95,6 @@ group :test do
   gem "capybara"
   gem "selenium-webdriver"
   gem 'rails-controller-testing'
+  gem 'webmock'
 end
 

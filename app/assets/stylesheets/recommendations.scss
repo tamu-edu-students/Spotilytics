@@ -1,0 +1,15 @@
+// Import spotify theme partial
+@import "partials/default-theme";
+
+.card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 0 0.8rem 0.3rem rgba(179, 179, 179, 0.15);
+  }
+}
+
+h1 {
+  color: $spotify-green;
+}
