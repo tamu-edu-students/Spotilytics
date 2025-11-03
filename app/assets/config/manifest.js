@@ -3,4 +3,5 @@
 //= link application.css
 //= link home.css
 //= link dashboard.css
+//= link profile.css
 //= link_tree ../../javascript .js

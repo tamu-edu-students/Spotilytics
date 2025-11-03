@@ -14,6 +14,7 @@ Rails.application.routes.draw do
   get '/dashboard', to: 'pages#dashboard', as: :dashboard
   get '/top-artists', to: 'pages#top_artists', as: :top_artists
   get '/home', to: 'pages#home', as: :home
+  get '/view-profile', to: 'pages#view_profile', as: :view_profile
   root 'pages#home'
 
   # Callback from Spotify

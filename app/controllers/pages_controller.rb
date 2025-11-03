@@ -1,5 +1,5 @@
 class PagesController < ApplicationController
-  before_action :require_spotify_auth!, only: %i[dashboard top_artists top_tracks]
+  before_action :require_spotify_auth!, only: %i[dashboard top_artists top_tracks view_profile]
 
   TOP_ARTIST_TIME_RANGES = [
     { key: 'long_term', label: 'Past Year' },
@@ -43,6 +43,18 @@ class PagesController < ApplicationController
     @new_releases = []
   end
 
+  def view_profile
+    @profile=fetch_profile()
+
+  rescue SpotifyClient::UnauthorizedError
+    redirect_to home_path, alert: 'You must log in with spotify to view your profile.' and return
+  rescue SpotifyClient::Error => e
+    Rails.logger.warn "Failed to fetch Spotify profile data: #{e.message}"
+    flash.now[:alert] = 'We were unable to load your Spotify data right now. Please try again later.'
+
+    @profile = nil
+  end
+
   def top_artists
     @time_ranges = TOP_ARTIST_TIME_RANGES
     @top_artists_by_range = {}
@@ -83,6 +95,10 @@ class PagesController < ApplicationController
 
   def spotify_client
     @spotify_client ||= SpotifyClient.new(session: session)
+  end
+
+  def fetch_profile()
+    spotify_client.profile()
   end
 
   def fetch_new_releases(limit:)

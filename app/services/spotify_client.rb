@@ -19,6 +19,19 @@ class SpotifyClient
     @client_secret = ENV['SPOTIFY_CLIENT_SECRET']
   end
 
+  def profile()
+    access_token = ensure_access_token!
+    response = get("/users/#{current_user_id}", access_token)
+
+    items = OpenStruct.new(
+      id: response['id'],
+      display_name: response['display_name'],
+      image_url: response.dig('images', 0, 'url'), 
+      followers: response.dig('followers', 'total') || 0,
+      spotify_url: response.dig('external_urls', 'spotify')
+    )
+  end
+
   def new_releases(limit:)
     access_token = ensure_access_token!
     response = get('/browse/new-releases', access_token, limit: limit)
