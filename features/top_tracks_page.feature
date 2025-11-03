@@ -31,3 +31,16 @@ Feature: Top Tracks page
     And I search for top tracks with limit "Top 50"
     Then the limit selector should have "Top 50" selected
     And I should see exactly 50 tracks
+
+  Scenario: Token expired → redirected to home with session-expired alert
+    Given Spotify top tracks raises Unauthorized
+    When I go to the top tracks page
+    Then I should be on the home page
+    And I should see "Session expired. Please sign in with Spotify again."
+
+  Scenario: Generic Spotify error → 200 with friendly message and empty lists
+    Given Spotify top tracks raises a generic error
+    When I go to the top tracks page
+    Then I should be on the Top Tracks page
+    And I should see "Couldn't load your top tracks from Spotify."
+    And I should see no rendered tracks

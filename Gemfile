@@ -98,3 +98,11 @@ group :test do
   gem 'webmock'
 end
 
+group :test do
+  gem 'simplecov', require: false
+end
+
+group :test do
+  gem 'rack_session_access', '~> 0.2'
+end
+
