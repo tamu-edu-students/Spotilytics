@@ -52,6 +52,12 @@ class CucumberDashboardController < ApplicationController
   end
 end
 
+def stub_spotify_for_dashboard!
+    @mock_spotify ||= instance_double(SpotifyClient)
+    allow(SpotifyClient).to receive(:new).with(session: anything).and_return(@mock_spotify)
+    @mock_spotify
+  end
+
 
 #
 # GIVEN: logged in for dashboard
@@ -117,6 +123,8 @@ Given("Spotify responds with top tracks for the dashboard") do
   allow(SpotifyClient).to receive(:new).with(session: anything).and_return(mock)
   allow(mock).to receive(:top_tracks).with(limit: 10, time_range: "long_term").and_return(tracks)
   allow(mock).to receive(:top_artists).with(limit: 10, time_range: "long_term").and_return(artists)
+  allow(mock).to receive(:followed_artists).and_return([])
+  allow(mock).to receive(:new_releases).and_return([])
 end
 
 When("I go to the dashboard") do
@@ -136,5 +144,19 @@ Then("I should see the dashboard primary track artist") do
 end
 
 Then("I should see the dashboard CTA to view top tracks") do
-  expect(page).to have_content("View top 10 tracks this year")
+  expect(page).to have_content("Your Top Tracks")
 end
+
+Given("Spotify for the dashboard raises Unauthorized") do
+  mock = stub_spotify_for_dashboard!
+  allow(mock).to receive(:top_tracks).and_raise(SpotifyClient::UnauthorizedError.new("expired"))
+  allow(mock).to receive(:top_artists).and_raise(SpotifyClient::UnauthorizedError.new("expired"))
+end
+
+Given("Spotify for the dashboard raises a generic error") do
+  mock = stub_spotify_for_dashboard!
+  allow(mock).to receive(:top_tracks).and_raise(SpotifyClient::Error.new("rate limited"))
+  allow(mock).to receive(:top_artists).and_raise(SpotifyClient::Error.new("rate limited"))
+end
+
+

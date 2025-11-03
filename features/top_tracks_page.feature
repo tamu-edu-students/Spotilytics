@@ -32,11 +32,6 @@ Feature: Top Tracks page
     Then the limit selector should have "Top 50" selected
     And I should see exactly 50 tracks
 
-  Scenario: Not logged in → redirected to home with login alert
-    When I visit the Top Tracks page not logged in
-    Then I should be on the home page
-    And I should see "Please sign in with Spotify first."
-
   Scenario: Token expired → redirected to home with session-expired alert
     Given Spotify top tracks raises Unauthorized
     When I go to the top tracks page

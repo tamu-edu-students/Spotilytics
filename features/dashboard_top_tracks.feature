@@ -11,3 +11,19 @@ Feature: Dashboard shows top tracks
     And I should see the dashboard primary track name
     And I should see the dashboard primary track artist
     And I should see the dashboard CTA to view top tracks
+
+  Scenario: Spotify token expired -> redirect to home with re-auth alert
+    Given I am logged in with Spotify for the dashboard
+    And Spotify for the dashboard raises Unauthorized
+    When I go to the dashboard
+    Then I should be on the home page
+    And I should see "You must log in with spotify to access the dashboard."
+
+  Scenario: Generic Spotify error -> dashboard renders 200 with friendly message
+    Given I am logged in with Spotify for the dashboard
+    And Spotify for the dashboard raises a generic error
+    When I go to the dashboard
+    Then I should be on the dashboard page
+    And I should see "We were unable to load your Spotify data right now. Please try again later."
+
+
