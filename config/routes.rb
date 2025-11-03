@@ -28,5 +28,5 @@ Rails.application.routes.draw do
   post "/create_playlist", to: "playlists#create", as: :create_playlist
 
   # Get Reccomendations
-  get '/reccomendations', to: 'reccomendations#reccomendations', as: :reccomendations
+  get  'recommendations',        to: 'recommendations#recommendations',   as: :recommendations
 end

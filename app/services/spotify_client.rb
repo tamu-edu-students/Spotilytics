@@ -19,6 +19,32 @@ class SpotifyClient
     @client_secret = ENV['SPOTIFY_CLIENT_SECRET']
   end
 
+  def search_tracks(query, limit: 10)
+    access_token = ensure_access_token!
+    params = {
+      q: query,
+      type: 'track',
+      limit: limit
+    }
+
+    response = get('/search', access_token, params)
+    items = response.dig('tracks', 'items') || []
+
+    items.map do |item|
+      OpenStruct.new(
+        id: item['id'],
+        name: item['name'],
+        artists: (item['artists'] || []).map { |a| a['name'] }.join(', '),
+        album_name: item.dig('album', 'name'),
+        album_image_url: item.dig('album', 'images', 0, 'url'),
+        popularity: item['popularity'],
+        preview_url: item['preview_url'],
+        spotify_url: item.dig('external_urls', 'spotify'),
+        duration_ms: item['duration_ms']
+      )
+    end
+  end
+
   def profile()
     access_token = ensure_access_token!
     response = get("/users/#{current_user_id}", access_token)

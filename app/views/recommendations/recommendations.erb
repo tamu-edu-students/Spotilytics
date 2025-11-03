@@ -1,0 +1,23 @@
+<% content_for :extra_css do %>
+  <%= stylesheet_link_tag "recommendations", media: "all" %>
+<% end %>
+
+<main class="container mt-4">
+  <h1 class="text-center text-light">Recommendations</h1>
+
+  <div class="row">
+    <% @recommendations.each do |track| %>
+      <div class="col-md-4 mb-3">
+        <div class="card bg-dark text-light h-100">
+          <img src="<%= track.album_image_url %>" class="card-img-top" alt="<%= track.name %>">
+          <div class="card-body">
+            <h5 class="card-title"><%= track.name %></h5>
+            <p class="card-text"><%= track.artists %></p>
+            <a href="<%= track.spotify_url %>" target="_blank" class="btn btn-success btn-spotify">Open in Spotify</a>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</main>
+

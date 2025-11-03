@@ -4,5 +4,5 @@
 //= link home.css
 //= link dashboard.css
 //= link profile.css
-//= link reccomendations.css
+//= link recommendations.css
 //= link_tree ../../javascript .js
