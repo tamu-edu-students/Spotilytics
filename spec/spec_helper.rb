@@ -16,15 +16,13 @@
 
 require 'simplecov'
 SimpleCov.start 'rails' do
-  enable_coverage :branch   # checks branch coverage, not just lines
-  add_filter '/spec/'       # ignore your test files
-  add_filter '/config/'     # ignore config files
-  add_filter '/vendor/'     # ignore vendor files
-  add_filter '/db/'         # ignore database files
-  add_filter '/app/channels/application_cable/' # ignore ActionCable files
-  add_filter '/app/jobs/application_job.rb'     # ignore ActiveJob files
-  add_filter '/app/mailers/application_mailer.rb' # ignore ActionMailer files
-  add_filter '/lib/tasks/'  # ignore rake tasks
+  add_filter '/spec/'
+  add_filter '/config/'
+  add_filter '/vendor/'
+  add_filter '/db/'
+  add_group 'Models', 'app/models'
+  add_group 'Controllers', 'app/controllers'
+  add_group 'Helpers', 'app/helpers'
 end
 
 
