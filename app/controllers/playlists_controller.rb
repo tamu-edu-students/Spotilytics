@@ -58,10 +58,8 @@ class PlaylistsController < ApplicationController
 
       redirect_to top_tracks_path, notice: "Playlist created on Spotify: #{playlist_name}"
     rescue SpotifyClient::UnauthorizedError => e
-      Rails.logger.error "Spotify unauthorized in playlist create: #{e.message}"
       redirect_to root_path, alert: "Session expired. Please sign in with Spotify again."
     rescue SpotifyClient::Error => e
-      Rails.logger.error "Spotify error creating playlist: #{e.message}"
       redirect_to top_tracks_path, alert: "Couldn't create playlist on Spotify."
     end
   end
