@@ -101,7 +101,7 @@ RSpec.describe SpotifyClient, type: :service do
         it "returns an OpenStruct with user data" do
             allow(client).to receive(:current_user_id).and_return("u123")
             stub_spotify_get("/users/u123", body: {
-            id: "u123", display_name: "Test", images: [{ "url" => "img.jpg" }],
+            id: "u123", display_name: "Test", images: [ { "url" => "img.jpg" } ],
             followers: { "total" => 10 }, external_urls: { "spotify" => "url" }
             })
             profile = client.profile
@@ -128,7 +128,7 @@ RSpec.describe SpotifyClient, type: :service do
     describe "#add_tracks_to_playlist" do
         it "adds tracks successfully" do
             stub_spotify_post("/playlists/p123/tracks", body: {})
-            expect(client.add_tracks_to_playlist(playlist_id: "p123", uris: ["spotify:track:1"])).to be true
+            expect(client.add_tracks_to_playlist(playlist_id: "p123", uris: [ "spotify:track:1" ])).to be true
         end
     end
 
@@ -161,10 +161,10 @@ RSpec.describe SpotifyClient, type: :service do
                     {
                         "id" => "track123",
                         "name" => "Harder, Better, Faster, Stronger",
-                        "artists" => [{ "name" => "Daft Punk" }],
+                        "artists" => [ { "name" => "Daft Punk" } ],
                         "album" => {
                         "name" => "Discovery",
-                        "images" => [{ "url" => "http://example.com/discovery.jpg" }]
+                        "images" => [ { "url" => "http://example.com/discovery.jpg" } ]
                         },
                         "popularity" => 95,
                         "preview_url" => "http://example.com/preview.mp3",
@@ -210,7 +210,7 @@ RSpec.describe SpotifyClient, type: :service do
                     "/search",
                     body: { tracks: { items: [] } }
                 )
-            
+
                 stub_spotify_get("/me", body: { id: "user123" })
             end
 
@@ -224,7 +224,7 @@ RSpec.describe SpotifyClient, type: :service do
             before do
                 stub_spotify_get(
                     "/search",
-                    body: {} 
+                    body: {}
                 )
 
                 stub_spotify_get("/me", body: { id: "user123" })
@@ -280,8 +280,8 @@ RSpec.describe SpotifyClient, type: :service do
                 {
                     "id" => "artist#{i + 1}",
                     "name" => "Artist #{i + 1}",
-                    "images" => [{ "url" => "http://example.com/artist#{i + 1}.jpg" }],
-                    "genres" => ["genre#{i + 1}"],
+                    "images" => [ { "url" => "http://example.com/artist#{i + 1}.jpg" } ],
+                    "genres" => [ "genre#{i + 1}" ],
                     "popularity" => 100 - i
                 }
                 end
@@ -301,7 +301,7 @@ RSpec.describe SpotifyClient, type: :service do
                     expect(artist.name).to eq("Artist #{i + 1}")
                     expect(artist.rank).to eq(i + 1)
                     expect(artist.image_url).to eq("http://example.com/artist#{i + 1}.jpg")
-                    expect(artist.genres).to eq(["genre#{i + 1}"])
+                    expect(artist.genres).to eq([ "genre#{i + 1}" ])
                     expect(artist.popularity).to eq(100 - i)
                     expect(artist.playcount).to eq(100 - i)
                 end
@@ -349,5 +349,4 @@ RSpec.describe SpotifyClient, type: :service do
             end
         end
     end
-
 end

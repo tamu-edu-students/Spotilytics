@@ -21,7 +21,7 @@ class PlaylistsController < ApplicationController
       # ---- Resolve user_id safely (handles old sessions) ----
       user_info   = (session[:spotify_user] || {}).dup
       indifferent = user_info.respond_to?(:with_indifferent_access) ? user_info.with_indifferent_access : user_info
-      user_id     = indifferent[:id].presence || indifferent['id'].presence
+      user_id     = indifferent[:id].presence || indifferent["id"].presence
 
       # Fallback: ask Spotify /me if not present in session (works for old logins)
       unless user_id.present?

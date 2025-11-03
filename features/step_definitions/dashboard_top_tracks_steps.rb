@@ -41,7 +41,7 @@ class CucumberDashboardController < ApplicationController
       OpenStruct.new(
         name: "Placeholder Artist",
         image_url: "http://example.com/artist.jpg",
-        genres: ["alt"],
+        genres: [ "alt" ],
         popularity: 75,
         spotify_url: "https://open.spotify.com/artist/fake"
       )
@@ -113,7 +113,7 @@ Given("Spotify responds with top tracks for the dashboard") do
     OpenStruct.new(
       name: "Placeholder Artist",
       image_url: "http://example.com/artist.jpg",
-      genres: ["alt"],
+      genres: [ "alt" ],
       popularity: 75,
       spotify_url: "https://open.spotify.com/artist/fake"
     )
@@ -128,11 +128,11 @@ Given("Spotify responds with top tracks for the dashboard") do
 end
 
 When("I go to the dashboard") do
-  visit '/dashboard'   
+  visit '/dashboard'
 end
 
 Then("I should see the Top Tracks card") do
-  expect(page).to have_content("Top Tracks") 
+  expect(page).to have_content("Top Tracks")
 end
 
 Then("I should see the dashboard primary track name") do
@@ -158,5 +158,3 @@ Given("Spotify for the dashboard raises a generic error") do
   allow(mock).to receive(:top_tracks).and_raise(SpotifyClient::Error.new("rate limited"))
   allow(mock).to receive(:top_artists).and_raise(SpotifyClient::Error.new("rate limited"))
 end
-
-

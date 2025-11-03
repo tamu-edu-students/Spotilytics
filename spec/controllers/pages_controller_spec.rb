@@ -54,7 +54,7 @@ RSpec.describe PagesController, type: :controller do
 
         # dashboard also fetches top artists; stub it to something harmless
         allow(mock_client).to receive(:top_artists).and_return([])
-        
+
         # dashboard also fetches followed; stub it to something harmless
         allow(mock_client).to receive(:followed_artists).and_return([])
 
@@ -160,7 +160,7 @@ RSpec.describe PagesController, type: :controller do
             name: "Artist #{i+1}",
             rank: i + 1,
             image_url: "https://example.com/a#{i+1}.jpg",
-            genres: ["genre_#{i+1}"],  
+            genres: [ "genre_#{i+1}" ],
             popularity: 60,
             playcount: 50
           )
@@ -195,7 +195,7 @@ RSpec.describe PagesController, type: :controller do
 
     context "when artists return with NO genres" do
       before do
-        artists = [OpenStruct.new(name: "A1", genres: []), OpenStruct.new(name: "A2", genres: nil)]
+        artists = [ OpenStruct.new(name: "A1", genres: []), OpenStruct.new(name: "A2", genres: nil) ]
         allow(mock_client).to receive(:top_artists).and_return(artists)
       end
 
@@ -257,7 +257,7 @@ RSpec.describe PagesController, type: :controller do
           OpenStruct.new(
             id: "a1", name: "Artist 1", rank: 1,
             image_url: "http://img/a1.jpg",
-            genres: ["pop"], popularity: 65, playcount: 42
+            genres: [ "pop" ], popularity: 65, playcount: 42
           )
         ]
       end
@@ -266,7 +266,7 @@ RSpec.describe PagesController, type: :controller do
         expect(mock_client).to receive(:top_artists).with(limit: 25, time_range: "short_term").and_return(artists_stub)
         expect(mock_client).to receive(:top_artists).with(limit: 50, time_range: "medium_term").and_return(artists_stub)
         expect(mock_client).to receive(:top_artists).with(limit: 10, time_range: "long_term").and_return(artists_stub)
-        expect(mock_client).to receive(:followed_artist_ids).with(["a1"]).and_return(Set.new(["a1"]))
+        expect(mock_client).to receive(:followed_artist_ids).with([ "a1" ]).and_return(Set.new([ "a1" ]))
 
         get :top_artists, params: { limit_short_term: "25", limit_medium_term: "50", limit_long_term: "abc" }
 
@@ -274,7 +274,7 @@ RSpec.describe PagesController, type: :controller do
         expect(assigns(:top_artists_by_range)["short_term"]).to eq(artists_stub)
         expect(assigns(:top_artists_by_range)["medium_term"]).to eq(artists_stub)
         expect(assigns(:top_artists_by_range)["long_term"]).to eq(artists_stub)
-        expect(assigns(:followed_artist_ids)).to eq(Set.new(["a1"]))
+        expect(assigns(:followed_artist_ids)).to eq(Set.new([ "a1" ]))
         expect(assigns(:time_ranges)).to eq(PagesController::TOP_ARTIST_TIME_RANGES)
         expect(response).to have_http_status(:ok)
       end
@@ -352,7 +352,7 @@ RSpec.describe PagesController, type: :controller do
       allow(controller).to receive(:default_render).and_return(nil)
     end
 
-    after { Rails.application.reload_routes! } 
+    after { Rails.application.reload_routes! }
 
     it 'generic error branch logs, flashes and assigns empty @top_tracks' do
       session[:spotify_user] = { 'display_name' => 'Spec' }
@@ -374,7 +374,7 @@ RSpec.describe PagesController, type: :controller do
 
   describe "GET #view_profile" do
     include_context "logged in user"
-    
+
     context "when SpotifyClient returns profile successfully" do
       render_views
 
