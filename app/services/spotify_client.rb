@@ -19,6 +19,46 @@ class SpotifyClient
     @client_secret = ENV['SPOTIFY_CLIENT_SECRET']
   end
 
+  def new_releases(limit:)
+    access_token = ensure_access_token!
+    response = get('/browse/new-releases', access_token, limit: limit)
+
+    # The response looks like: { "artists": { "items": [ ... ] } }
+    items = response.dig('albums', 'items') || []
+
+    items.map.with_index(1) do |item, index|
+      OpenStruct.new(
+        id: item['id'],
+        name: item['name'],
+        image_url: item.dig('images', 0, 'url'),
+        total_tracks: item['total_tracks'] || 0,
+        release_date: item['release_date'] || 0,
+        spotify_url: item.dig('external_urls', 'spotify'),
+        artists: (item["artists"] || []).map { |artist| artist["name"] }
+      )
+    end
+  end
+
+  def followed_artists(limit:)
+    access_token = ensure_access_token!
+    response = get('/me/following', access_token, limit: limit, type: 'artist')
+
+    # The response looks like: { "artists": { "items": [ ... ] } }
+    items = response.dig('artists', 'items') || []
+
+    items.map.with_index(1) do |item, index|
+      OpenStruct.new(
+        id: item['id'],
+        name: item['name'],
+        image_url: item.dig('images', 0, 'url'),
+        genres: item['genres'] || [],
+        popularity: item['popularity'] || 0,
+        spotify_url: item.dig('external_urls', 'spotify')
+      )
+    end
+  end
+
+
   def top_artists(limit:, time_range:)
     access_token = ensure_access_token!
     response = get('/me/top/artists', access_token, limit: limit, time_range: time_range)

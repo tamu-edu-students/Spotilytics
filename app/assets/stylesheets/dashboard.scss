@@ -6,8 +6,6 @@
   border-radius: 12px;
   box-shadow: 0 4px 10px rgba(255, 255, 255, 0.05);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
-  cursor: pointer;
-
 
   img {
     border-radius: 8px;
@@ -41,3 +39,99 @@
   display: none !important;
 }
 
+.top-tracks-container {
+  min-width: 800px;
+}
+
+.top-track {
+  border-radius: 10px;
+  box-shadow: 0 0 1rem 0.15rem rgba(179, 179, 179, 0.25);
+  width: 350px;
+  position: relative;
+}
+
+.first-track-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: $spotify-green;
+  border-radius: 5px;
+  font-weight: 700;
+}
+
+.top-genre-container {
+  min-width: 470px;
+}
+
+.genre-list {
+  width: 150px;
+}
+
+.top-artists-container {
+  min-width: 600px;
+  min-height: 290px;
+  height: 35vh;
+}
+
+.followed-artists-container {
+  min-height: 290px;
+  height: 35vh;
+  min-width: 250px;
+}
+
+.followed-artists-wrapper {
+  background-color: #323232;
+  overflow-y: auto;
+  height: 225px;
+  background-color: $light-gray;
+  box-shadow: 0 4px 10px rgba(255, 255, 255, 0.2);  
+}
+
+/* Target the entire scrollbar */
+.followed-artists-wrapper::-webkit-scrollbar {
+  width: 8px !important;             /* width for vertical scrollbars */
+  height: 12px;            /* height for horizontal scrollbars */
+  background: transparent !important; 
+}
+
+/* Track (background of scrollbar) */
+.followed-artists-wrapper::-webkit-scrollbar-track {
+  background: transparent !important;
+  width: 3px !important;
+}
+
+/* Handle (the draggable part) */
+.followed-artists-wrapper::-webkit-scrollbar-thumb {
+  background-color: rgba(80, 80, 80, 1); 
+  border-radius: 4px;
+  width: 3px !important;
+  border: none; 
+}
+
+/* Handle hover effect */
+.followed-artists-wrapper::-webkit-scrollbar-thumb:hover {
+  background-color: #555;
+}
+
+.followed-artists-card {
+  height: 60px;
+  width: 100%;
+  border-bottom: solid;
+  border-bottom-width: 1px;
+  border-bottom-color: black;
+  color: black !important;
+  display: flex;
+  align-items: center;
+  background-color:#323232;
+}
+
+.followed-artists-card:hover {
+  background-color:#1e1e1e;
+  color: white;
+}
+
+.new-releases-container {
+  min-height: 290px;
+  height: 35vh;
+  min-width: 390px;
+}

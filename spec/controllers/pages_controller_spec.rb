@@ -53,6 +53,12 @@ RSpec.describe PagesController, type: :controller do
 
         # dashboard also fetches top artists; stub it to something harmless
         allow(mock_client).to receive(:top_artists).and_return([])
+        
+        # dashboard also fetches followed; stub it to something harmless
+        allow(mock_client).to receive(:followed_artists).and_return([])
+
+        # dashboard also fetches new releases; stub it to something harmless
+        allow(mock_client).to receive(:new_releases).and_return([])
       end
 
       it "assigns top tracks and primary track for the preview card" do
@@ -139,6 +145,8 @@ RSpec.describe PagesController, type: :controller do
     before do
       allow(SpotifyClient).to receive(:new).with(session: anything).and_return(mock_client)
       allow(mock_client).to receive(:top_tracks).with(limit: 10, time_range: "long_term").and_return([])
+      allow(mock_client).to receive(:followed_artists).and_return([])
+      allow(mock_client).to receive(:new_releases).and_return([])
     end
 
     context "when SpotifyClient returns artists with genres" do
@@ -164,6 +172,8 @@ RSpec.describe PagesController, type: :controller do
         allow(SpotifyClient).to receive(:new).with(session: anything).and_return(mock_client)
         allow(mock_client).to receive(:top_tracks).with(limit: 10, time_range: "long_term").and_return([])
         allow(mock_client).to receive(:top_artists).and_return(mock_artists)
+        allow(mock_client).to receive(:followed_artists).and_return([])
+        allow(mock_client).to receive(:new_releases).and_return([])
       end
 
       it "assigns @genre_chart with an 'Other' bucket" do
