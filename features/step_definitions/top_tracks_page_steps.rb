@@ -205,4 +205,38 @@ Then('I should see exactly {int} tracks') do |n|
   expect(long_col_cells.size).to eq(n)
 end
 
+def root_path_for_test
+  Rails.application.routes.url_helpers.root_path
+end
+
+def top_tracks_path_for_test
+  Rails.application.routes.url_helpers.top_tracks_path
+end
+
+Given('Spotify top tracks raises Unauthorized') do
+  mock = instance_double(SpotifyClient)
+  allow(SpotifyClient).to receive(:new).with(session: anything).and_return(mock)
+  allow(mock).to receive(:top_tracks).and_raise(SpotifyClient::UnauthorizedError.new('token expired'))
+end
+
+Given('Spotify top tracks raises a generic error') do
+  mock = instance_double(SpotifyClient)
+  allow(SpotifyClient).to receive(:new).with(session: anything).and_return(mock)
+  allow(mock).to receive(:top_tracks).and_raise(SpotifyClient::Error.new('rate limited'))
+end
+
+When('I visit the Top Tracks page not logged in') do
+  if page.respond_to?(:set_rack_session)
+    page.set_rack_session(spotify_user: nil)
+  else
+    visit root_path_for_test
+    page.driver.request.session[:spotify_user] = nil if page.driver.respond_to?(:request)
+  end
+  visit top_tracks_path_for_test
+end
+
+Then('I should see no rendered tracks') do
+  expect(page).to have_no_css('.track-lineup')
+end
+
 
