@@ -1,20 +1,20 @@
-require 'set'
+require "set"
 
 class PagesController < ApplicationController
   before_action :require_spotify_auth!, only: %i[dashboard top_artists top_tracks view_profile clear]
 
   TOP_ARTIST_TIME_RANGES = [
-    { key: 'long_term', label: 'Past Year' },
-    { key: 'medium_term', label: 'Past 6 Months' },
-    { key: 'short_term', label: 'Past 4 Weeks' }
+    { key: "long_term", label: "Past Year" },
+    { key: "medium_term", label: "Past 6 Months" },
+    { key: "short_term", label: "Past 4 Weeks" }
   ].freeze
 
   def clear
     spotify_client.clear_user_cache()
-    redirect_to home_path, notice: 'Data refreshed successfully' and return
+    redirect_to home_path, notice: "Data refreshed successfully" and return
 
     rescue SpotifyClient::UnauthorizedError
-      redirect_to home_path, alert: 'You must log in with spotify to refresh your data.' and return
+      redirect_to home_path, alert: "You must log in with spotify to refresh your data." and return
   end
 
   def home
@@ -40,9 +40,9 @@ class PagesController < ApplicationController
 
 
   rescue SpotifyClient::UnauthorizedError
-    redirect_to home_path, alert: 'You must log in with spotify to access the dashboard.' and return
+    redirect_to home_path, alert: "You must log in with spotify to access the dashboard." and return
   rescue SpotifyClient::Error => e
-    flash.now[:alert] = 'We were unable to load your Spotify data right now. Please try again later.'
+    flash.now[:alert] = "We were unable to load your Spotify data right now. Please try again later."
     @top_artists = []
     @primary_artist = nil
     @top_tracks = []
@@ -57,10 +57,10 @@ class PagesController < ApplicationController
 
   rescue SpotifyClient::UnauthorizedError
     Rails.logger.warn "Unauthorized dashboard access"
-    redirect_to home_path, alert: 'You must log in with spotify to view your profile.' and return
+    redirect_to home_path, alert: "You must log in with spotify to view your profile." and return
   rescue SpotifyClient::Error => e
     Rails.logger.warn "Failed to fetch Spotify data for dashboard: #{e.message}"
-    flash.now[:alert] = 'We were unable to load your Spotify data right now. Please try again later.'
+    flash.now[:alert] = "We were unable to load your Spotify data right now. Please try again later."
 
     @profile = nil
   end
@@ -92,16 +92,16 @@ class PagesController < ApplicationController
         Set.new
       end
   rescue SpotifyClient::UnauthorizedError
-    redirect_to home_path, alert: 'You must log in with spotify to view your top artists.' and return
+    redirect_to home_path, alert: "You must log in with spotify to view your top artists." and return
   rescue SpotifyClient::Error => e
     if insufficient_scope?(e)
       reset_spotify_session!
-      redirect_to login_path, alert: 'Spotify now needs permission to manage your follows. Please sign in again.'
+      redirect_to login_path, alert: "Spotify now needs permission to manage your follows. Please sign in again."
     else
       Rails.logger.warn "Failed to fetch Spotify top artists: #{e.message}"
-      flash.now[:alert] = 'We were unable to load your top artists from Spotify. Please try again later.'
+      flash.now[:alert] = "We were unable to load your top artists from Spotify. Please try again later."
       @top_artists_by_range = TOP_ARTIST_TIME_RANGES.each_with_object({}) { |range, acc| acc[range[:key]] = [] }
-      @limits = TOP_ARTIST_TIME_RANGES.to_h { |range| [range[:key], 10] }
+      @limits = TOP_ARTIST_TIME_RANGES.to_h { |range| [ range[:key], 10 ] }
       @followed_artist_ids = Set.new
       @time_ranges = TOP_ARTIST_TIME_RANGES
     end
@@ -111,20 +111,20 @@ class PagesController < ApplicationController
     limit = normalize_limit(params[:limit])
     @top_tracks = fetch_top_tracks(limit: limit)
   rescue SpotifyClient::UnauthorizedError
-    redirect_to home_path, alert: 'You must log in with spotify to view your top tracks.' and return
+    redirect_to home_path, alert: "You must log in with spotify to view your top tracks." and return
   rescue SpotifyClient::Error => e
     Rails.logger.warn "Failed to fetch Spotify top tracks: #{e.message}"
-    flash.now[:alert] = 'We were unable to load your top tracks from Spotify. Please try again later.'
+    flash.now[:alert] = "We were unable to load your top tracks from Spotify. Please try again later."
     @top_tracks = []
   end
-  
+
   private
 
   def spotify_client
     @spotify_client ||= SpotifyClient.new(session: session)
   end
 
-  def fetch_profile()
+  def fetch_profile
     spotify_client.profile()
   end
 
@@ -132,12 +132,12 @@ class PagesController < ApplicationController
     spotify_client.new_releases(limit: limit)
   end
 
-  def fetch_top_artists(limit:, time_range: 'long_term')
+  def fetch_top_artists(limit:, time_range: "long_term")
     spotify_client.top_artists(limit: limit, time_range: time_range)
   end
 
   def fetch_top_tracks(limit:)
-    spotify_client.top_tracks(limit: limit, time_range: 'long_term')
+    spotify_client.top_tracks(limit: limit, time_range: "long_term")
   end
 
   def fetch_followed_artists(limit:)
@@ -147,14 +147,14 @@ class PagesController < ApplicationController
   # Accept only 10, 25, 50; default to 10
   def normalize_limit(value)
     v = value.to_i
-    [10, 25, 50].include?(v) ? v : 10
+    [ 10, 25, 50 ].include?(v) ? v : 10
   end
 
   def build_genre_chart!(artists)
     counts = Hash.new(0)
 
     Array(artists).each do |a|
-      genres = a.respond_to?(:genres) ? a.genres : Array(a['genres'])
+      genres = a.respond_to?(:genres) ? a.genres : Array(a["genres"])
       next if genres.blank?
       genres.each do |g|
         g = g.to_s.strip.downcase
@@ -173,7 +173,7 @@ class PagesController < ApplicationController
     top   = sorted.first(top_n)
     other = sorted.drop(top_n).sum { |(_, c)| c }
 
-    labels = top.map { |(g, _)| g.split.map(&:capitalize).join(' ') }
+    labels = top.map { |(g, _)| g.split.map(&:capitalize).join(" ") }
     data   = top.map(&:last)
     if other > 0
       labels << "Other"
@@ -199,12 +199,12 @@ class PagesController < ApplicationController
     if artist.respond_to?(:id)
       artist.id
     elsif artist.respond_to?(:[])
-      artist['id'] || artist[:id]
+      artist["id"] || artist[:id]
     end
   end
 
   def insufficient_scope?(error)
-    error.message.to_s.downcase.include?('insufficient client scope')
+    error.message.to_s.downcase.include?("insufficient client scope")
   end
 
   def reset_spotify_session!

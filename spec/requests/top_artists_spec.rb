@@ -61,7 +61,7 @@ RSpec.describe "TopArtists", type: :request do
   end
 
   it "renders an unfollow button when the artist is already followed" do
-    set_stub_followed_artists(['long_term_artist_1'])
+    set_stub_followed_artists([ 'long_term_artist_1' ])
 
     get top_artists_path
 

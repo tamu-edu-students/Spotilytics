@@ -1,19 +1,19 @@
 class SessionsController < ApplicationController
   def create
-    auth = request.env['omniauth.auth']
-    info = auth['info'] || {}
+    auth = request.env["omniauth.auth"]
+    info = auth["info"] || {}
 
     session[:spotify_user] = {
-      id:           auth['uid'],      
-      display_name: info['name'],
-      email:        info['email'],
-      image:        info['image'],
+      id:           auth["uid"],
+      display_name: info["name"],
+      email:        info["email"],
+      image:        info["image"]
     }
 
-    credentials = auth['credentials'] || {}
-    session[:spotify_token]         = credentials['token']
-    session[:spotify_refresh_token] = credentials['refresh_token']
-    session[:spotify_expires_at]    = credentials['expires_at']
+    credentials = auth["credentials"] || {}
+    session[:spotify_token]         = credentials["token"]
+    session[:spotify_refresh_token] = credentials["refresh_token"]
+    session[:spotify_expires_at]    = credentials["expires_at"]
 
     redirect_to root_path, notice: "Signed in with Spotify"
   end

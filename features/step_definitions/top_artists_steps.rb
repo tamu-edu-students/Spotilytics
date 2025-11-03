@@ -103,7 +103,7 @@ Given("the first artist in {string} column is already followed") do |range_key|
   artist_id = "#{range_key}_artist_1"
   TopArtistsCallStore.followed_ids ||= Set.new
   TopArtistsCallStore.followed_ids << artist_id
-  mark_artist_followed!([artist_id]) if respond_to?(:mark_artist_followed!)
+  mark_artist_followed!([ artist_id ]) if respond_to?(:mark_artist_followed!)
 end
 
 When("I go to the top artists page") do
@@ -112,7 +112,7 @@ end
 
 When('I choose {string} for {string} and click Update') do |label, range_label|
   key = range_label_to_key(range_label)
-  within(%Q{.top-artists-column[data-range="#{key}"]}) do
+  within(%Q(.top-artists-column[data-range="#{key}"])) do
     select(label, from: "limit_#{key}")
     click_button 'Update'
   end
@@ -179,20 +179,20 @@ end
 
 Then('the {string} selector should have {string} selected') do |range_label, label|
   key = range_label_to_key(range_label)
-  within(%Q{.top-artists-column[data-range="#{key}"]}) do
+  within(%Q(.top-artists-column[data-range="#{key}"])) do
     expect(page).to have_select("limit_#{key}", selected: label)
   end
 end
 
 Then('the {string} column should list exactly {int} artists') do |range_label, n|
   key = range_label_to_key(range_label)
-  within(%Q{.top-artists-column[data-range="#{key}"]}) do
+  within(%Q(.top-artists-column[data-range="#{key}"])) do
     expect(page.all(".top-artist").size).to eq(n)
   end
 end
 
 def within_first_artist_row_for(range_key, &block)
-  within(%Q{.top-artists-column[data-range='#{range_key}']}) do
+  within(%Q(.top-artists-column[data-range='#{range_key}'])) do
     row = first('.top-artist')
     raise "No artist rows found for #{range_key}" unless row
     within(row, &block)

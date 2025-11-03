@@ -1,4 +1,4 @@
-require 'ostruct'
+require "ostruct"
 
 class ApplicationController < ActionController::Base
   # Only allow modern browsers supporting webp images, web push, badges, import maps, CSS nesting, and CSS :has.
@@ -17,6 +17,6 @@ class ApplicationController < ActionController::Base
   def require_spotify_auth!
     return if logged_in?
 
-    redirect_to home_path, alert: 'You must log in with spotify to view this page.'
+    redirect_to home_path, alert: "You must log in with spotify to view this page."
   end
 end
