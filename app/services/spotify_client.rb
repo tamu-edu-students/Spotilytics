@@ -1,6 +1,5 @@
-require 'net/http'
 # frozen_string_literal: true
-
+require 'net/http'
 require 'uri'
 require 'json'
 require 'base64'
