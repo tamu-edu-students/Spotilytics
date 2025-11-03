@@ -12,7 +12,7 @@ class PagesController < ApplicationController
     redirect_to home_path, notice: 'Data refreshed successfully' and return
 
     rescue SpotifyClient::UnauthorizedError
-      redirect_to home_path, alert: 'You must log in with spotify to access the dashboard.' and return
+      redirect_to home_path, alert: 'You must log in with spotify to refresh your data.' and return
   end
 
   def home
