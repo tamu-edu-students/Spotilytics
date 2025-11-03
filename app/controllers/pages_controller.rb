@@ -19,18 +19,28 @@ class PagesController < ApplicationController
     @top_tracks = fetch_top_tracks(limit: 10)
     @primary_track = @top_tracks.first
 
+    # Genre Chart
     build_genre_chart!(@top_artists)
+
+    # Followed Artists
+    @followed_artists = fetch_followed_artists(limit: 20)
+
+    # New Releases
+    @new_releases = fetch_new_releases(limit: 2)
+
 
   rescue SpotifyClient::UnauthorizedError
     redirect_to home_path, alert: 'You must log in with spotify to access the dashboard.' and return
   rescue SpotifyClient::Error => e
-    Rails.logger.warn "Failed to fetch Spotify top artists for dashboard: #{e.message}"
+    Rails.logger.warn "Failed to fetch Spotify data for dashboard: #{e.message}"
     flash.now[:alert] = 'We were unable to load your Spotify data right now. Please try again later.'
     @top_artists = []
     @primary_artist = nil
     @top_tracks = []
     @primary_track = nil
     @genre_chart = nil
+    @followed_artists = []
+    @new_releases = []
   end
 
   def top_artists
@@ -75,12 +85,20 @@ class PagesController < ApplicationController
     @spotify_client ||= SpotifyClient.new(session: session)
   end
 
+  def fetch_new_releases(limit:)
+    spotify_client.new_releases(limit: limit)
+  end
+
   def fetch_top_artists(limit:, time_range: 'long_term')
     spotify_client.top_artists(limit: limit, time_range: time_range)
   end
 
   def fetch_top_tracks(limit:)
     spotify_client.top_tracks(limit: limit, time_range: 'long_term')
+  end
+
+  def fetch_followed_artists(limit:)
+    spotify_client.followed_artists(limit: limit)
   end
 
   # Accept only 10, 25, 50; default to 10

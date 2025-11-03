@@ -4,18 +4,13 @@
 <% end %>
 
 <main class="container mt-4">
+  <h1 class="text-light">
+    Your Top Artists</span>
+  </h1>
 
-  <div class="d-flex justify-content-between align-items-center mb-3 px-3 me-3">
-    <h1>
-      Your Top Artists</span>
-    </h1>
-  </div>
-
-  <% if flash[:alert].present? %>
-    <div class="alert alert-warning">
-      <%= flash[:alert] %>
-    </div>
-  <% end %>
+  <p class="text-secondary">
+    Short term (4 weeks) vs Medium (6 months) vs Long (1 year)
+  </p>
 
   <div class="row g-4">
     <% @time_ranges.each do |range| %>
