@@ -96,3 +96,11 @@ group :test do
   gem 'rails-controller-testing'
 end
 
+group :test do
+  gem 'simplecov', require: false
+end
+
+group :test do
+  gem 'rack_session_access', '~> 0.2'
+end
+

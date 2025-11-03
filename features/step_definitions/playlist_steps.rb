@@ -1,0 +1,105 @@
+require 'ostruct'
+
+# ---------- Helpers ----------
+def mock_spotify!
+  @mock_spotify ||= instance_double(SpotifyClient)
+  allow(SpotifyClient).to receive(:new).with(session: anything).and_return(@mock_spotify)
+  @mock_spotify
+end
+
+def top_tracks_path_for_test
+  Rails.application.routes.url_helpers.top_tracks_path
+end
+
+def create_playlist_path_for_test
+  Rails.application.routes.url_helpers.create_playlist_path
+end
+
+# ---------- Navigation / Session ----------
+
+Given('I am logged in for playlists') do
+  OmniAuth.config.test_mode = true
+  OmniAuth.config.mock_auth[:spotify] = OmniAuth::AuthHash.new(
+    provider: 'spotify',
+    uid: 'user_123',
+    info: { name: 'Test User', email: 'test@example.com', image: nil },
+    credentials: {
+      token:         'fake',
+      refresh_token: 'fake_refresh',
+      expires_at:    1.hour.from_now.to_i
+    }
+  )
+
+  visit '/auth/spotify'
+  visit '/auth/spotify/callback'   
+end
+
+Given("I am logged in for playlists with user id {string}") do |uid|
+  page.set_rack_session(spotify_user: { "id" => uid, "display_name" => "Test User" })
+end
+
+Given("I am logged in for playlists without user id") do
+  page.set_rack_session(spotify_user: { "display_name" => "Test User" })
+end
+
+# ---------- Spotify stubs ----------
+Given('Spotify returns {int} top tracks for {string}') do |n, range|
+  client  = mock_spotify!
+  tracks  = (1..n).map { |i| OpenStruct.new(id: "t#{i}") }
+
+  allow(client).to receive(:top_tracks).and_return([])
+
+  allow(client).to receive(:top_tracks)
+    .with(limit: 10, time_range: range)
+    .and_return(tracks)
+end
+
+Given('Spotify creates playlist {string} and adds tracks') do |name|
+  client = mock_spotify!
+  allow(client).to receive(:create_playlist_for)
+    .with(hash_including(name: name, public: false))
+    .and_return('pl_123')
+  allow(client).to receive(:add_tracks_to_playlist)
+    .with(hash_including(playlist_id: 'pl_123', uris: kind_of(Array)))
+    .and_return(true)
+end
+
+Given('Spotify API returns user id {string}') do |uid|
+  client = mock_spotify!
+  allow(client).to receive(:current_user_id).and_return(uid)
+end
+
+Given('Spotify raises Unauthorized on any call') do
+  mock = mock_spotify!
+  allow(mock).to receive(:top_tracks).and_raise(SpotifyClient::UnauthorizedError.new("token expired"))
+  allow(mock).to receive(:create_playlist_for).and_raise(SpotifyClient::UnauthorizedError.new("token expired"))
+  allow(mock).to receive(:add_tracks_to_playlist).and_raise(SpotifyClient::UnauthorizedError.new("token expired"))
+  allow(mock).to receive(:current_user_id).and_raise(SpotifyClient::UnauthorizedError.new("token expired"))
+end
+
+Given('Spotify raises Error on any call') do
+  mock = mock_spotify!
+  allow(mock).to receive(:top_tracks).and_raise(SpotifyClient::Error.new("rate limited"))
+  allow(mock).to receive(:create_playlist_for).and_raise(SpotifyClient::Error.new("rate limited"))
+  allow(mock).to receive(:add_tracks_to_playlist).and_raise(SpotifyClient::Error.new("rate limited"))
+  allow(mock).to receive(:current_user_id).and_raise(SpotifyClient::Error.new("rate limited"))
+end
+
+# ---------- Actions ----------
+When("I POST create_playlist for {string}") do |range|
+  page.driver.submit :post, create_playlist_path, { time_range: range }
+end
+
+When('I POST create_playlist for {string} without login') do |range|
+  visit Rails.application.routes.url_helpers.root_path
+  page.driver.request.session[:spotify_user] = nil
+  page.driver.submit :post, create_playlist_path_for_test, { time_range: range }
+end
+
+# ---------- Expectations ----------
+Then("I should be on the Top Tracks page") do
+  expect(page).to have_current_path(
+    Rails.application.routes.url_helpers.top_tracks_path,
+    ignore_query: true
+  )
+end
