@@ -3,7 +3,7 @@ name: Deploy to Heroku
 on:
   pull_request:
   push:
-    branches: [ main ]
+    branches: [ main, feature/custom_top_tracks_no ]
 
 jobs:
   scan_ruby:
