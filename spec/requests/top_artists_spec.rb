@@ -49,4 +49,28 @@ RSpec.describe "TopArtists", type: :request do
       expect(counts).to eq(counts.sort.reverse)
     end
   end
+
+  it "renders an unfollow button when the artist is already followed" do
+    set_stub_followed_artists(['long_term_artist_1'])
+
+    get top_artists_path
+
+    expect(response.body).to include('Unfollow')
+    expect(response.body).not_to include('Artist followed.')
+  end
+
+  it "requests followed artist ids with a single unique set when many ids requested" do
+    stub_spotify_top_artists(50)
+
+    get top_artists_path, params: {
+      limit_long_term: 50,
+      limit_medium_term: 50,
+      limit_short_term: 50
+    }
+
+    requests = followed_artist_ids_requests
+    expect(requests).not_to be_empty
+    expect(requests.length).to eq(1)
+    expect(requests.first).to eq(requests.first.uniq)
+  end
 end

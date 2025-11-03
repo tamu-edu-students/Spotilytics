@@ -22,6 +22,8 @@ Rails.application.routes.draw do
   get    '/login',                to: redirect("/auth/spotify"), as: :login
   delete '/logout', to: 'sessions#destroy', as: :logout
 
+  resources :artist_follows, only: [:create, :destroy], param: :spotify_id
+
   # GET /top_tracks
   get "/top_tracks", to: "top_tracks#index", as: :top_tracks
   post "/create_playlist", to: "playlists#create", as: :create_playlist

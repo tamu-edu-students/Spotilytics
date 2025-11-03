@@ -1,3 +1,5 @@
+require 'set'
+
 class PagesController < ApplicationController
   before_action :require_spotify_auth!, only: %i[dashboard top_artists top_tracks]
 
@@ -46,25 +48,37 @@ class PagesController < ApplicationController
   def top_artists
     @time_ranges = TOP_ARTIST_TIME_RANGES
     @top_artists_by_range = {}
-    @limits               = {}
+    @limits = {}
+
+    collected_ids = []
 
     @time_ranges.each do |range|
-      key        = range[:key]                              # "long_term" | "medium_term" | "short_term"
-      param_name = "limit_#{key}"                           # "limit_long_term", etc.
-      limit      = normalize_limit(params[param_name])      # default to 10 when blank/invalid
+      key        = range[:key]
+      param_name = "limit_#{key}"
+      limit      = normalize_limit(params[param_name])
 
-    @limits[key] = limit
-    @top_artists_by_range[range[:key]] = fetch_top_artists(limit: limit, time_range: range[:key])
+      @limits[key] = limit
+      artists = fetch_top_artists(limit: limit, time_range: key)
+      @top_artists_by_range[key] = artists
+      collected_ids.concat(extract_artist_ids(artists))
     end
+
+    unique_ids = collected_ids.uniq
+
+    @followed_artist_ids =
+      if unique_ids.any?
+        spotify_client.followed_artist_ids(unique_ids)
+      else
+        Set.new
+      end
   rescue SpotifyClient::UnauthorizedError
     redirect_to home_path, alert: 'You must log in with spotify to view your top artists.' and return
   rescue SpotifyClient::Error => e
     Rails.logger.warn "Failed to fetch Spotify top artists: #{e.message}"
     flash.now[:alert] = 'We were unable to load your top artists from Spotify. Please try again later.'
-    @top_artists_by_range = TOP_ARTIST_TIME_RANGES.each_with_object({}) do |range, acc|
-      acc[range[:key]] = []
-    @limits = TOP_ARTIST_TIME_RANGES.map { |r| [r[:key], 10] }.to_h
-    end
+    @top_artists_by_range = TOP_ARTIST_TIME_RANGES.each_with_object({}) { |range, acc| acc[range[:key]] = [] }
+    @limits = TOP_ARTIST_TIME_RANGES.to_h { |range| [range[:key], 10] }
+    @followed_artist_ids = Set.new
     @time_ranges = TOP_ARTIST_TIME_RANGES
   end
 
@@ -146,5 +160,17 @@ class PagesController < ApplicationController
         }
       ]
     }
+  end
+
+  def extract_artist_ids(artists)
+    Array(artists).map { |artist| artist_identifier(artist) }.compact
+  end
+
+  def artist_identifier(artist)
+    if artist.respond_to?(:id)
+      artist.id
+    elsif artist.respond_to?(:[])
+      artist['id'] || artist[:id]
+    end
   end
 end

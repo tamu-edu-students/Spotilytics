@@ -19,6 +19,8 @@ Feature: Top artists
     And I click the View Top Artists button
     Then I should be on the top artists page
     And I should see top-artist columns for each time range
+    And Spotify should be asked for my top artists across all ranges
+    And I should see top-artist columns for each time range
 
   Scenario: Default shows Top 10 for each time range
     Given I am signed in with Spotify
@@ -51,3 +53,19 @@ Feature: Top artists
     And the "Past 6 Months" column should list exactly 25 artists
     And the "Past 4 Weeks" column should list exactly 10 artists
 
+  Scenario: Follow and unfollow a top artist
+    Given I am signed in with Spotify
+    When I go to the top artists page
+    Then I should see a Follow button for the first artist in the "long_term" column
+    When I follow the first artist in the "long_term" column
+    Then I should see "Artist followed."
+    Then I should see an Unfollow button for the first artist in the "long_term" column
+    When I unfollow the first artist in the "long_term" column
+    Then I should see "Artist unfollowed."
+    And I should see a Follow button for the first artist in the "long_term" column
+
+  Scenario: Visiting when an artist is already followed
+    Given I am signed in with Spotify
+    And the first artist in "long_term" column is already followed
+    When I go to the top artists page
+    Then I should see an Unfollow button for the first artist in the "long_term" column

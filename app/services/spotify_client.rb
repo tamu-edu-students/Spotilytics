@@ -5,6 +5,7 @@ require 'uri'
 require 'json'
 require 'base64'
 require 'ostruct'
+require 'set'
 
 class SpotifyClient
   API_ROOT = 'https://api.spotify.com/v1'
@@ -95,6 +96,44 @@ class SpotifyClient
         duration_ms: item['duration_ms']
       )
     end
+  end
+
+  def follow_artists(ids)
+    ids = Array(ids).map(&:to_s).uniq
+    return true if ids.empty?
+
+    access_token = ensure_access_token!
+    body = { ids: ids }
+    request_with_json(Net::HTTP::Put, '/me/following', access_token, params: { type: 'artist' }, body: body)
+    true
+  end
+
+  def unfollow_artists(ids)
+    ids = Array(ids).map(&:to_s).uniq
+    return true if ids.empty?
+
+    access_token = ensure_access_token!
+    body = { ids: ids }
+    request_with_json(Net::HTTP::Delete, '/me/following', access_token, params: { type: 'artist' }, body: body)
+    true
+  end
+
+  def followed_artist_ids(ids)
+    ids = Array(ids).map(&:to_s).uniq
+    return Set.new if ids.empty?
+
+    access_token = ensure_access_token!
+    result = Set.new
+
+    ids.each_slice(50) do |chunk|
+      response = get('/me/following/contains', access_token, type: 'artist', ids: chunk.join(','))
+      statuses = Array(response)
+      chunk.each_with_index do |id, index|
+        result << id if statuses[index]
+      end
+    end
+
+    result
   end
 
   # Returns the Spotify account id of the current user (string).
@@ -192,6 +231,18 @@ class SpotifyClient
     request = Net::HTTP::Get.new(uri)
     request['Authorization'] = "Bearer #{access_token}"
     request['Content-Type'] = 'application/json'
+
+    perform_request(uri, request)
+  end
+
+  def request_with_json(http_method_class, path, access_token, params: {}, body: nil)
+    uri = URI.parse("#{API_ROOT}#{path}")
+    uri.query = URI.encode_www_form(params) if params.any?
+
+    request = http_method_class.new(uri)
+    request['Authorization'] = "Bearer #{access_token}"
+    request['Content-Type'] = 'application/json'
+    request.body = body.nil? ? nil : JSON.dump(body)
 
     perform_request(uri, request)
   end

@@ -5,12 +5,24 @@
 
 <main class="container mt-4">
   <h1 class="text-light">
-    Your Top Artists</span>
+    Your Top Artists
   </h1>
 
   <p class="text-secondary">
     Short term (4 weeks) vs Medium (6 months) vs Long (1 year)
   </p>
+
+  <% if flash[:notice].present? %>
+    <div class="alert alert-success">
+      <%= flash[:notice] %>
+    </div>
+  <% end %>
+
+  <% if flash[:alert].present? %>
+    <div class="alert alert-warning">
+      <%= flash[:alert] %>
+    </div>
+  <% end %>
 
   <div class="row g-4">
     <% @time_ranges.each do |range| %>
@@ -30,15 +42,17 @@
               <label class="me-1 text-secondary fw-semibold">Show</label>
               <%= select_tag "limit_#{range[:key]}",
                     options_for_select([["Top 10", 10], ["Top 25", 25], ["Top 50", 50]], @limits[range[:key]]),
-                    class: "form-select form-select-sm bg-dark text-white border-secondary",
-                    onchange: "this.form.submit();" %>
-              <button class="btn btn-dark btn-sm js-hidden" type="submit">↻</button>
+                    class: "form-select form-select-sm bg-dark text-white border-secondary" %>
+              <button class="btn btn-dark btn-sm" type="submit">Update</button>
             <% end %>
           </div>
 
           <% if artists.present? %>
             <div class="top-artists-list">
               <% artists.each_with_index do |artist, idx| %>
+                <% artist_name = artist.respond_to?(:name) ? artist.name : artist['name'] %>
+                <% artist_id   = artist.respond_to?(:id) ? artist.id : artist['id'] %>
+                <% plays       = artist.respond_to?(:playcount) ? artist.playcount : artist['playcount'] %>
                 <div class="top-artist d-flex align-items-center mb-3">
                   <div class="text-center me-3">
                     <span class="badge bg-secondary fs-6">#<%= idx + 1 %></span>
@@ -52,9 +66,27 @@
                   <% end %>
 
                   <div class="me-3">
-                    <strong class="artist-name"><%= artist.respond_to?(:name) ? artist.name : artist['name'] %></strong>
-                    <div class="text-muted artist-plays">Plays: <%= artist.respond_to?(:playcount) ? artist.playcount : artist['playcount'] %></div>
+                    <strong class="artist-name"><%= artist_name %></strong>
+                    <div class="text-muted artist-plays">Plays: <%= plays %></div>
                   </div>
+
+                  <% if artist_id.present? %>
+                    <div class="ms-auto">
+                      <% if @followed_artist_ids.include?(artist_id.to_s) %>
+                        <%= button_to 'Unfollow',
+                                      artist_follow_path(artist_id),
+                                      method: :delete,
+                                      class: 'btn btn-outline-light btn-sm',
+                                      form: { class: 'd-inline-block m-0' } %>
+                      <% else %>
+                        <%= button_to 'Follow',
+                                      artist_follows_path(spotify_id: artist_id),
+                                      method: :post,
+                                      class: 'btn btn-spotify btn-sm',
+                                      form: { class: 'd-inline-block m-0' } %>
+                      <% end %>
+                    </div>
+                  <% end %>
                 </div>
               <% end %>
             </div>
