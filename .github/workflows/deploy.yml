@@ -74,12 +74,6 @@ jobs:
         with:
           ruby-version: .ruby-version
           bundler-cache: true
-
-      - name: Prepare test DB
-        env:
-          RAILS_ENV: test
-        run: |
-          bin/rails db:prepare
       
     
       # --- RSpec ---
@@ -131,5 +125,5 @@ jobs:
           heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
           heroku_app_name: "spotilytics-app"
           heroku_email: "aurawra@outlook.com"
-          branch: feature/custom_top_tracks_no
+          branch: main
           usedocker: false
