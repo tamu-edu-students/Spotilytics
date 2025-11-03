@@ -17,7 +17,7 @@ module Project
     config.autoload_lib(ignore: %w[assets tasks])
 
     # Ensure app/services is autoloaded and eagerly loaded so the Spotify client is available
-    config.autoload_paths << Rails.root.join('app/services')
-    config.eager_load_paths << Rails.root.join('app/services')
+    config.autoload_paths << Rails.root.join("app/services")
+    config.eager_load_paths << Rails.root.join("app/services")
   end
 end

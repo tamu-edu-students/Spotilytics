@@ -22,7 +22,7 @@ class CucumberTopTracksController < ApplicationController
     client = SpotifyClient.new(session: session)
 
     limit = params[:limit].to_i
-    limit = 10 unless [10, 25, 50].include?(limit)
+    limit = 10 unless [ 10, 25, 50 ].include?(limit)
 
     @tracks = client.top_tracks(limit: limit, time_range: "long_term")
 
@@ -112,12 +112,12 @@ end
 When('I choose {string} in the limit selector for {string} and click Update') do |label, range_label|
   key = range_label_to_key(range_label)
 
-  other_keys = %w[short_term medium_term long_term] - [key]
+  other_keys = %w[short_term medium_term long_term] - [ key ]
   preserved  = {}
 
-  within(%Q{.time-header-col[data-range="#{key}"]}) do
+  within(%Q(.time-header-col[data-range="#{key}"])) do
     other_keys.each do |k|
-      preserved[k] = find(%Q{input[name="limit_#{k}"]}, visible: :all).value.to_s
+      preserved[k] = find(%Q(input[name="limit_#{k}"]), visible: :all).value.to_s
     end
 
     select(label, from: "limit_#{key}")
@@ -143,7 +143,7 @@ When("I choose {string} in the limit selector \(auto submit\)") do |label|
 end
 
 When("I search for top tracks with limit {string}") do |val|
-  n = val[/\d+/].to_i 
+  n = val[/\d+/].to_i
 
   visit top_tracks_path(
     limit_short_term:  n,
@@ -185,7 +185,7 @@ Then("I should see the Spotify play link") do
 end
 
 Then('the limit selector should have {string} selected') do |label|
-  possible_ids = ['limit_short_term', 'limit_medium_term', 'limit_long_term']
+  possible_ids = [ 'limit_short_term', 'limit_medium_term', 'limit_long_term' ]
 
   found = possible_ids.any? do |id|
     page.has_select?(id, selected: label)
@@ -238,5 +238,3 @@ end
 Then('I should see no rendered tracks') do
   expect(page).to have_no_css('.track-lineup')
 end
-
-

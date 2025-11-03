@@ -31,7 +31,7 @@ Given('I am logged in for playlists') do
   )
 
   visit '/auth/spotify'
-  visit '/auth/spotify/callback'   
+  visit '/auth/spotify/callback'
 end
 
 Given("I am logged in for playlists with user id {string}") do |uid|

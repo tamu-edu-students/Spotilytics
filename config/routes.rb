@@ -11,23 +11,25 @@ Rails.application.routes.draw do
 
   # Defines the root path route ("/")
   # root "posts#index"
-  get '/dashboard', to: 'pages#dashboard', as: :dashboard
-  get '/top-artists', to: 'pages#top_artists', as: :top_artists
-  get '/home', to: 'pages#home', as: :home
-  get '/view-profile', to: 'pages#view_profile', as: :view_profile
-  get '/clear', to: 'pages#clear', as: :clear
-  root 'pages#home'
+  get "/dashboard", to: "pages#dashboard", as: :dashboard
+  get "/top-artists", to: "pages#top_artists", as: :top_artists
+  get "/home", to: "pages#home", as: :home
+  get "/view-profile", to: "pages#view_profile", as: :view_profile
+  get "/clear", to: "pages#clear", as: :clear
+  root "pages#home"
 
   # Callback from Spotify
-  match '/auth/spotify/callback', to: 'sessions#create', via: %i[get post]
-  get    '/auth/failure',         to: "sessions#failure"  
-  get    '/login',                to: redirect("/auth/spotify"), as: :login
-  delete '/logout', to: 'sessions#destroy', as: :logout
+  match "/auth/spotify/callback", to: "sessions#create", via: %i[get post]
+  get    "/auth/failure",         to: "sessions#failure"
+  get    "/login",                to: redirect("/auth/spotify"), as: :login
+  delete "/logout", to: "sessions#destroy", as: :logout
+
+  resources :artist_follows, only: [ :create, :destroy ], param: :spotify_id
 
   # GET /top_tracks
   get "/top_tracks", to: "top_tracks#index", as: :top_tracks
   post "/create_playlist", to: "playlists#create", as: :create_playlist
 
   # Get Reccomendations
-  get  'recommendations',        to: 'recommendations#recommendations',   as: :recommendations
+  get  "recommendations",        to: "recommendations#recommendations",   as: :recommendations
 end
