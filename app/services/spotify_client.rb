@@ -19,128 +19,148 @@ class SpotifyClient
   end
 
   def search_tracks(query, limit: 10)
-    access_token = ensure_access_token!
-    params = {
-      q: query,
-      type: 'track',
-      limit: limit
-    }
+    cache_for(["search_tracks", limit]) do
+      access_token = ensure_access_token!
+      params = {
+        q: query,
+        type: 'track',
+        limit: limit
+      }
 
-    response = get('/search', access_token, params)
-    items = response.dig('tracks', 'items') || []
+      response = get('/search', access_token, params)
+      items = response.dig('tracks', 'items') || []
 
-    items.map do |item|
-      OpenStruct.new(
-        id: item['id'],
-        name: item['name'],
-        artists: (item['artists'] || []).map { |a| a['name'] }.join(', '),
-        album_name: item.dig('album', 'name'),
-        album_image_url: item.dig('album', 'images', 0, 'url'),
-        popularity: item['popularity'],
-        preview_url: item['preview_url'],
-        spotify_url: item.dig('external_urls', 'spotify'),
-        duration_ms: item['duration_ms']
-      )
+      items.map do |item|
+        OpenStruct.new(
+          id: item['id'],
+          name: item['name'],
+          artists: (item['artists'] || []).map { |a| a['name'] }.join(', '),
+          album_name: item.dig('album', 'name'),
+          album_image_url: item.dig('album', 'images', 0, 'url'),
+          popularity: item['popularity'],
+          preview_url: item['preview_url'],
+          spotify_url: item.dig('external_urls', 'spotify'),
+          duration_ms: item['duration_ms']
+        )
+      end
     end
   end
 
   def profile()
-    access_token = ensure_access_token!
-    response = get("/users/#{current_user_id}", access_token)
+    cache_for(["profile"]) do
+      access_token = ensure_access_token!
+      response = get("/users/#{current_user_id}", access_token)
 
-    items = OpenStruct.new(
-      id: response['id'],
-      display_name: response['display_name'],
-      image_url: response.dig('images', 0, 'url'), 
-      followers: response.dig('followers', 'total') || 0,
-      spotify_url: response.dig('external_urls', 'spotify')
-    )
-  end
-
-  def new_releases(limit:)
-    access_token = ensure_access_token!
-    response = get('/browse/new-releases', access_token, limit: limit)
-
-    # The response looks like: { "artists": { "items": [ ... ] } }
-    items = response.dig('albums', 'items') || []
-
-    items.map.with_index(1) do |item, index|
-      OpenStruct.new(
-        id: item['id'],
-        name: item['name'],
-        image_url: item.dig('images', 0, 'url'),
-        total_tracks: item['total_tracks'] || 0,
-        release_date: item['release_date'] || 0,
-        spotify_url: item.dig('external_urls', 'spotify'),
-        artists: (item["artists"] || []).map { |artist| artist["name"] }
+      items = OpenStruct.new(
+        id: response['id'],
+        display_name: response['display_name'],
+        image_url: response.dig('images', 0, 'url'), 
+        followers: response.dig('followers', 'total') || 0,
+        spotify_url: response.dig('external_urls', 'spotify')
       )
     end
   end
 
+  def new_releases(limit:)
+    cache_for(["new_releases", limit]) do
+      access_token = ensure_access_token!
+      response = get('/browse/new-releases', access_token, limit: limit)
+
+      # The response looks like: { "artists": { "items": [ ... ] } }
+      items = response.dig('albums', 'items') || []
+
+      items.map.with_index(1) do |item, index|
+        OpenStruct.new(
+          id: item['id'],
+          name: item['name'],
+          image_url: item.dig('images', 0, 'url'),
+          total_tracks: item['total_tracks'] || 0,
+          release_date: item['release_date'] || 0,
+          spotify_url: item.dig('external_urls', 'spotify'),
+          artists: (item["artists"] || []).map { |artist| artist["name"] }
+        )
+      end
+    end
+  end
+
   def followed_artists(limit:)
-    access_token = ensure_access_token!
-    response = get('/me/following', access_token, limit: limit, type: 'artist')
+    cache_for(["followed_artists", limit]) do
+      access_token = ensure_access_token!
+      response = get('/me/following', access_token, limit: limit, type: 'artist')
 
-    # The response looks like: { "artists": { "items": [ ... ] } }
-    items = response.dig('artists', 'items') || []
+      # The response looks like: { "artists": { "items": [ ... ] } }
+      items = response.dig('artists', 'items') || []
 
-    items.map.with_index(1) do |item, index|
-      OpenStruct.new(
-        id: item['id'],
-        name: item['name'],
-        image_url: item.dig('images', 0, 'url'),
-        genres: item['genres'] || [],
-        popularity: item['popularity'] || 0,
-        spotify_url: item.dig('external_urls', 'spotify')
-      )
+      items.map.with_index(1) do |item, index|
+        OpenStruct.new(
+          id: item['id'],
+          name: item['name'],
+          image_url: item.dig('images', 0, 'url'),
+          genres: item['genres'] || [],
+          popularity: item['popularity'] || 0,
+          spotify_url: item.dig('external_urls', 'spotify')
+        )
+      end
     end
   end
 
 
   def top_artists(limit:, time_range:)
-    access_token = ensure_access_token!
-    response = get('/me/top/artists', access_token, limit: limit, time_range: time_range)
-    items = response.fetch('items', [])
-    items.map.with_index(1) do |item, index|
-      OpenStruct.new(
-        id: item['id'],
-        name: item['name'],
-        rank: index,
-        image_url: item.dig('images', 0, 'url'),
-        genres: item['genres'] || [],
-        popularity: item['popularity'] || 0,
-        playcount: item['popularity'] || 0
-      )
+    cache_for(["top_artists", time_range, limit]) do
+      access_token = ensure_access_token!
+      response = get('/me/top/artists', access_token, limit: limit, time_range: time_range)
+      items = response.fetch('items', [])
+      items.map.with_index(1) do |item, index|
+        OpenStruct.new(
+          id: item['id'],
+          name: item['name'],
+          rank: index,
+          image_url: item.dig('images', 0, 'url'),
+          genres: item['genres'] || [],
+          popularity: item['popularity'] || 0,
+          playcount: item['popularity'] || 0
+        )
+      end
     end
   end
 
   def top_tracks(limit:, time_range:)
-    access_token = ensure_access_token!
-    response = get('/me/top/tracks', access_token, limit: limit, time_range: time_range)
-    items = response.fetch('items', [])
+    cache_for(["top_tracks", time_range, limit]) do
+      access_token = ensure_access_token!
+      response = get('/me/top/tracks', access_token, limit: limit, time_range: time_range)
+      items = response.fetch('items', [])
 
-    items.map.with_index(1) do |item, index|
-      OpenStruct.new(
-        id: item['id'],
-        name: item['name'],
-        rank: index,
-        artists: (item['artists'] || []).map { |a| a['name'] }.join(', '),
-        album_name: item.dig('album', 'name'),
-        album_image_url: item.dig('album', 'images', 0, 'url'),
-        popularity: item['popularity'],
-        preview_url: item['preview_url'],
-        spotify_url: item.dig('external_urls', 'spotify'),
-        duration_ms: item['duration_ms']
-      )
+      items.map.with_index(1) do |item, index|
+        OpenStruct.new(
+          id: item['id'],
+          name: item['name'],
+          rank: index,
+          artists: (item['artists'] || []).map { |a| a['name'] }.join(', '),
+          album_name: item.dig('album', 'name'),
+          album_image_url: item.dig('album', 'images', 0, 'url'),
+          popularity: item['popularity'],
+          preview_url: item['preview_url'],
+          spotify_url: item.dig('external_urls', 'spotify'),
+          duration_ms: item['duration_ms']
+        )
+      end
     end
   end
 
   # Returns the Spotify account id of the current user (string).
   def current_user_id
-    # access_token = ensure_access_token!
-    # me = get('/me', access_token)
-    # uid = me['id']
-    uid = session[:spotify_user]&.[](:id)
+    access_token = ensure_access_token!
+    me = get('/me', access_token)
+    uid = me['id']
+    Rails.logger.info "Session user: #{session[:spotify_user].inspect}"
+    uid = session.dig('spotify_user', 'id')
+
+    if uid.blank?
+      access_token = ensure_access_token!
+      me = get('/me', access_token)
+      uid = me['id']
+    end
+
     raise Error, 'Could not determine Spotify user id' if uid.blank?
     uid
   end
@@ -179,10 +199,32 @@ class SpotifyClient
     true
   end
 
+  def clear_user_cache
+    user_id = current_user_id
+    return unless user_id
+    Rails.cache.delete_matched("spotify_#{user_id}_*")
+  end
+
 
   private
 
   attr_reader :session, :client_id, :client_secret
+
+  private
+
+  def cache_for(key_parts, expires_in: 24.hours)
+    user_id = current_user_id
+    return yield unless user_id # fallback if no user logged in
+
+    # Build a stable cache key like "spotify_12345_top_tracks_medium_term_20"
+    key = ['spotify', user_id, *Array(key_parts)].join('_')
+    Rails.logger.info "Cache hit for #{key}" if Rails.cache.exist?(key)
+    
+    Rails.cache.fetch(key, expires_in: expires_in) do
+      Rails.logger.info "Caching miss for #{key}, fetching from Spotify API..."
+      yield
+    end
+  end
 
   def ensure_access_token!
     token = session[:spotify_token]
