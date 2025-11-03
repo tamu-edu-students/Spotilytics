@@ -1,35 +1,135 @@
 name: Deploy to Heroku
 
 on:
+  pull_request:
   push:
-    branches:
-      - main   
+    branches: [ main ]
 
 jobs:
-  deploy:
+  scan_ruby:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Ruby
+      - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: .ruby-version
+          bundler-cache: true
 
-      - name: Install dependencies
+      - name: Scan for common Rails security vulnerabilities using static analysis
+        run: bin/brakeman --no-pager
+
+  scan_js:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: .ruby-version
+          bundler-cache: true
+
+      - name: Scan for security vulnerabilities in JavaScript dependencies
+        run: bin/importmap audit
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: .ruby-version
+          bundler-cache: true
+
+      - name: Lint code for consistent style
+        run: bin/rubocop -f github
+
+  test:
+    runs-on: ubuntu-latest
+
+    # services:
+    #  redis:
+    #    image: redis
+    #    ports:
+    #      - 6379:6379
+    #    options: --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
+    steps:
+      - name: Install packages
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y google-chrome-stable curl libjemalloc2 libvips sqlite3
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: .ruby-version
+          bundler-cache: true
+
+      - name: Prepare test DB
+        env:
+          RAILS_ENV: test
         run: |
-          bundle install --jobs 4 --retry 3
+          bin/rails db:prepare
+      
+    
+      # --- RSpec ---
+      - name: RSpec
+        env:
+          RAILS_ENV: test
+        run: bundle exec rspec
+      
+      # --- Cucumber ---
+      - name: Cucumber
+        env:
+          RAILS_ENV: test
+        run: bundle exec cucumber --tags "not @wip" --format progress
 
-      - name: Install Heroku CLI
+      # --- Merge Coverage ---
+      - name: Merge Coverage Reports
+        env:
+          RAILS_ENV: test
+        run: bundle exec ruby bin/coverage_merge
+
+      - name: Upload screenshots (RSpec/Cucumber failures)
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: screenshots
+          path: |
+            ${{ github.workspace }}/tmp/screenshots
+            ${{ github.workspace }}/tmp/capybara
+          if-no-files-found: ignore
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage
+
+
+  deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    needs: [scan_ruby, scan_js, lint, test]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install Heroku CLI 
         run: |
           curl https://cli-assets.heroku.com/install.sh | sh
-
-      - name: Deploy to Heroku
-        uses: akhileshns/heroku-deploy@v4
+      - uses: akhileshns/heroku-deploy@v3.14.15 
         with:
           heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
           heroku_app_name: "spotilytics-app"
           heroku_email: "aurawra@outlook.com"
-          branch: main
+          branch: feature/custom_top_tracks_no
+          usedocker: false
