@@ -1,4 +1,4 @@
-# Spotilytics
+# 🎧 Spotilytics
 
 Spotilytics is a Ruby on Rails web application that connects to the Spotify Web API to generate an on-demand “Spotify Wrapped” experience.
 Users can log in with their Spotify account to instantly view their Top Tracks, Top Artists and Genre insights, all powered by live Spotify data.
@@ -192,4 +192,74 @@ You’ll be able to:
 | **run single Cucumber scenario**    | `bundle exec cucumber features/notes.feature` |
 | **check test coverage**       | `open coverage/index.html` |
 | **check last few lines of error log messages from Heroku**       | `heroku logs` |
+
+# User Guide — Spotilytics
+
+Welcome to Spotilytics, your personalized Spotify analytics dashboard!
+Spotilytics lets you view your listening history, top artists, top tracks, and genres anytime - like having Spotify Wrapped on demand.
+
+---
+
+### Getting Started
+
+1. **Access the App**  
+   Visit your deployed app [https://spotilytics-app-41dbe947e18e.herokuapp.com/](https://spotilytics-app-41dbe947e18e.herokuapp.com/)
+
+   Requirements
+	- A Spotify account (Free or Premium)
+	- Internet connection and a browser
+	- Permission to connect Spotilytics to your Spotify account
+
+2. **Logging In with Spotify**
+	1.	Visit the Spotilytics home page.
+	2.	Click “Log in with Spotify”.
+	3.	You’ll be redirected to Spotify’s secure authorization page.
+	4.	Click “Agree” to give Spotilytics access to:
+	    - Your top tracks and artists
+	    - Permission to create playlists on your behalf
+	5.	You’ll be redirected back to the Home Page once authentication succeeds.
+
+    Spotilytics uses Spotify OAuth 2.0, so:
+    - Your credentials are never stored by us.
+    - Only temporary tokens are used per session.
+    - Tokens automatically expire for security.
+
+3. **Home Page Overview**
+
+    After logging in, you’ll see the Home Page featuring:
+        - The Spotilytics logo and Spotify branding
+        - A short description of what the app does
+        - A “My Dashboard” button that takes you to your personalized analytics
+        This page acts as your entry point to explore your listening statistics.
+
+4. **Dashboard Overview**
+
+    Your dashboard provides a snapshot of your listening habits.
+    It’s divided into four main sections:
+
+    *Top Tracks This Year*
+    - Displays your most-listened-to songs over the past year.
+    - Shows the top 5 tracks with:
+        - Rank number
+        - Track name and artist
+        - Album name and popularity (out of 100)
+
+    *Top Artists This Year*
+    - Displays your most-played artists this year.
+    - Shows:
+        - Rank and artist photo
+        - Total plays count
+        - Includes a “View Top Artists” button to explore more.
+
+    *Top Genres*
+    - A pie chart visualization of your most-listened-to genres.
+    - The chart includes both major genres and an “Other” category for lesser-played types.
+
+    *Followed Artists & New Releases*
+    - Lists artists you follow on Spotify, with profile images and “View on Spotify” links.
+    - Shows recent releases from your favorite artists, including:
+        - Album art
+        - Artist name
+        - Track count and release date
+        - Direct link to the album on Spotify
 
