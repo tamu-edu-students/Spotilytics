@@ -146,4 +146,208 @@ RSpec.describe SpotifyClient, type: :service do
             expect(headers["Authorization"]).to include("Basic")
         end
     end
+
+    describe "#search_tracks" do
+        let(:query) { "Daft Punk" }
+        let(:limit) { 10 }
+        let(:base_url) { "https://api.spotify.com/v1" }
+        let(:url) { "#{base_url}/search?q=#{CGI.escape(query)}&type=track&limit=#{limit}" }
+
+        context "when the request succeeds with track data" do
+            let(:body) do
+                {
+                tracks: {
+                    items: [
+                    {
+                        "id" => "track123",
+                        "name" => "Harder, Better, Faster, Stronger",
+                        "artists" => [{ "name" => "Daft Punk" }],
+                        "album" => {
+                        "name" => "Discovery",
+                        "images" => [{ "url" => "http://example.com/discovery.jpg" }]
+                        },
+                        "popularity" => 95,
+                        "preview_url" => "http://example.com/preview.mp3",
+                        "external_urls" => { "spotify" => "https://open.spotify.com/track/track123" },
+                        "duration_ms" => 224000
+                    }
+                    ]
+                }
+                }
+            end
+
+
+            before do
+                stub_request(:get, "#{base_url}/search")
+                .with(query: hash_including(q: query, type: "track", limit: limit.to_s))
+                .to_return(status: 200, body: body.to_json, headers: { 'Content-Type' => 'application/json' })
+
+                stub_spotify_get("/me", body: { id: "user123" })
+            end
+
+            it "returns an array of OpenStruct track objects" do
+                results = client.search_tracks(query, limit: limit)
+
+                expect(results).to be_an(Array)
+                expect(results.size).to eq(1)
+
+                track = results.first
+                expect(track.id).to eq("track123")
+                expect(track.name).to eq("Harder, Better, Faster, Stronger")
+                expect(track.artists).to eq("Daft Punk")
+                expect(track.album_name).to eq("Discovery")
+                expect(track.album_image_url).to eq("http://example.com/discovery.jpg")
+                expect(track.popularity).to eq(95)
+                expect(track.preview_url).to eq("http://example.com/preview.mp3")
+                expect(track.spotify_url).to eq("https://open.spotify.com/track/track123")
+                expect(track.duration_ms).to eq(224000)
+            end
+        end
+
+        context "when Spotify returns no items" do
+            before do
+                stub_spotify_get(
+                    "/search",
+                    body: { tracks: { items: [] } }
+                )
+            
+                stub_spotify_get("/me", body: { id: "user123" })
+            end
+
+            it "returns an empty array" do
+                results = client.search_tracks(query)
+                expect(results).to eq([])
+            end
+        end
+
+        context "when Spotify response is missing 'tracks' key" do
+            before do
+                stub_spotify_get(
+                    "/search",
+                    body: {} 
+                )
+
+                stub_spotify_get("/me", body: { id: "user123" })
+            end
+
+            it "returns an empty array safely" do
+                results = client.search_tracks(query)
+                expect(results).to eq([])
+            end
+        end
+
+        context "when get raises an error" do
+            before do
+                allow(client).to receive(:get).and_raise(SpotifyClient::Error, "API failed")
+            end
+
+            it "raises SpotifyClient::Error" do
+                expect { client.search_tracks(query) }.to raise_error(SpotifyClient::Error, /API failed/)
+            end
+        end
+
+        context "when ensure_access_token! raises UnauthorizedError" do
+            before do
+                allow(client).to receive(:ensure_access_token!).and_raise(SpotifyClient::UnauthorizedError)
+            end
+
+            it "raises UnauthorizedError and does not call get" do
+                expect(client).not_to receive(:get)
+                expect { client.search_tracks(query) }.to raise_error(SpotifyClient::UnauthorizedError)
+            end
+        end
+    end
+
+    describe "#top_artists" do
+        let(:limit) { 10 }
+        let(:time_range) { "long_term" }
+
+        before do
+            # Stub /me for cache_for → current_user_id
+            stub_spotify_get("/me", body: { id: "user123" })
+
+            # Disable actual caching for testing
+            allow(client).to receive(:cache_for).and_wrap_original { |_m, *_args, &block| block.call }
+
+            # Mock access token retrieval
+            allow(client).to receive(:ensure_access_token!).and_return("valid_token")
+        end
+
+        context "when the request succeeds with artist data" do
+            let(:body) do
+            {
+                items: Array.new(limit) do |i|
+                {
+                    "id" => "artist#{i + 1}",
+                    "name" => "Artist #{i + 1}",
+                    "images" => [{ "url" => "http://example.com/artist#{i + 1}.jpg" }],
+                    "genres" => ["genre#{i + 1}"],
+                    "popularity" => 100 - i
+                }
+                end
+            }
+            end
+
+            before do
+                stub_spotify_get("/me/top/artists", body: body)
+            end
+
+            it "returns an array of OpenStruct artist objects with correct rank and data" do
+                results = client.top_artists(limit: limit, time_range: time_range)
+                expect(results.size).to eq(limit)
+
+                results.each_with_index do |artist, i|
+                    expect(artist.id).to eq("artist#{i + 1}")
+                    expect(artist.name).to eq("Artist #{i + 1}")
+                    expect(artist.rank).to eq(i + 1)
+                    expect(artist.image_url).to eq("http://example.com/artist#{i + 1}.jpg")
+                    expect(artist.genres).to eq(["genre#{i + 1}"])
+                    expect(artist.popularity).to eq(100 - i)
+                    expect(artist.playcount).to eq(100 - i)
+                end
+            end
+        end
+
+        context "when Spotify returns no items" do
+            before do
+                stub_spotify_get("/me/top/artists", body: { items: [] })
+            end
+
+            it "returns an empty array" do
+                expect(client.top_artists(limit: limit, time_range: time_range)).to eq([])
+            end
+        end
+
+        context "when Spotify response is missing 'items' key" do
+            before do
+                stub_spotify_get("/me/top/artists", body: {})
+            end
+
+            it "returns an empty array safely" do
+                expect(client.top_artists(limit: limit, time_range: time_range)).to eq([])
+            end
+        end
+
+        context "when get raises an error" do
+            before do
+                allow(client).to receive(:get).and_raise(SpotifyClient::Error, "API failed")
+            end
+
+            it "raises SpotifyClient::Error" do
+                expect { client.top_artists(limit: limit, time_range: time_range) }.to raise_error(SpotifyClient::Error, /API failed/)
+            end
+        end
+
+        context "when ensure_access_token! raises UnauthorizedError" do
+            before do
+                allow(client).to receive(:ensure_access_token!).and_raise(SpotifyClient::UnauthorizedError)
+            end
+
+            it "raises UnauthorizedError and does not call get" do
+                expect(client).not_to receive(:get)
+                expect { client.top_artists(limit: limit, time_range: time_range) }.to raise_error(SpotifyClient::UnauthorizedError)
+            end
+        end
+    end
+
 end
