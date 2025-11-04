@@ -106,3 +106,11 @@ Feature: Top artists
     And Spotify unfollow API raises an unauthorized error once
     When I submit an unfollow request for "long_term_artist_1"
     Then the response should redirect to the login page with alert "Please sign in with Spotify to continue."
+  Scenario: Top artists token expired ? redirected to home with alert
+    Given OmniAuth is in test mode
+    And I am signed in with Spotify
+    And Spotify raises Unauthorized for top artists
+    When I go to the top artists page
+    Then I should be on the home page
+    And I should see "You must log in with spotify to view your top artists."
+

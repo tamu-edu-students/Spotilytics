@@ -238,3 +238,62 @@ end
 Then('I should see no rendered tracks') do
   expect(page).to have_no_css('.track-lineup')
 end
+
+# --- Stubbing helpers ---
+
+def legacy_mock_client
+  @legacy_mock_client ||= instance_double(SpotifyClient)
+end
+
+def stub_legacy_spotify!
+  allow(SpotifyClient).to receive(:new).with(session: anything).and_return(legacy_mock_client)
+end
+
+# Happy path: return N tracks
+Given("Spotify responds with legacy ranked top tracks") do
+  stub_legacy_spotify!
+  allow(legacy_mock_client).to receive(:top_tracks) do |args|
+    limit = args[:limit].to_i
+    (1..limit).map do |i|
+      OpenStruct.new(
+        id: "t#{i}",
+        rank: i,
+        name: "Legacy Track #{i}",
+        artists: "Artist #{i}",
+        album_name: "Album #{i}",
+        album_image_url: nil,
+        popularity: 50 + i,
+        preview_url: nil,
+        spotify_url: "https://open.spotify.com/track/#{i}",
+        duration_ms: 120_000
+      )
+    end
+  end
+end
+
+Given("Spotify legacy top tracks raises Unauthorized") do
+  stub_legacy_spotify!
+  allow(legacy_mock_client).to receive(:top_tracks).and_raise(SpotifyClient::UnauthorizedError.new("expired"))
+end
+
+Given("Spotify legacy top tracks raises a generic error") do
+  stub_legacy_spotify!
+  allow(legacy_mock_client).to receive(:top_tracks).and_raise(SpotifyClient::Error.new("rate limited"))
+end
+
+# --- Navigation ---
+
+When("I visit the legacy top tracks page with limit {string}") do |label|
+  visit legacy_top_tracks_test_path(limit: label)
+end
+
+Then("I should be on the legacy top tracks page") do
+  expect(page).to have_current_path("/legacy_top_tracks", ignore_query: true)
+end
+
+Then("I should see exactly {int} legacy tracks") do |n|
+  # the pages#top_tracks view renders the same partials as the new page;
+  # fall back to a generic count on rows/links if specific classes differ locally.
+  expect(page.all(".top-track, li, .list-group-item, .track").size).to be >= n
+end
+

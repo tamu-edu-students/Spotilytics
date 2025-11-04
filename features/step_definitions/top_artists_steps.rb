@@ -345,3 +345,9 @@ end
 Then("I should be redirected to the sign in page") do
   expect(current_path).to match(/sign_in|login|users\/sign_in/)
 end
+
+Given("Spotify raises Unauthorized for top artists") do
+  mock = instance_double(SpotifyClient)
+  allow(SpotifyClient).to receive(:new).with(session: anything).and_return(mock)
+  allow(mock).to receive(:top_artists).and_raise(SpotifyClient::UnauthorizedError.new("expired"))
+end

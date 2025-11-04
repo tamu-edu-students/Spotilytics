@@ -7,7 +7,7 @@
     <h1 class="text-light mb-4">View Profile</h1>
     
     <div class="spotify-card-profile card text-light text-center p-4 shadow-lg mx-auto">
-      <% if @profile.image_url.present? %>
+      <% if @profile&.image_url.present? %>
         <img src="<%= @profile.image_url %>" 
              alt="<%= @profile.display_name %>" 
              class="rounded-circle mx-auto mb-3 profile-img">
@@ -17,10 +17,10 @@
         </div>
       <% end %>
 
-      <h3 class="text-light mb-2"><%= @profile.display_name %></h3>
-      <p class="text-secondary mb-3"><%= number_with_delimiter(@profile.followers) %> Followers</p>
+      <h3 class="text-light mb-2"><%= @profile&.display_name || "-" %></h3>
+      <p class="text-secondary mb-3"><%= number_with_delimiter(@profile&.followers.to_i) %> Followers</p>
 
-      <% if @profile.spotify_url.present? %>
+      <% if @profile&.spotify_url.present? %>
         <%= link_to "Open Profile in Spotify", 
                     @profile.spotify_url, 
                     target: "_blank", 
