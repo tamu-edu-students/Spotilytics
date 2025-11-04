@@ -1,0 +1,17 @@
+#!/usr/bin/env ruby
+require 'bundler/setup'
+require 'simplecov'
+
+resultsets = Dir['coverage/**/.resultset.json']
+abort("No .resultset.json files found") if resultsets.empty?
+
+SimpleCov.collate(resultsets) do
+  enable_coverage :branch
+  formatter SimpleCov::Formatter::HTMLFormatter
+  add_filter %w[/spec/ /features/ /config/ /vendor/ /db/ /test/]
+  add_group 'Controllers', 'app/controllers'
+  add_group 'Models',       'app/models'
+  add_group 'Helpers',      'app/helpers'
+end
+
+puts "Coverage merged: #{resultsets.join(', ')}"

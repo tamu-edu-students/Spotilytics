@@ -104,7 +104,7 @@ RSpec.describe RecommendationsController, type: :controller do
 
                 expect(response).to redirect_to(home_path)
                 expect(flash[:alert]).to eq(
-                'You must log in with spotify to view your reccomendations.'
+                'You must log in with spotify to view your recommendations.'
                 )
             end
         end
