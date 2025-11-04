@@ -160,7 +160,7 @@ In **GitHub** → **Settings → Secrets and Variables → Actions**, add the fo
 | Secret | Description |
 |--------|--------------|
 | `HEROKU_API_KEY` | Your Heroku API key (run `heroku auth:token` to get it) |
-| `HEROKU_APP_NAME` | Your Heroku app name (note-together in this case) |
+| `HEROKU_APP_NAME` | Your Heroku app name (spotilytics in this case) |
 | `SPOTIFY_CLIENT_ID` | Your Spotify Client ID |
 | `SPOTIFY_CLIENT_SECRET` | Your Spotify Client Secret |
 
