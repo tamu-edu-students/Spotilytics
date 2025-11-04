@@ -27,6 +27,18 @@ RSpec.describe SpotifyClient, type: :service do
             .to_return(status: status, body: body.to_json, headers: { "Content-Type" => "application/json" })
     end
 
+    def stub_spotify_put(path, body:, status: 200)
+        stub_request(:put, %r{https://api.spotify.com/v1#{path}})
+            .to_return(status: status, body: body.to_json, headers: { "Content-Type" => "application/json" })
+    end
+
+    def stub_spotify_delete(path, body:, status: 200)
+        stub_request(:delete, %r{https://api.spotify.com/v1#{path}})
+            .to_return(status: status, body: body.to_json, headers: { "Content-Type" => "application/json" })
+    end
+
+
+
     describe "#ensure_access_token!" do
         it "returns the existing token if valid" do
             expect(client.send(:ensure_access_token!)).to eq("valid_token")
@@ -349,4 +361,195 @@ RSpec.describe SpotifyClient, type: :service do
             end
         end
     end
+
+    describe '#follow_artists' do
+        let(:access_token) { "valid_token" }
+
+        before do
+            allow(client).to receive(:ensure_access_token!).and_return(access_token)
+            allow(client).to receive(:cache_for).and_wrap_original { |_m, *_args, &block| block.call }
+            stub_spotify_get("/me", body: { id: "user123" })
+        end
+
+        context "when given a single artist ID" do
+            it "sends a PUT request to follow the artist and returns true" do
+            stub_request(:put, "https://api.spotify.com/v1/me/following")
+                .with(
+                query: { type: "artist" },
+                body: { ids: ["abc123"] }.to_json,
+                headers: { "Authorization" => "Bearer #{access_token}" }
+                )
+                .to_return(status: 204, body: "", headers: {})
+
+            result = client.follow_artists("abc123")
+            expect(result).to eq(true)
+            end
+        end
+
+        context "when given multiple artist IDs with duplicates and integers" do
+            it "removes duplicates, stringifies IDs, and sends them correctly" do
+            stub_request(:put, "https://api.spotify.com/v1/me/following")
+                .with(
+                query: { type: "artist" },
+                body: { ids: ["123", "456"] }.to_json,
+                headers: { "Authorization" => "Bearer #{access_token}" }
+                )
+                .to_return(status: 204, body: "", headers: {})
+
+            result = client.follow_artists([123, "456", 123])
+            expect(result).to eq(true)
+            end
+        end
+
+        context "when given an empty array" do
+            it "returns true without making any HTTP request" do
+            expect(client).not_to receive(:request_with_json)
+            expect(client.follow_artists([])).to eq(true)
+            end
+        end
+
+        context "when the request fails with an error" do
+            it "raises SpotifyClient::Error" do
+            stub_request(:put, "https://api.spotify.com/v1/me/following")
+                .with(query: { type: "artist" })
+                .to_return(status: 400, body: { error: { message: "Bad Request" } }.to_json)
+
+            expect {
+                client.follow_artists("abc123")
+            }.to raise_error(SpotifyClient::Error, /Bad Request/)
+            end
+        end
+    end
+
+    describe "#unfollow_artists" do
+        let(:access_token) { "valid_token" }
+
+        before do
+            allow(client).to receive(:ensure_access_token!).and_return(access_token)
+            allow(client).to receive(:cache_for).and_wrap_original { |_m, *_args, &block| block.call }
+            # Some Spotify endpoints may call /me for caching logic, so stub it to be safe
+            stub_spotify_get("/me", body: { id: "user123" })
+        end
+
+        context "when given a single artist ID" do
+            it "sends a DELETE request to unfollow the artist and returns true" do
+            stub_request(:delete, "https://api.spotify.com/v1/me/following")
+                .with(
+                query: { type: "artist" },
+                body: { ids: ["abc123"] }.to_json,
+                headers: { "Authorization" => "Bearer #{access_token}" }
+                )
+                .to_return(status: 204, body: "", headers: {})
+
+            result = client.unfollow_artists("abc123")
+            expect(result).to eq(true)
+            end
+        end
+
+        context "when given multiple artist IDs with duplicates and integers" do
+            it "removes duplicates, stringifies IDs, and sends them correctly" do
+            stub_request(:delete, "https://api.spotify.com/v1/me/following")
+                .with(
+                query: { type: "artist" },
+                body: { ids: ["123", "456"] }.to_json,
+                headers: { "Authorization" => "Bearer #{access_token}" }
+                )
+                .to_return(status: 204, body: "", headers: {})
+
+            result = client.unfollow_artists([123, "456", 123])
+            expect(result).to eq(true)
+            end
+        end
+
+        context "when given an empty array" do
+            it "returns true without making any HTTP request" do
+            expect(client).not_to receive(:request_with_json)
+            expect(client.unfollow_artists([])).to eq(true)
+            end
+        end
+
+        context "when the request fails with an error" do
+            it "raises SpotifyClient::Error" do
+            stub_request(:delete, "https://api.spotify.com/v1/me/following")
+                .with(query: { type: "artist" })
+                .to_return(status: 400, body: { error: { message: "Bad Request" } }.to_json)
+
+            expect {
+                client.unfollow_artists("abc123")
+            }.to raise_error(SpotifyClient::Error, /Bad Request/)
+            end
+        end
+    end
+
+    describe "#followed_artist_ids" do
+        let(:access_token) { "valid_token" }
+
+        before do
+            allow(client).to receive(:ensure_access_token!).and_return(access_token)
+            allow(client).to receive(:cache_for).and_wrap_original { |_m, *_args, &block| block.call }
+            stub_spotify_get("/me", body: { id: "user123" }) 
+        end
+
+        context "when given an empty array" do
+            it "returns an empty Set and does not call the API" do
+            expect(client).not_to receive(:get)
+            result = client.followed_artist_ids([])
+            expect(result).to eq(Set.new)
+            end
+        end
+
+        context "when given a single ID that is followed" do
+            it "returns a Set containing that ID" do
+            stub_request(:get, "https://api.spotify.com/v1/me/following/contains")
+                .with(query: { type: "artist", ids: "abc123" })
+                .to_return(status: 200, body: "[true]", headers: { "Content-Type" => "application/json" })
+
+            result = client.followed_artist_ids("abc123")
+            expect(result).to eq(Set.new(["abc123"]))
+            end
+        end
+
+        context "when given a single ID that is not followed" do
+            it "returns an empty Set" do
+            stub_request(:get, "https://api.spotify.com/v1/me/following/contains")
+                .with(query: { type: "artist", ids: "abc123" })
+                .to_return(status: 200, body: "[false]", headers: { "Content-Type" => "application/json" })
+
+            result = client.followed_artist_ids("abc123")
+            expect(result).to eq(Set.new)
+            end
+        end
+
+        context "when given multiple IDs with duplicates and mixed statuses" do
+            it "deduplicates IDs and includes only followed ones" do
+            stub_request(:get, "https://api.spotify.com/v1/me/following/contains")
+                .with(query: { type: "artist", ids: "1,2,3" })
+                .to_return(status: 200, body: "[true,false,true]", headers: { "Content-Type" => "application/json" })
+
+            result = client.followed_artist_ids(["1", "2", "3", "1"])
+            expect(result).to eq(Set.new(["1", "3"]))
+            end
+        end
+
+        context "when given more than 50 IDs" do
+            it "splits them into batches of 50 per request" do
+            ids = (1..60).to_a.map(&:to_s)
+            first_batch = ids[0...50]
+            second_batch = ids[50..]
+
+            stub_request(:get, "https://api.spotify.com/v1/me/following/contains")
+                .with(query: { type: "artist", ids: first_batch.join(",") })
+                .to_return(status: 200, body: "[#{(['true'] * 50).join(',')}]", headers: { "Content-Type" => "application/json" })
+
+            stub_request(:get, "https://api.spotify.com/v1/me/following/contains")
+                .with(query: { type: "artist", ids: second_batch.join(",") })
+                .to_return(status: 200, body: "[true,true,true,true,true,true,true,true,true,true]", headers: { "Content-Type" => "application/json" })
+
+            result = client.followed_artist_ids(ids)
+            expect(result.size).to eq(60)
+            expect(result).to include(*ids)
+            end
+        end
+    end
+
 end
