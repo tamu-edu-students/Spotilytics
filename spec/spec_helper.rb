@@ -16,6 +16,7 @@
 
 require 'simplecov'
 SimpleCov.start 'rails' do
+  enable_coverage :branch
   command_name 'Rspec'
   coverage_dir 'coverage/rspec'
   add_filter '/spec/'
