@@ -21,7 +21,7 @@ RSpec.describe SpotifyClient, type: :service do
         .with(Net::HTTP::Put, '/me/following', 'token', params: { type: 'artist' }, body: { ids: %w[a1 a2] })
       allow(client).to receive(:ensure_access_token!).and_return('token')
 
-      client.follow_artists(['a1', 'a2', 'a1'])
+      client.follow_artists([ 'a1', 'a2', 'a1' ])
     end
   end
 
@@ -32,7 +32,7 @@ RSpec.describe SpotifyClient, type: :service do
       expect(client).to receive(:request_with_json)
         .with(Net::HTTP::Delete, '/me/following', 'abc', params: { type: 'artist' }, body: { ids: %w[x1 x2] })
 
-      client.unfollow_artists(['x1', 'x1', 'x2'])
+      client.unfollow_artists([ 'x1', 'x1', 'x2' ])
     end
   end
 
@@ -44,7 +44,7 @@ RSpec.describe SpotifyClient, type: :service do
       ids = (1..120).map { |i| "artist_#{i}" }
       first_chunk = Array.new(50, true)
       second_chunk = Array.new(50, false)
-      third_chunk = [true] + Array.new(19, false)
+      third_chunk = [ true ] + Array.new(19, false)
 
       expect(client).to receive(:get)
         .with('/me/following/contains', 'access', type: 'artist', ids: ids.first(50).join(','))

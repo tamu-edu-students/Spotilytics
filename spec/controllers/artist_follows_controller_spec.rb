@@ -13,13 +13,13 @@ RSpec.describe ArtistFollowsController, type: :controller do
 
   describe '#create' do
     it 'follows an artist and redirects back with notice' do
-      allow(spotify_client).to receive(:follow_artists).with([spotify_id]).and_return(true)
+      allow(spotify_client).to receive(:follow_artists).with([ spotify_id ]).and_return(true)
 
       post :create, params: { spotify_id: spotify_id }
 
       expect(response).to redirect_to(top_artists_path)
       expect(flash[:notice]).to eq('Artist followed.')
-      expect(spotify_client).to have_received(:follow_artists).with([spotify_id])
+      expect(spotify_client).to have_received(:follow_artists).with([ spotify_id ])
     end
 
     it 'redirects to login and clears tokens when scope is missing' do
@@ -60,7 +60,7 @@ RSpec.describe ArtistFollowsController, type: :controller do
 
       expect(response).to redirect_to(top_artists_path)
       expect(flash[:notice]).to eq('Artist unfollowed.')
-      expect(spotify_client).to have_received(:unfollow_artists).with([spotify_id])
+      expect(spotify_client).to have_received(:unfollow_artists).with([ spotify_id ])
     end
 
     it 'redirects to login and clears tokens when scope is missing' do

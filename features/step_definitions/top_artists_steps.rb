@@ -218,14 +218,14 @@ Then("I should remain on the top artists page") do
 end
 
 Then("I should be on the login page") do
-  expected_paths = [login_path, '/auth/spotify']
+  expected_paths = [ login_path, '/auth/spotify' ]
   expect(expected_paths).to include(URI.parse(current_url).path)
 end
 
 Then("the response should redirect to the login page") do
   location = page.driver.response.headers['Location']
   uri = URI.parse(location)
-  acceptable = [login_path, '/auth/spotify']
+  acceptable = [ login_path, '/auth/spotify' ]
   expect(acceptable).to include(uri.path)
 end
 

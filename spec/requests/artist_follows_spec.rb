@@ -43,7 +43,7 @@ RSpec.describe "ArtistFollows", type: :request do
     end
 
     it "redirects to login when Spotify requires new scope on unfollow" do
-      set_stub_followed_artists([artist_id])
+      set_stub_followed_artists([ artist_id ])
       simulate_unfollow_error!('Insufficient client scope')
 
       delete artist_follow_path(artist_id)
