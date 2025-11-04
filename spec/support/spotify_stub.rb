@@ -15,6 +15,8 @@ module SpotifyStub
     @_follow_calls = []
     @_unfollow_calls = []
     @_followed_artist_ids_requests = []
+    @_next_follow_error = nil
+    @_next_unfollow_error = nil
 
     RSpec.current_example.metadata[:stubbed_spotify_top_artists] = artists_by_range if defined?(RSpec) && RSpec.respond_to?(:current_example)
     @_stubbed_spotify_top_artists = artists_by_range
@@ -45,6 +47,11 @@ module SpotifyStub
     end
 
     allow_any_instance_of(SpotifyClient).to receive(:follow_artists) do |_, ids|
+      if @_next_follow_error
+        error = @_next_follow_error
+        @_next_follow_error = nil
+        raise error
+      end
       ids = Array(ids).map(&:to_s)
       @_follow_calls << ids
       ids.each { |id| @_followed_artist_ids << id }
@@ -52,6 +59,11 @@ module SpotifyStub
     end
 
     allow_any_instance_of(SpotifyClient).to receive(:unfollow_artists) do |_, ids|
+      if @_next_unfollow_error
+        error = @_next_unfollow_error
+        @_next_unfollow_error = nil
+        raise error
+      end
       ids = Array(ids).map(&:to_s)
       @_unfollow_calls << ids
       ids.each { |id| @_followed_artist_ids.delete(id) }
@@ -87,6 +99,14 @@ module SpotifyStub
 
   def followed_artist_ids_requests
     @_followed_artist_ids_requests || []
+  end
+
+  def simulate_follow_error!(message = 'Insufficient client scope')
+    @_next_follow_error = SpotifyClient::Error.new(message)
+  end
+
+  def simulate_unfollow_error!(message = 'Insufficient client scope')
+    @_next_unfollow_error = SpotifyClient::Error.new(message)
   end
 
   private
