@@ -263,3 +263,329 @@ Spotilytics lets you view your listening history, top artists, top tracks, and g
         - Track count and release date
         - Direct link to the album on Spotify
 
+5. **Top Tracks Page**
+
+    Navigate to Top Tracks using the navigation bar or via the dashboard.
+
+    This page lets you view your top tracks over different time periods.
+
+    *Time Ranges*:
+    - Last 4 Weeks
+    - Last 6 Months
+    - Last 1 Year
+
+    *Track Details*:
+
+    For each time range, Spotilytics shows:
+    - Song title
+    - Artist name
+    - Album title
+    - Popularity score
+    - “Play on Spotify” button
+
+    *Adjustable Limits*:
+
+    Use the dropdown menu under any of the time range to switch between:
+    - Top 10
+    - Top 25
+    - Top 50
+
+    Your results update automatically when you change the selection.
+
+6. **Top Artists Page**
+
+    The Top Artists page provides detailed insights into your most-played artists.
+
+    *Time Ranges*
+
+    You can view:
+    - Past Year
+    - Past 6 Months
+    - Past 4 Weeks
+
+    *Artist Details*
+
+    Each section lists:
+    - Rank (1–50)
+    - Artist image and name
+    - Estimated play count
+
+    Follow / Unfollow Artists
+    - Next to each artist, you’ll see a Follow / Unfollow button.
+    - Click to modify your followed artists directly through Spotilytics.
+    - Changes reflect instantly in your Spotify account.
+
+7. **Playlist Creation**
+
+    You can instantly turn your top tracks into a Spotify playlist.
+
+    How to Create a Playlist:
+    1.	Go to the Top Tracks page.
+    2.	Choose a time range (e.g. “Last 6 Months”).
+    3.	Click the “Create Playlist” button.
+    4.	Spotilytics will:
+        - Generate a new playlist in your Spotify account
+        - Named like “Your Top Tracks – Last 6 Months”
+        - Add your top 10 songs automatically
+
+8. **Recommendations Page**
+
+    The Recommendations tab generates personalized music recommendations based on your recent listening history and top artists.
+
+    What You’ll See:
+    - A curated grid of recommended tracks and albums.
+
+    Each recommendation includes:
+    - Album artwork
+    - Song or album title
+    - Artist name(s)
+    - “Open in Spotify” button to play directly.
+
+---
+
+### Tips for Best Use
+
+- Log in regularly - Refresh your Spotify connection every few days to keep recommendations and stats up to date.
+- Use “Refresh Data” button on the nav bar after major listening changes (e.g. a new playlist binge) to see updated top tracks instantly.
+- Try different time ranges (4 weeks / 6 months / 1 year) to compare your short-term and long-term listening trends.
+- Explore Recommendations often — they’re dynamically personalized based on your recent activity and top artists.
+
+---
+
+### Troubleshooting Guide
+
+- Login issues? -> Log out, clear your browser cache, then log back in via Spotify.
+- Data not updating? -> Click Refresh Data or revoke and reauthorize the app in your Spotify account settings.
+- Blank dashboard or missing stats? -> Ensure your Spotify account has at least a few weeks of listening history.
+- Playlist creation failing? -> Check that your Spotify session hasn’t expired — re-login to fix this instantly.
+
+---
+
+# Architecture Decision Records (ADRs)
+
+## ADR 0001 – Use Spotify API as the primary Source (No DB)
+**Status:** Accepted
+
+**Context**  
+Spotilytics retrieves real-time Spotify data. Storing a local copy adds complexity and compliance risk without long-term benefit.
+
+**Decision**  
+Do not maintain an internal database. Fetch data directly from Spotify APIs and cache short-lived results only.
+
+**Consequences**  
+- Advantage: Always fresh and consistent data  
+- Downside: Dependent on Spotify API uptime and latency  
+- Downside: Must respect API rate limits
+
+## ADR 0002 – Authentication via Spotify OAuth
+**Status:** Accepted
+
+**Context**  
+Users must log in securely and authorize Spotilytics to access their profile, top tracks and artists.
+
+**Decision**  
+Implement Spotify OAuth 2.0 using `omniauth` and `rspotify`. Tokens are stored in session only; refresh handled by RSpotify.
+
+**Consequences**  
+- Advantage: Secure, proven flow  
+- Advantage: Spotify-compliant token management  
+- Downside: Relies on RSpotify library abstractions  
+- Downside: Must handle expired sessions gracefully
+
+## ADR 0003 – Short-Lived Caching in Memory/Session
+**Status:** Accepted
+
+**Context**  
+Frequent Spotify API calls could slow page loads and hit rate limits.
+
+**Decision**  
+Cache lightweight API responses (e.g. top artists/tracks) in session or memory for minutes; invalidate via “Refresh Data”.
+
+**Consequences**  
+- Advantage: Faster user experience  
+- Advantage: Fewer external API calls  
+- Downside: Cache lost on dyno restart  
+- Downside: Potential stale data if not refreshed
+
+## ADR 0004 – Server-Side Playlist Creation
+**Status:** Accepted
+
+**Context**  
+Creating playlists requires user tokens. Executing this client-side would expose credentials.
+
+**Decision**  
+Handle playlist creation entirely server-side within `PlaylistsController#create`.
+
+**Consequences**  
+- Advantage: Secure and auditable  
+- Advantage: Simplifies frontend logic  
+- Downside: Adds load to server-side  
+- Downside: Must throttle to avoid hitting Spotify limits
+
+## ADR 005 – Add “Refresh Data” Action for Live Spotify Sync
+**Status:** Accepted
+
+**Context**  
+Spotilytics visualizes listening data (top tracks, artists, genres and recommendations) directly from Spotify’s Web API and stores it in the cache for several hours.  
+Users often want to see their most recent stats — especially after major playlist updates or new songs played.  
+We needed a lightweight mechanism to force re-fetching from the API without manual cache clearing or session resets.
+
+**Decision**  
+Add a **“Refresh Data”** button in the navigation bar that triggers a refresh of cached Spotify data.  
+When clicked, it clears temporary session-level caches and re-requests data from Spotify APIs for:  
+- Top tracks  
+- Top artists  
+- Recommendations  
+
+**Consequences**  
+- Advantage: Enables real-time Spotify data sync on demand  
+- Advantage: Improves user trust and transparency (“instant refresh”)  
+- Advantage: Avoids the need for background jobs or a persistent DB  
+- Downside: Increases API traffic if users refresh too frequently  
+- Downside: Adds minor latency (API round-trip before page render)
+
+---
+
+# Postmortem: 
+
+## Incident 001 – Limited User Data for Inactive Spotify Accounts
+
+Date: 2025-28-10
+Status: Closed
+
+### Impact
+
+Users with low Spotify activity (e.g. few streams in the past year) saw empty or incomplete data visualizations on the Dashboard and Top Tracks/Artists pages. This led to poor user experience and confusion about whether the app was broken.
+
+### Root Cause
+
+Spotify’s “Top Items” endpoints return limited results when a user’s listening history is insufficient. Spotilytics didn’t account for this edge case in early builds.
+
+### Actions Taken
+- Added empty state UI (“Not enough data yet — start listening and come back!”).
+- Adjusted analytics logic to gracefully render placeholders when fewer than 5 tracks or artists are returned.
+
+### Follow-Up
+- Consider hybrid display using Spotify featured playlists as filler data to enhance UI.
+
+## Incident 002 – Follow/Unfollow Rate Limit Exceeded
+
+Date: 2025-02-11
+Status: Closed
+
+### Impact
+
+Frequent follow/unfollow actions in the Top Artists tab triggered Spotify API’s 429 Too Many Requests rate limit, causing temporary errors and failed interactions.
+
+### Root Cause
+
+The Spotify Web API enforces per-user and per-app rate limits. The UI allowed rapid toggling of follow state without throttling or batching requests.
+
+### Actions Taken
+- Batched multiple API calls server-side using short async queues.
+
+### Follow-Up
+- Evaluate caching artist follow state locally to reduce duplicate calls.
+- Track API usage metrics in logs to identify peak load.
+
+## Incident 003 – Restricted Access in Spotify Developer “Development Mode”
+
+Date: 2025-25-10
+Status: Ongoing (Known Limitation)
+
+### Impact
+
+New users not whitelisted in the Spotify Developer Dashboard couldn’t log in to Spotilytics, receiving “You are not registered for this app” errors.
+This limited testing to a small group of manually added accounts.
+
+### Root Cause
+
+Spotify Developer apps in Development Mode only allow 25 registered testers.
+Upgrading to “Production Mode” requires Spotify approval and organizational verification.
+
+### Actions Taken
+- Documented the testing limitation clearly in README.
+- Added instructions for adding testers via Developer Dashboard.
+
+### Follow-Up
+- Move Spotilytics app to Spotify Verified Org once org-level upgrade is requested from Spotify.
+- Add fallback “Demo Mode” (mock data) for public users to explore app features without Spotify login.
+
+## Incident 004 – Coverage Reports Not Merging in CI
+
+Date: 2025-03-11
+Status: Resolved
+
+### Impact
+
+GitHub Actions showed 0% line coverage for Cucumber tests even though all scenarios passed locally.
+This created confusion and reduced visibility into real test health.
+
+### Root Cause
+
+SimpleCov for Cucumber was writing to the default coverage/ folder, while RSpec wrote to coverage/rspec/.
+CI didn’t collate both result sets before report upload.
+
+### Actions Taken
+- Updated features/support/env.rb to set:
+```bash
+    SimpleCov.command_name 'Cucumber'
+    SimpleCov.coverage_dir 'coverage/cucumber'
+```
+
+- Updated CI workflow to run:
+```bash
+    bundle exec ruby bin/coverage_merge
+```
+
+- Verified merged report includes both RSpec and Cucumber.
+
+---
+
+# Debug Pointers
+
+This section provides **useful context for developers** trying to debug issues in the codebase — including fixes that worked, workarounds that were tested and common dead ends to avoid.
+
+| Issue / Area | Tried Solutions | Final Working Fix / Recommendation |
+|---------------|----------------|------------------------------------|
+|Spotify OAuth login failing (“invalid_client” or “redirect_uri_mismatch”)| Tried re-authenticating and restarting server — didn’t help. | Added the exact callback URLs (/auth/spotify/callback) for both localhost and Heroku to the Spotify Developer Dashboard and verified SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET were set in GitHub Actions and Heroku config vars. Also ensured that the user was whitelisted in development mode |
+| Empty dashboard for inactive Spotify users | Tried switching to long_term time range only - data still missing. | Added friendly empty-state messages when Spotify returns insufficient top tracks/artists. |
+| Playlist creation failing with “Invalid time range” | Tried re-sending POST requests from UI — no success. | Ensured time_range parameter matches one of the valid keys: short_term, medium_term, long_term. |
+| Recommendations tab returning no results | Verified API keys — still empty. | Confirmed the app had user-top-read and user-read-recently-played scopes enabled in Spotify Developer Dashboard |
+| Top Tracks limits not persisting across columns | Only the changed column updated — others reset to default. | Preserved other range limits via hidden fields (limit_short_term, limit_medium_term, limit_long_term) in the form before submission.|
+
+---
+
+# Debugging Common Issues
+
+| Problem | Likely Cause | Fix |
+|----------|---------------|-----|
+| OAuth callback fails on Heroku | Missing redirect URI or wrong environment variables | Add exact production callback to Spotify Developer Dashboard and check SPOTIFY_CLIENT_ID / SPOTIFY_CLIENT_SECRET in Heroku/ Github config|
+| “You are not registered for this app” during login / Login works locally but not in production
+ | Spotify app still in Development Mode | Add test users under User Management in Spotify Dashboard or request Production access |
+| Follow/Unfollow buttons randomly fail | Rate limit hit | Batch or throttle API requests; respect Spotify’s rate limits; avoid repeated clicks |
+
+# Summary
+
+**Spotilytics** lets Spotify users:
+- Explore personalized listening stats and Spotify Wrapped-style insights anytime
+- View top tracks, artists, and genres across different time ranges
+- Get smart recommendations based on your listening patterns
+- Create and save custom playlists directly to your Spotify account
+- Manage your profile — including following and unfollowing artists — all in one place
+
+# Developed by Team 1 - CSCE 606 (Fall 2025)
+## Team Members
+- **Aurora Jitrskul**
+- **Pablo Pineda**
+- **Aditya Vellampalli**
+- **Spoorthy Kumbashi Raghavendra**
+
+> “Discover Your Sound”
+
+
+
+
+
+
+

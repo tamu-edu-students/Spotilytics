@@ -25,6 +25,8 @@ end
 
 # Enable SImpleCov
 SimpleCov.start 'rails' do
+  command_name 'Cucumber'
+  coverage_dir 'coverage/cucumber'
   add_filter '/spec/'
   add_filter '/config/'
   add_filter '/vendor/'

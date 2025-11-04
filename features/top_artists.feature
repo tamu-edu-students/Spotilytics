@@ -19,6 +19,8 @@ Feature: Top artists
     And I click the View Top Artists button
     Then I should be on the top artists page
     And I should see top-artist columns for each time range
+    And Spotify should be asked for my top artists across all ranges
+    And I should see top-artist columns for each time range
 
   Scenario: Default shows Top 10 for each time range
     Given I am signed in with Spotify
@@ -51,7 +53,60 @@ Feature: Top artists
     And the "Past 6 Months" column should list exactly 25 artists
     And the "Past 4 Weeks" column should list exactly 10 artists
 
-  Scenario: Top artists token expired → redirected to home with alert
+  Scenario: Follow and unfollow a top artist
+    Given I am signed in with Spotify
+    When I go to the top artists page
+    Then I should see a Follow button for the first artist in the "long_term" column
+    When I follow the first artist in the "long_term" column
+    Then I should see "Artist followed."
+    Then I should see an Unfollow button for the first artist in the "long_term" column
+    When I unfollow the first artist in the "long_term" column
+    Then I should see "Artist unfollowed."
+    And I should see a Follow button for the first artist in the "long_term" column
+
+  Scenario: Visiting when an artist is already followed
+    Given I am signed in with Spotify
+    And the first artist in "long_term" column is already followed
+    When I go to the top artists page
+    Then I should see an Unfollow button for the first artist in the "long_term" column
+
+  Scenario: Follow request without session triggers login
+    Given I am signed in with Spotify
+    And Spotify returns top artists data
+    And Spotify follow API raises an unauthorized error once
+    When I submit a follow request for "long_term_artist_1"
+    Then the response should redirect to the login page
+
+  Scenario: Follow request surfaces Spotify error message
+    Given I am signed in with Spotify
+    And Spotify returns top artists data
+    And Spotify follow API raises an error "rate limited" once
+    When I submit a follow request for "long_term_artist_2"
+    Then the response should redirect to the top artists page with alert "Unable to follow artist: rate limited"
+
+  Scenario: Follow request requires new Spotify permissions
+    Given I am signed in with Spotify
+    And Spotify returns top artists data
+    And Spotify follow API raises an insufficient scope error once
+    When I submit a follow request for "long_term_artist_3"
+    Then the response should redirect to the login page with alert "Spotify now needs permission to manage your follows. Please sign in again."
+
+  Scenario: Unfollow request surfaces Spotify error message
+    Given I am signed in with Spotify
+    And the first artist in "long_term" column is already followed
+    And Spotify returns top artists data
+    And Spotify unfollow API raises an error "service unavailable" once
+    When I submit an unfollow request for "long_term_artist_1"
+    Then the response should redirect to the top artists page with alert "Unable to unfollow artist: service unavailable"
+
+  Scenario: Unfollow request without session triggers login
+    Given I am signed in with Spotify
+    And the first artist in "long_term" column is already followed
+    And Spotify returns top artists data
+    And Spotify unfollow API raises an unauthorized error once
+    When I submit an unfollow request for "long_term_artist_1"
+    Then the response should redirect to the login page with alert "Please sign in with Spotify to continue."
+  Scenario: Top artists token expired ? redirected to home with alert
     Given OmniAuth is in test mode
     And I am signed in with Spotify
     And Spotify raises Unauthorized for top artists
