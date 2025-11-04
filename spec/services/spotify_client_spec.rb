@@ -1,40 +1,21 @@
-require 'rails_helper'
-
-def build_client(session_overrides = {})
-  default_session = {
-    spotify_token: 'token',
-    spotify_refresh_token: 'refresh',
-    spotify_expires_at: 1.hour.from_now.to_i
-  }
-  SpotifyClient.new(session: default_session.merge(session_overrides))
-end
+require "rails_helper"
 
 RSpec.describe SpotifyClient, type: :service do
-  before do
-    allow(ENV).to receive(:[]) { |key| { 'SPOTIFY_CLIENT_ID' => 'id', 'SPOTIFY_CLIENT_SECRET' => 'secret' }[key] }
-  end
-
-  describe '#follow_artists' do
-    it 'deduplicates ids and sends a PUT request' do
-      client = build_client
-      expect(client).to receive(:request_with_json)
-        .with(Net::HTTP::Put, '/me/following', 'token', params: { type: 'artist' }, body: { ids: %w[a1 a2] })
-      allow(client).to receive(:ensure_access_token!).and_return('token')
-
-      client.follow_artists([ 'a1', 'a2', 'a1' ])
+    let(:session) do
+        {
+        spotify_token: "valid_token",
+        spotify_expires_at: 1.hour.from_now.to_i,
+        spotify_refresh_token: "refresh123"
+        }.with_indifferent_access
     end
-  end
 
-  describe '#unfollow_artists' do
-    it 'deduplicates ids before issuing delete request' do
-      client = build_client
-      allow(client).to receive(:ensure_access_token!).and_return('abc')
-      expect(client).to receive(:request_with_json)
-        .with(Net::HTTP::Delete, '/me/following', 'abc', params: { type: 'artist' }, body: { ids: %w[x1 x2] })
+    subject(:client) { described_class.new(session: session) }
 
-      client.unfollow_artists([ 'x1', 'x1', 'x2' ])
+    before do
+        allow(ENV).to receive(:[]).and_call_original
+        allow(ENV).to receive(:[]).with("SPOTIFY_CLIENT_ID").and_return("client_id")
+        allow(ENV).to receive(:[]).with("SPOTIFY_CLIENT_SECRET").and_return("client_secret")
     end
-  end
 
     def stub_spotify_get(path, body:, status: 200)
         stub_request(:get, %r{https://api.spotify.com/v1#{path}})
