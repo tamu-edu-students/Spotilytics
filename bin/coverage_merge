@@ -1,0 +1,30 @@
+#!/usr/bin/env ruby
+
+# Load bundler and gems
+require 'bundler/setup'
+require 'simplecov'
+
+# Merge coverage results from RSpec and Cucumber
+SimpleCov.collate Dir["coverage/.resultset.json"], 'rails' do
+  enable_coverage :branch
+  
+  add_filter '/vendor/'
+  add_filter '/spec/'
+  add_filter '/features/'
+  add_filter '/config/'
+  add_filter '/db/'
+  add_filter '/test/'
+  add_filter '/lib/tasks/'
+  add_filter '/app/channels/application_cable/'
+  add_filter '/app/jobs/application_job.rb'
+  add_filter '/app/mailers/application_mailer.rb'
+
+  # Group coverage by type
+  add_group 'Controllers', 'app/controllers'
+  add_group 'Models', 'app/models'
+  add_group 'Helpers', 'app/helpers'
+  add_group 'Mailers', 'app/mailers'
+  add_group 'Jobs', 'app/jobs'
+end
+
+puts "Coverage merged successfully!"
