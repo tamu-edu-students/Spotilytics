@@ -51,3 +51,11 @@ Feature: Top artists
     And the "Past 6 Months" column should list exactly 25 artists
     And the "Past 4 Weeks" column should list exactly 10 artists
 
+  Scenario: Top artists token expired → redirected to home with alert
+    Given OmniAuth is in test mode
+    And I am signed in with Spotify
+    And Spotify raises Unauthorized for top artists
+    When I go to the top artists page
+    Then I should be on the home page
+    And I should see "You must log in with spotify to view your top artists."
+

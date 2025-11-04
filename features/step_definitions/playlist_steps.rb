@@ -35,12 +35,32 @@ Given('I am logged in for playlists') do
 end
 
 Given("I am logged in for playlists with user id {string}") do |uid|
-  page.set_rack_session(spotify_user: { "id" => uid, "display_name" => "Test User" })
+  # Reuse the real login path so session keys exist
+  step "I am logged in for playlists"
+
+  # Safely mutate the Rack session through rack-test
+  if page.driver.respond_to?(:request) && page.driver.request&.respond_to?(:session)
+    page.driver.request.session[:spotify_user] ||= {}
+    page.driver.request.session[:spotify_user]["id"] = uid
+    page.driver.request.session[:spotify_user]["display_name"] ||= "Test User"
+  else
+    raise "Rack session is not available via page.driver.request.session"
+  end
 end
 
 Given("I am logged in for playlists without user id") do
-  page.set_rack_session(spotify_user: { "display_name" => "Test User" })
+  step "I am logged in for playlists"
+
+  if page.driver.respond_to?(:request) && page.driver.request&.respond_to?(:session)
+    # Ensure there's no id in the session (forces PlaylistsController to call current_user_id)
+    page.driver.request.session[:spotify_user] ||= {}
+    page.driver.request.session[:spotify_user].delete("id")
+    page.driver.request.session[:spotify_user]["display_name"] ||= "Test User"
+  else
+    raise "Rack session is not available via page.driver.request.session"
+  end
 end
+
 
 # ---------- Spotify stubs ----------
 Given('Spotify returns {int} top tracks for {string}') do |n, range|
@@ -102,4 +122,25 @@ Then("I should be on the Top Tracks page") do
     Rails.application.routes.url_helpers.top_tracks_path,
     ignore_query: true
   )
+end
+
+Given("I am logged in for playlists with non-mergeable session") do
+  # First establish a normal logged-in session so other keys exist
+  step "I am logged in for playlists"
+
+  # Replace session[:spotify_user] with an object that:
+  # - DOES NOT respond to :merge!   (forces the else branch)
+  # - DOES respond to :[]= and :[]  (so controller can write/read "id")
+  # - Supports :dup (controller calls .dup)
+  klass = Class.new do
+    def initialize; @h = {}; end
+    def []=(k, v);  @h[k] = v; end
+    def [](k);      @h[k]; end
+    def dup;        self; end
+    # No :merge! method on purpose
+  end
+
+  raise "Rack session unavailable" unless page.driver.respond_to?(:request) && page.driver.request&.respond_to?(:session)
+
+  page.driver.request.session[:spotify_user] = klass.new
 end

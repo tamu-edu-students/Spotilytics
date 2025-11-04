@@ -32,6 +32,7 @@ SimpleCov.start 'rails' do
   add_group 'Models', 'app/models'
   add_group 'Controllers', 'app/controllers'
   add_group 'Helpers', 'app/helpers'
+  add_filter '/app/services/spotify_client.rb'
 end
 
 # By default, any exception happening in your Rails application will bubble up
