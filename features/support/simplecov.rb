@@ -1,8 +1,8 @@
 # Start SimpleCov before anything else is loaded
 require 'simplecov'
 
-SimpleCov.command_name 'Cucumber'      
-SimpleCov.coverage_dir 'coverage/cucumber'       
+SimpleCov.command_name 'Cucumber'
+SimpleCov.coverage_dir 'coverage/cucumber'
 
 SimpleCov.start 'rails' do
   enable_coverage :branch
