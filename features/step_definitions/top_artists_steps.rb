@@ -1,5 +1,6 @@
 require 'ostruct'
 require 'set'
+require 'uri'
 
 module TopArtistsCallStore
   class << self
@@ -22,6 +23,10 @@ def range_label_to_key(label)
   }.fetch(label)
 end
 
+def spotify_mock
+  @spotify_mock || raise('Spotify mock not initialized; ensure "Spotify returns top artists data" ran first')
+end
+
 Given("Spotify returns top artists data") do
   TopArtistsCallStore.log = []
   TopArtistsCallStore.followed_ids = Set.new
@@ -30,6 +35,7 @@ Given("Spotify returns top artists data") do
   followed_state = TopArtistsCallStore.followed_ids
 
   mock = instance_double(SpotifyClient)
+  @spotify_mock = mock
   allow(SpotifyClient).to receive(:new).and_return(mock)
   allow(mock).to receive(:followed_artists).and_return([])
   allow(mock).to receive(:new_releases).and_return([])
@@ -106,9 +112,85 @@ Given("the first artist in {string} column is already followed") do |range_key|
   mark_artist_followed!([ artist_id ]) if respond_to?(:mark_artist_followed!)
 end
 
+Given("Spotify follow API raises an unauthorized error once") do
+  call_count = 0
+  allow(spotify_mock).to receive(:follow_artists) do |ids|
+    if call_count.zero?
+      call_count += 1
+      raise SpotifyClient::UnauthorizedError.new('token expired')
+    else
+      Array(ids).map(&:to_s).each { |id| TopArtistsCallStore.followed_ids << id }
+      true
+    end
+  end
+end
+
+Given("Spotify follow API raises an insufficient scope error once") do
+  call_count = 0
+  allow(spotify_mock).to receive(:follow_artists) do |ids|
+    if call_count.zero?
+      call_count += 1
+      raise SpotifyClient::Error.new('Insufficient client scope')
+    else
+      Array(ids).map(&:to_s).each { |id| TopArtistsCallStore.followed_ids << id }
+      true
+    end
+  end
+end
+
+Given("Spotify follow API raises an error {string} once") do |message|
+  call_count = 0
+  allow(spotify_mock).to receive(:follow_artists) do |ids|
+    if call_count.zero?
+      call_count += 1
+      raise SpotifyClient::Error.new(message)
+    else
+      Array(ids).map(&:to_s).each { |id| TopArtistsCallStore.followed_ids << id }
+      true
+    end
+  end
+end
+
+Given("Spotify unfollow API raises an error {string} once") do |message|
+  call_count = 0
+  allow(spotify_mock).to receive(:unfollow_artists) do |ids|
+    if call_count.zero?
+      call_count += 1
+      raise SpotifyClient::Error.new(message)
+    else
+      Array(ids).map(&:to_s)
+      true
+    end
+  end
+end
+
+Given("Spotify unfollow API raises an unauthorized error once") do
+  call_count = 0
+  allow(spotify_mock).to receive(:unfollow_artists) do |ids|
+    if call_count.zero?
+      call_count += 1
+      raise SpotifyClient::UnauthorizedError.new('token expired')
+    else
+      Array(ids).map(&:to_s)
+      true
+    end
+  end
+end
+
 When("I go to the top artists page") do
   visit top_artists_path
 end
+
+When("I submit a follow request for {string}") do |artist_id|
+  page.driver.header 'Referer', top_artists_path
+  page.driver.post artist_follows_path, { spotify_id: artist_id }
+end
+
+When("I submit an unfollow request for {string}") do |artist_id|
+  page.driver.header 'Referer', top_artists_path
+  page.driver.delete artist_follow_path(artist_id)
+end
+
 
 When('I choose {string} for {string} and click Update') do |label, range_label|
   key = range_label_to_key(range_label)
@@ -129,6 +211,34 @@ end
 
 Then("I should be on the top artists page") do
   expect(current_path).to eql(top_artists_path)
+end
+
+Then("I should remain on the top artists page") do
+  expect(page).to have_current_path(top_artists_path, ignore_query: true)
+end
+
+Then("I should be on the login page") do
+  expected_paths = [login_path, '/auth/spotify']
+  expect(expected_paths).to include(URI.parse(current_url).path)
+end
+
+Then("the response should redirect to the login page") do
+  location = page.driver.response.headers['Location']
+  uri = URI.parse(location)
+  acceptable = [login_path, '/auth/spotify']
+  expect(acceptable).to include(uri.path)
+end
+
+Then("the response should redirect to the top artists page with alert {string}") do |message|
+  location = page.driver.response.headers['Location']
+  expect(location).to include(top_artists_path)
+  visit location
+  expect(page).to have_content(message)
+end
+
+Then("the response should redirect to the login page with alert {string}") do |_message|
+  location = page.driver.response.headers['Location']
+  expect(location).to include(login_path)
 end
 
 Then("I should see either a top-artist list or a top-artist placeholder") do
@@ -222,6 +332,7 @@ When("I unfollow the first artist in the {string} column") do |range_key|
     click_button 'Unfollow'
   end
 end
+
 
 Given("I am not authenticated") do
   if respond_to?(:sign_out)

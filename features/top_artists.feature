@@ -69,3 +69,40 @@ Feature: Top artists
     And the first artist in "long_term" column is already followed
     When I go to the top artists page
     Then I should see an Unfollow button for the first artist in the "long_term" column
+
+  Scenario: Follow request without session triggers login
+    Given I am signed in with Spotify
+    And Spotify returns top artists data
+    And Spotify follow API raises an unauthorized error once
+    When I submit a follow request for "long_term_artist_1"
+    Then the response should redirect to the login page
+
+  Scenario: Follow request surfaces Spotify error message
+    Given I am signed in with Spotify
+    And Spotify returns top artists data
+    And Spotify follow API raises an error "rate limited" once
+    When I submit a follow request for "long_term_artist_2"
+    Then the response should redirect to the top artists page with alert "Unable to follow artist: rate limited"
+
+  Scenario: Follow request requires new Spotify permissions
+    Given I am signed in with Spotify
+    And Spotify returns top artists data
+    And Spotify follow API raises an insufficient scope error once
+    When I submit a follow request for "long_term_artist_3"
+    Then the response should redirect to the login page with alert "Spotify now needs permission to manage your follows. Please sign in again."
+
+  Scenario: Unfollow request surfaces Spotify error message
+    Given I am signed in with Spotify
+    And the first artist in "long_term" column is already followed
+    And Spotify returns top artists data
+    And Spotify unfollow API raises an error "service unavailable" once
+    When I submit an unfollow request for "long_term_artist_1"
+    Then the response should redirect to the top artists page with alert "Unable to unfollow artist: service unavailable"
+
+  Scenario: Unfollow request without session triggers login
+    Given I am signed in with Spotify
+    And the first artist in "long_term" column is already followed
+    And Spotify returns top artists data
+    And Spotify unfollow API raises an unauthorized error once
+    When I submit an unfollow request for "long_term_artist_1"
+    Then the response should redirect to the login page with alert "Please sign in with Spotify to continue."
