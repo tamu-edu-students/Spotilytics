@@ -52,14 +52,14 @@ RSpec.describe RecommendationsController, type: :controller do
                 allow(SpotifyClient).to receive(:new)
                     .with(session: anything)
                     .and_return(mock_client)
-                
+
                 # Recommendations built using top tracks
                 allow(mock_client).to receive(:top_tracks)
                 .with(limit: 20, time_range: "medium_term")
                 .and_return([])
 
                 # Recommendations also fetches top artists
-                allow(mock_client).to receive(:top_artists).with(limit:20, time_range: "medium_term").and_return([])
+                allow(mock_client).to receive(:top_artists).with(limit: 20, time_range: "medium_term").and_return([])
 
                 allow(mock_client).to receive(:search_tracks)
                     .with("", limit: 15)
@@ -68,7 +68,7 @@ RSpec.describe RecommendationsController, type: :controller do
 
             it "correctly assigns tracks to @recommendations" do
                 get :recommendations
-                
+
                 expect(assigns(:recommendations)).to eq(mock_tracks)
                 expect(response).to have_http_status(:ok)
             end
@@ -81,18 +81,18 @@ RSpec.describe RecommendationsController, type: :controller do
                 allow(SpotifyClient).to receive(:new)
                     .with(session: anything)
                     .and_return(mock_client)
-                
+
                 allow(SpotifyClient).to receive(:new)
                 .with(session: anything)
                 .and_return(mock_client)
-                
+
                 # Recommendations built using top tracks
                 allow(mock_client).to receive(:top_tracks)
                 .with(limit: 20, time_range: "medium_term")
                 .and_return([])
 
                 # Recommendations also fetches top artists
-                allow(mock_client).to receive(:top_artists).with(limit:20, time_range: "medium_term").and_return([])
+                allow(mock_client).to receive(:top_artists).with(limit: 20, time_range: "medium_term").and_return([])
 
                 allow(mock_client).to receive(:search_tracks)
                     .with("", limit: 15)
@@ -116,18 +116,18 @@ RSpec.describe RecommendationsController, type: :controller do
                 allow(SpotifyClient).to receive(:new)
                     .with(session: anything)
                     .and_return(mock_client)
-                
+
                 allow(SpotifyClient).to receive(:new)
                 .with(session: anything)
                 .and_return(mock_client)
-                
+
                 # Recommendations built using top tracks
                 allow(mock_client).to receive(:top_tracks)
                 .with(limit: 20, time_range: "medium_term")
                 .and_return([])
 
                 # Recommendations also fetches top artists
-                allow(mock_client).to receive(:top_artists).with(limit:20, time_range: "medium_term").and_return([])
+                allow(mock_client).to receive(:top_artists).with(limit: 20, time_range: "medium_term").and_return([])
 
                 allow(mock_client).to receive(:search_tracks)
                     .with("", limit: 15)

@@ -17,8 +17,8 @@ Given("OmniAuth is in test mode") do
 end
 
 Given("I am signed in with Spotify") do
-  step %{OmniAuth is in test mode}
-  visit "/auth/spotify" 
+  step %(OmniAuth is in test mode)
+  visit "/auth/spotify"
   visit "/auth/spotify/callback"
 end
 
@@ -44,7 +44,11 @@ When('I visit {string}') do |path|
 end
 
 Then("I should be on the home page") do
-  expect(page).to have_current_path(root_path, ignore_query: true)
+  uri  = Addressable::URI.parse(page.current_url)
+  path = uri.path
+  home = Rails.application.routes.url_helpers.home_path
+  root = Rails.application.routes.url_helpers.root_path
+  expect([ home, root ]).to include(path)
 end
 
 Then("I should see {string}") do |text|

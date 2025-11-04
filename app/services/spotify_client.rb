@@ -1,83 +1,84 @@
 # frozen_string_literal: true
-require 'net/http'
-require 'uri'
-require 'json'
-require 'base64'
-require 'ostruct'
-require 'set'
+
+require "net/http"
+require "uri"
+require "json"
+require "base64"
+require "ostruct"
+require "set"
 
 class SpotifyClient
-  API_ROOT = 'https://api.spotify.com/v1'
-  TOKEN_URI = URI('https://accounts.spotify.com/api/token').freeze
+  API_ROOT = "https://api.spotify.com/v1"
+  TOKEN_URI = URI("https://accounts.spotify.com/api/token").freeze
 
   class Error < StandardError; end
   class UnauthorizedError < Error; end
 
   def initialize(session:)
     @session = session
-    @client_id = ENV['SPOTIFY_CLIENT_ID']
-    @client_secret = ENV['SPOTIFY_CLIENT_SECRET']
+    @client_id = ENV["SPOTIFY_CLIENT_ID"]
+    @client_secret = ENV["SPOTIFY_CLIENT_SECRET"]
   end
 
   def search_tracks(query, limit: 10)
-    cache_for(["search_tracks", limit]) do
+    cache_for([ "search_tracks", limit ]) do
       access_token = ensure_access_token!
       params = {
         q: query,
-        type: 'track',
+        type: "track",
         limit: limit
       }
 
-      response = get('/search', access_token, params)
-      items = response.dig('tracks', 'items') || []
+      response = get("/search", access_token, params)
+      items = response.dig("tracks", "items") || []
 
       items.map do |item|
         OpenStruct.new(
-          id: item['id'],
-          name: item['name'],
-          artists: (item['artists'] || []).map { |a| a['name'] }.join(', '),
-          album_name: item.dig('album', 'name'),
-          album_image_url: item.dig('album', 'images', 0, 'url'),
-          popularity: item['popularity'],
-          preview_url: item['preview_url'],
-          spotify_url: item.dig('external_urls', 'spotify'),
-          duration_ms: item['duration_ms']
+          id: item["id"],
+          name: item["name"],
+          artists: (item["artists"] || []).map { |a| a["name"] }.join(", "),
+          album_name: item.dig("album", "name"),
+          album_image_url: item.dig("album", "images", 0, "url"),
+          popularity: item["popularity"],
+          preview_url: item["preview_url"],
+          spotify_url: item.dig("external_urls", "spotify"),
+          duration_ms: item["duration_ms"]
         )
       end
     end
   end
 
-  def profile()
-    cache_for(["profile"]) do
+  def profile
+    cache_for([ "profile" ]) do
       access_token = ensure_access_token!
       response = get("/users/#{current_user_id}", access_token)
 
       items = OpenStruct.new(
-        id: response['id'],
-        display_name: response['display_name'],
-        image_url: response.dig('images', 0, 'url'), 
-        followers: response.dig('followers', 'total') || 0,
-        spotify_url: response.dig('external_urls', 'spotify')
+        id: response["id"],
+        display_name: response["display_name"],
+        image_url: response.dig("images", 0, "url"),
+        followers: response.dig("followers", "total") || 0,
+        spotify_url: response.dig("external_urls", "spotify")
       )
     end
   end
 
   def new_releases(limit:)
-    cache_for(["new_releases", limit]) do
+    cache_for([ "new_releases", limit ]) do
       access_token = ensure_access_token!
-      response = get('/browse/new-releases', access_token, limit: limit)
+      response = get("/browse/new-releases", access_token, limit: limit)
 
       # The response looks like: { "artists": { "items": [ ... ] } }
-      items = response.dig('albums', 'items') || []
+      items = response.dig("albums", "items") || []
 
       items.map.with_index(1) do |item, index|
         OpenStruct.new(
-          id: item['id'],
-          name: item['name'],
-          image_url: item.dig('images', 0, 'url'),
-          total_tracks: item['total_tracks'] || 0,
-          release_date: item['release_date'] || 0,
-          spotify_url: item.dig('external_urls', 'spotify'),
+          id: item["id"],
+          name: item["name"],
+          image_url: item.dig("images", 0, "url"),
+          total_tracks: item["total_tracks"] || 0,
+          release_date: item["release_date"] || 0,
+          spotify_url: item.dig("external_urls", "spotify"),
           artists: (item["artists"] || []).map { |artist| artist["name"] }
         )
       end
@@ -85,21 +86,21 @@ class SpotifyClient
   end
 
   def followed_artists(limit:)
-    cache_for(["followed_artists", limit]) do
+    cache_for([ "followed_artists", limit ]) do
       access_token = ensure_access_token!
-      response = get('/me/following', access_token, limit: limit, type: 'artist')
+      response = get("/me/following", access_token, limit: limit, type: "artist")
 
       # The response looks like: { "artists": { "items": [ ... ] } }
-      items = response.dig('artists', 'items') || []
+      items = response.dig("artists", "items") || []
 
       items.map.with_index(1) do |item, index|
         OpenStruct.new(
-          id: item['id'],
-          name: item['name'],
-          image_url: item.dig('images', 0, 'url'),
-          genres: item['genres'] || [],
-          popularity: item['popularity'] || 0,
-          spotify_url: item.dig('external_urls', 'spotify')
+          id: item["id"],
+          name: item["name"],
+          image_url: item.dig("images", 0, "url"),
+          genres: item["genres"] || [],
+          popularity: item["popularity"] || 0,
+          spotify_url: item.dig("external_urls", "spotify")
         )
       end
     end
@@ -107,42 +108,42 @@ class SpotifyClient
 
 
   def top_artists(limit:, time_range:)
-    cache_for(["top_artists", time_range, limit]) do
+    cache_for([ "top_artists", time_range, limit ]) do
       access_token = ensure_access_token!
-      response = get('/me/top/artists', access_token, limit: limit, time_range: time_range)
-      items = response.fetch('items', [])
+      response = get("/me/top/artists", access_token, limit: limit, time_range: time_range)
+      items = response.fetch("items", [])
       items.map.with_index(1) do |item, index|
         OpenStruct.new(
-          id: item['id'],
-          name: item['name'],
+          id: item["id"],
+          name: item["name"],
           rank: index,
-          image_url: item.dig('images', 0, 'url'),
-          genres: item['genres'] || [],
-          popularity: item['popularity'] || 0,
-          playcount: item['popularity'] || 0
+          image_url: item.dig("images", 0, "url"),
+          genres: item["genres"] || [],
+          popularity: item["popularity"] || 0,
+          playcount: item["popularity"] || 0
         )
       end
     end
   end
 
   def top_tracks(limit:, time_range:)
-    cache_for(["top_tracks", time_range, limit]) do
+    cache_for([ "top_tracks", time_range, limit ]) do
       access_token = ensure_access_token!
-      response = get('/me/top/tracks', access_token, limit: limit, time_range: time_range)
-      items = response.fetch('items', [])
+      response = get("/me/top/tracks", access_token, limit: limit, time_range: time_range)
+      items = response.fetch("items", [])
 
       items.map.with_index(1) do |item, index|
         OpenStruct.new(
-          id: item['id'],
-          name: item['name'],
+          id: item["id"],
+          name: item["name"],
           rank: index,
-          artists: (item['artists'] || []).map { |a| a['name'] }.join(', '),
-          album_name: item.dig('album', 'name'),
-          album_image_url: item.dig('album', 'images', 0, 'url'),
-          popularity: item['popularity'],
-          preview_url: item['preview_url'],
-          spotify_url: item.dig('external_urls', 'spotify'),
-          duration_ms: item['duration_ms']
+          artists: (item["artists"] || []).map { |a| a["name"] }.join(", "),
+          album_name: item.dig("album", "name"),
+          album_image_url: item.dig("album", "images", 0, "url"),
+          popularity: item["popularity"],
+          preview_url: item["preview_url"],
+          spotify_url: item.dig("external_urls", "spotify"),
+          duration_ms: item["duration_ms"]
         )
       end
     end
@@ -154,7 +155,7 @@ class SpotifyClient
 
     access_token = ensure_access_token!
     body = { ids: ids }
-    request_with_json(Net::HTTP::Put, '/me/following', access_token, params: { type: 'artist' }, body: body)
+    request_with_json(Net::HTTP::Put, "/me/following", access_token, params: { type: "artist" }, body: body)
     true
   end
 
@@ -164,7 +165,7 @@ class SpotifyClient
 
     access_token = ensure_access_token!
     body = { ids: ids }
-    request_with_json(Net::HTTP::Delete, '/me/following', access_token, params: { type: 'artist' }, body: body)
+    request_with_json(Net::HTTP::Delete, "/me/following", access_token, params: { type: "artist" }, body: body)
     true
   end
 
@@ -176,7 +177,7 @@ class SpotifyClient
     result = Set.new
 
     ids.each_slice(50) do |chunk|
-      response = get('/me/following/contains', access_token, type: 'artist', ids: chunk.join(','))
+      response = get("/me/following/contains", access_token, type: "artist", ids: chunk.join(","))
       statuses = Array(response)
       chunk.each_with_index do |id, index|
         result << id if statuses[index]
@@ -189,17 +190,17 @@ class SpotifyClient
   # Returns the Spotify account id of the current user (string).
   def current_user_id
     access_token = ensure_access_token!
-    me = get('/me', access_token)
-    uid = me['id']
-    uid = session.dig('spotify_user', 'id')
+    me = get("/me", access_token)
+    uid = me["id"]
+    uid = session.dig("spotify_user", "id")
 
     if uid.blank?
       access_token = ensure_access_token!
-      me = get('/me', access_token)
-      uid = me['id']
+      me = get("/me", access_token)
+      uid = me["id"]
     end
 
-    raise Error, 'Could not determine Spotify user id' if uid.blank?
+    raise Error, "Could not determine Spotify user id" if uid.blank?
     uid
   end
 
@@ -255,7 +256,7 @@ class SpotifyClient
     return yield unless user_id # fallback if no user logged in
 
     # Build a stable cache key like "spotify_12345_top_tracks_medium_term_20"
-    key = ['spotify', user_id, *Array(key_parts)].join('_')
+    key = [ "spotify", user_id, *Array(key_parts) ].join("_")
 
     Rails.logger.info "[SpotifyCache] Looking for key: #{key}"   # Always prints
     result = Rails.cache.fetch(key, expires_in: expires_in) do
@@ -283,26 +284,26 @@ class SpotifyClient
 
   def refresh_access_token!
     refresh_token = session[:spotify_refresh_token]
-    raise UnauthorizedError, 'Missing Spotify refresh token' if refresh_token.blank?
-    raise UnauthorizedError, 'Missing Spotify client credentials' if client_id.blank? || client_secret.blank?
+    raise UnauthorizedError, "Missing Spotify refresh token" if refresh_token.blank?
+    raise UnauthorizedError, "Missing Spotify client credentials" if client_id.blank? || client_secret.blank?
 
     response = post_form(
       TOKEN_URI,
       {
-        grant_type: 'refresh_token',
+        grant_type: "refresh_token",
         refresh_token: refresh_token
       },
       token_headers
     )
 
-    unless response['access_token']
-      message = response['error_description'] || response.dig('error', 'message') || 'Unknown error refreshing token'
+    unless response["access_token"]
+      message = response["error_description"] || response.dig("error", "message") || "Unknown error refreshing token"
       raise UnauthorizedError, message
     end
 
-    session[:spotify_token] = response['access_token']
-    session[:spotify_expires_at] = Time.current.to_i + response.fetch('expires_in', 3600).to_i
-    session[:spotify_refresh_token] = response['refresh_token'] if response['refresh_token'].present?
+    session[:spotify_token] = response["access_token"]
+    session[:spotify_expires_at] = Time.current.to_i + response.fetch("expires_in", 3600).to_i
+    session[:spotify_refresh_token] = response["refresh_token"] if response["refresh_token"].present?
 
     session[:spotify_token]
   end
@@ -312,8 +313,8 @@ class SpotifyClient
     uri.query = URI.encode_www_form(params)
 
     request = Net::HTTP::Get.new(uri)
-    request['Authorization'] = "Bearer #{access_token}"
-    request['Content-Type'] = 'application/json'
+    request["Authorization"] = "Bearer #{access_token}"
+    request["Content-Type"] = "application/json"
 
     perform_request(uri, request)
   end
@@ -323,8 +324,8 @@ class SpotifyClient
     uri.query = URI.encode_www_form(params) if params.any?
 
     request = http_method_class.new(uri)
-    request['Authorization'] = "Bearer #{access_token}"
-    request['Content-Type'] = 'application/json'
+    request["Authorization"] = "Bearer #{access_token}"
+    request["Content-Type"] = "application/json"
     request.body = body.nil? ? nil : JSON.dump(body)
 
     perform_request(uri, request)
@@ -339,7 +340,7 @@ class SpotifyClient
   end
 
   def perform_request(uri, request)
-    response = Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == 'https') do |http|
+    response = Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == "https") do |http|
       http.open_timeout = 5
       http.read_timeout = 5
       http.request(request)
@@ -348,7 +349,7 @@ class SpotifyClient
     body = parse_json(response.body)
 
     if response.code.to_i >= 400
-      message = body['error_description'] || body.dig('error', 'message') || response.message
+      message = body["error_description"] || body.dig("error", "message") || response.message
       raise Error, message
     end
 
@@ -368,12 +369,12 @@ class SpotifyClient
   def token_headers
     encoded = Base64.strict_encode64("#{client_id}:#{client_secret}")
     {
-      'Authorization' => "Basic #{encoded}",
-      'Content-Type' => 'application/x-www-form-urlencoded'
+      "Authorization" => "Basic #{encoded}",
+      "Content-Type" => "application/x-www-form-urlencoded"
     }
   end
 
-    # Build full Spotify track URIs that the playlist API expects
+  # Build full Spotify track URIs that the playlist API expects
   def track_uris_from_tracks(tracks)
     tracks.map { |t| "spotify:track:#{t.id}" }
   end
@@ -382,8 +383,8 @@ class SpotifyClient
     uri = URI.parse("#{API_ROOT}#{path}")
 
     request = Net::HTTP::Post.new(uri)
-    request['Authorization'] = "Bearer #{access_token}"
-    request['Content-Type']  = 'application/json'
+    request["Authorization"] = "Bearer #{access_token}"
+    request["Content-Type"]  = "application/json"
     request.body = JSON.dump(body_hash)
 
     perform_request(uri, request)

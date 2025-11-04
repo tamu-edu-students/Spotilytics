@@ -16,6 +16,8 @@
 
 require 'simplecov'
 SimpleCov.start 'rails' do
+  command_name 'Rspec'
+  coverage_dir 'coverage/rspec'
   add_filter '/spec/'
   add_filter '/config/'
   add_filter '/vendor/'
@@ -24,6 +26,7 @@ SimpleCov.start 'rails' do
   add_group 'Controllers', 'app/controllers'
   add_group 'Helpers', 'app/helpers'
 end
+
 
 RSpec.configure do |config|
   # rspec-expectations config goes here. You can use an alternate

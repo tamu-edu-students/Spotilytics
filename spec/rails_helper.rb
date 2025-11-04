@@ -71,13 +71,13 @@ RSpec.configure do |config|
   #
 
   require 'capybara/rspec'
-  
+
   # To enable this behaviour uncomment the line below.
   config.infer_spec_type_from_file_location!
 
   # Include URL/path helpers
   config.include Rails.application.routes.url_helpers
- 
+
   # Make OmniAuth test mode helpers available
   OmniAuth.config.test_mode = true
 

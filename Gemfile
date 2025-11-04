@@ -43,17 +43,17 @@ gem "kamal", require: false
 gem "thruster", require: false
 
 # Omniauth for Spotify authentication
-gem 'omniauth', '~> 2.1'
-gem 'omniauth-rails_csrf_protection', '~> 1.0'
-gem 'rspotify', '~> 2.11'
+gem "omniauth", "~> 2.1"
+gem "omniauth-rails_csrf_protection", "~> 1.0"
+gem "rspotify", "~> 2.11"
 
-gem 'dotenv-rails', groups: [:development, :test]
+gem "dotenv-rails", groups: [ :development, :test ]
 
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
 # gem "image_processing", "~> 1.2"
 group :production do
-  gem 'pg'
-  gem 'redis'
+  gem "pg"
+  gem "redis"
 end
 
 group :development, :test do
@@ -72,14 +72,14 @@ group :development, :test do
   # Rspec
   gem "rspec-rails"
 
-  # Coverage 
+  # Coverage
   gem "simplecov", require: false
 
   # Database cleaner (used by cucumber for test isolation)
-  gem 'database_cleaner-active_record'
+  gem "database_cleaner-active_record"
 
   # (Optional) For writing tests in a more expressive way
-  gem 'factory_bot_rails'
+  gem "factory_bot_rails"
 
   # Use sqlite3 as the database for Active Record
   gem "sqlite3", ">= 2.1"
@@ -94,7 +94,14 @@ group :test do
   # Use system testing [https://guides.rubyonrails.org/testing.html#system-testing]
   gem "capybara"
   gem "selenium-webdriver"
-  gem 'rails-controller-testing'
-  gem 'webmock'
+  gem "rails-controller-testing"
+  gem "webmock"
 end
 
+group :test do
+  gem "simplecov", require: false
+end
+
+group :test do
+  gem "rack_session_access", "~> 0.2"
+end

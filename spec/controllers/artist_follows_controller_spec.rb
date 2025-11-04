@@ -38,6 +38,16 @@ RSpec.describe ArtistFollowsController, type: :controller do
       expect(session[:spotify_refresh_token]).to be_nil
       expect(session[:spotify_expires_at]).to be_nil
     end
+
+    it 'redirects back with the original error message for other errors' do
+      allow(spotify_client).to receive(:follow_artists)
+        .and_raise(SpotifyClient::Error.new('rate limited'))
+
+      post :create, params: { spotify_id: spotify_id }
+
+      expect(response).to redirect_to(top_artists_path)
+      expect(flash[:alert]).to eq('Unable to follow artist: rate limited')
+    end
   end
 
   describe '#destroy' do
@@ -68,6 +78,16 @@ RSpec.describe ArtistFollowsController, type: :controller do
       expect(session[:spotify_token]).to be_nil
       expect(session[:spotify_refresh_token]).to be_nil
       expect(session[:spotify_expires_at]).to be_nil
+    end
+
+    it 'redirects back with message when unfollow fails for other reasons' do
+      allow(spotify_client).to receive(:unfollow_artists)
+        .and_raise(SpotifyClient::Error.new('service unavailable'))
+
+      delete :destroy, params: { spotify_id: spotify_id }
+
+      expect(response).to redirect_to(top_artists_path)
+      expect(flash[:alert]).to eq('Unable to unfollow artist: service unavailable')
     end
   end
 end

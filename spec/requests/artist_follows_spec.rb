@@ -33,7 +33,7 @@ RSpec.describe "ArtistFollows", type: :request do
 
   describe "DELETE /artist_follows/:spotify_id" do
     it "unfollows the artist and redirects back to top artists" do
-      set_stub_followed_artists([artist_id])
+      set_stub_followed_artists([ artist_id ])
 
       delete artist_follow_path(artist_id)
 
