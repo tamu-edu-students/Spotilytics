@@ -314,6 +314,40 @@ RSpec.describe PagesController, type: :controller do
         expect(assigns(:time_ranges)).to eq(PagesController::TOP_ARTIST_TIME_RANGES)
       end
     end
+
+    context "when SpotifyClient::Error with insufficient scope occurs" do
+      let(:artists_stub) do
+        [
+          OpenStruct.new(
+            id: "a1", name: "Artist 1", rank: 1,
+            image_url: "http://img/a1.jpg",
+            genres: [ "pop" ], popularity: 65, playcount: 42
+          )
+        ]
+      end
+
+      before do
+        # Force the controller to think this is an insufficient scope error
+        allow(controller).to receive(:insufficient_scope?).and_return(true)
+        allow(mock_client).to receive(:followed_artist_ids).and_raise(SpotifyClient::Error.new("insufficient client scope"))
+        allow(mock_client).to receive(:top_artists).with(limit: 10, time_range: "long_term").and_return(artists_stub)
+        allow(mock_client).to receive(:top_artists).with(limit: 10, time_range: "medium_term").and_return(artists_stub)
+        allow(mock_client).to receive(:top_artists).with(limit: 10, time_range: "short_term").and_return(artists_stub)
+      end
+
+      it "resets the Spotify session and redirects to login with an alert" do
+        get :top_artists
+
+        # Expect redirect
+        expect(response).to redirect_to(login_path)
+        expect(flash[:alert]).to match(/Spotify now needs permission/)
+
+        # Expect tokens cleared
+        expect(session[:spotify_token]).to be_nil
+        expect(session[:spotify_refresh_token]).to be_nil
+        expect(session[:spotify_expires_at]).to be_nil
+      end
+    end
   end
 
   describe "GET #top_tracks (PagesController)" do
@@ -484,4 +518,5 @@ RSpec.describe PagesController, type: :controller do
       end
     end
   end
+
 end
