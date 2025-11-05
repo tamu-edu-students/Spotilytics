@@ -30,7 +30,7 @@ RSpec.describe ArtistFollowsController, type: :controller do
     describe "#create" do
         context "when follow succeeds" do
             before do
-                allow(spotify_client).to receive(:follow_artists).with([spotify_id]).and_return(true)
+                allow(spotify_client).to receive(:follow_artists).with([ spotify_id ]).and_return(true)
             end
 
             it "follows the artist and redirects back with notice" do
@@ -92,11 +92,11 @@ RSpec.describe ArtistFollowsController, type: :controller do
         end
     end
 
-  # ---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
     describe "#destroy" do
         context "when unfollow succeeds" do
             before do
-                allow(spotify_client).to receive(:unfollow_artists).with([spotify_id]).and_return(true)
+                allow(spotify_client).to receive(:unfollow_artists).with([ spotify_id ]).and_return(true)
             end
 
             it "unfollows the artist and redirects back with notice" do

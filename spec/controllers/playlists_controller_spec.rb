@@ -71,7 +71,7 @@ RSpec.describe PlaylistsController, type: :controller do
 
                 expect(spotify_client).to have_received(:add_tracks_to_playlist).with(
                 playlist_id: "playlist_123",
-                uris: ["spotify:track:track1", "spotify:track:track2"]
+                uris: [ "spotify:track:track1", "spotify:track:track2" ]
                 )
 
                 expect(response).to redirect_to(top_tracks_path)

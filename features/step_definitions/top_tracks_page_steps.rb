@@ -296,4 +296,3 @@ Then("I should see exactly {int} legacy tracks") do |n|
   # fall back to a generic count on rows/links if specific classes differ locally.
   expect(page.all(".top-track, li, .list-group-item, .track").size).to be >= n
 end
-
