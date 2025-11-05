@@ -55,7 +55,8 @@ Rails.application.configure do
   config.cache_store = :redis_cache_store, {
     url: ENV.fetch("REDIS_URL"),
     namespace: "spotilytics-cache",
-    expires_in: 24.hours
+    expires_in: 24.hours,
+    ssl_params: { verify_mode: OpenSSL::SSL::VERIFY_NONE }
   }
 
   # Replace the default in-process and non-durable queuing backend for Active Job.
