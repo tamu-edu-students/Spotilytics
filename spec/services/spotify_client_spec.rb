@@ -376,7 +376,7 @@ RSpec.describe SpotifyClient, type: :service do
             stub_request(:put, "https://api.spotify.com/v1/me/following")
                 .with(
                 query: { type: "artist" },
-                body: { ids: ["abc123"] }.to_json,
+                body: { ids: [ "abc123" ] }.to_json,
                 headers: { "Authorization" => "Bearer #{access_token}" }
                 )
                 .to_return(status: 204, body: "", headers: {})
@@ -391,12 +391,12 @@ RSpec.describe SpotifyClient, type: :service do
             stub_request(:put, "https://api.spotify.com/v1/me/following")
                 .with(
                 query: { type: "artist" },
-                body: { ids: ["123", "456"] }.to_json,
+                body: { ids: [ "123", "456" ] }.to_json,
                 headers: { "Authorization" => "Bearer #{access_token}" }
                 )
                 .to_return(status: 204, body: "", headers: {})
 
-            result = client.follow_artists([123, "456", 123])
+            result = client.follow_artists([ 123, "456", 123 ])
             expect(result).to eq(true)
             end
         end
@@ -436,7 +436,7 @@ RSpec.describe SpotifyClient, type: :service do
             stub_request(:delete, "https://api.spotify.com/v1/me/following")
                 .with(
                 query: { type: "artist" },
-                body: { ids: ["abc123"] }.to_json,
+                body: { ids: [ "abc123" ] }.to_json,
                 headers: { "Authorization" => "Bearer #{access_token}" }
                 )
                 .to_return(status: 204, body: "", headers: {})
@@ -451,12 +451,12 @@ RSpec.describe SpotifyClient, type: :service do
             stub_request(:delete, "https://api.spotify.com/v1/me/following")
                 .with(
                 query: { type: "artist" },
-                body: { ids: ["123", "456"] }.to_json,
+                body: { ids: [ "123", "456" ] }.to_json,
                 headers: { "Authorization" => "Bearer #{access_token}" }
                 )
                 .to_return(status: 204, body: "", headers: {})
 
-            result = client.unfollow_artists([123, "456", 123])
+            result = client.unfollow_artists([ 123, "456", 123 ])
             expect(result).to eq(true)
             end
         end
@@ -487,7 +487,7 @@ RSpec.describe SpotifyClient, type: :service do
         before do
             allow(client).to receive(:ensure_access_token!).and_return(access_token)
             allow(client).to receive(:cache_for).and_wrap_original { |_m, *_args, &block| block.call }
-            stub_spotify_get("/me", body: { id: "user123" }) 
+            stub_spotify_get("/me", body: { id: "user123" })
         end
 
         context "when given an empty array" do
@@ -505,7 +505,7 @@ RSpec.describe SpotifyClient, type: :service do
                 .to_return(status: 200, body: "[true]", headers: { "Content-Type" => "application/json" })
 
             result = client.followed_artist_ids("abc123")
-            expect(result).to eq(Set.new(["abc123"]))
+            expect(result).to eq(Set.new([ "abc123" ]))
             end
         end
 
@@ -526,8 +526,8 @@ RSpec.describe SpotifyClient, type: :service do
                 .with(query: { type: "artist", ids: "1,2,3" })
                 .to_return(status: 200, body: "[true,false,true]", headers: { "Content-Type" => "application/json" })
 
-            result = client.followed_artist_ids(["1", "2", "3", "1"])
-            expect(result).to eq(Set.new(["1", "3"]))
+            result = client.followed_artist_ids([ "1", "2", "3", "1" ])
+            expect(result).to eq(Set.new([ "1", "3" ]))
             end
         end
 
@@ -539,7 +539,7 @@ RSpec.describe SpotifyClient, type: :service do
 
             stub_request(:get, "https://api.spotify.com/v1/me/following/contains")
                 .with(query: { type: "artist", ids: first_batch.join(",") })
-                .to_return(status: 200, body: "[#{(['true'] * 50).join(',')}]", headers: { "Content-Type" => "application/json" })
+                .to_return(status: 200, body: "[#{([ 'true' ] * 50).join(',')}]", headers: { "Content-Type" => "application/json" })
 
             stub_request(:get, "https://api.spotify.com/v1/me/following/contains")
                 .with(query: { type: "artist", ids: second_batch.join(",") })
@@ -551,5 +551,4 @@ RSpec.describe SpotifyClient, type: :service do
             end
         end
     end
-
 end
