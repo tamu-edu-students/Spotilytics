@@ -48,8 +48,74 @@ RSpec.describe SpotifyClient, type: :service do
             session[:spotify_expires_at] = 1.minute.ago.to_i
             allow(client).to receive(:refresh_access_token!).and_return("new_token")
             expect(client.send(:ensure_access_token!)).to eq("new_token")
-        end
     end
+  end
+
+  describe "#recently_played" do
+    let(:now) { Time.utc(2025, 1, 1, 12, 0, 0) }
+
+    before do
+      allow(Time).to receive(:iso8601).and_call_original
+      stub_spotify_get("/me", body: { id: "user123" })
+
+      allow(client).to receive(:cache_for).and_wrap_original { |_m, *_args, &block| block.call }
+      allow(client).to receive(:ensure_access_token!).and_return("valid_token")
+      allow(client).to receive(:current_user_id).and_return("user123")
+    end
+
+    it "paginates until the requested limit is reached" do
+      first_batch_time = now
+      second_batch_time = now - 1.hour
+
+      first_items = Array.new(50) do |i|
+        {
+          "played_at" => (first_batch_time - i.minutes).iso8601,
+          "track" => { "id" => "t#{i}", "name" => "Track #{i}" }
+        }
+      end
+
+      second_items = Array.new(50) do |i|
+        {
+          "played_at" => (second_batch_time - i.minutes).iso8601,
+          "track" => { "id" => "t#{50 + i}", "name" => "Track #{50 + i}" }
+        }
+      end
+
+      before_cursor = ((first_items.last["played_at"].to_time.to_f * 1000).to_i) - 1
+
+      expect(client).to receive(:get)
+        .with("/me/player/recently-played", "valid_token", hash_including(limit: 50))
+        .and_return({ "items" => first_items, "next" => "next-page" })
+
+      expect(client).to receive(:get)
+        .with("/me/player/recently-played", "valid_token", hash_including(limit: 50, before: before_cursor))
+        .and_return({ "items" => second_items, "next" => nil })
+
+      results = client.recently_played(limit: 100)
+      expect(results.size).to eq(100)
+      expect(results.first.id).to eq("t0")
+      expect(results.last.id).to eq("t99")
+    end
+
+    it "deduplicates repeated plays and stops when a short page is returned" do
+      timestamp = now.iso8601
+      dup_item = { "played_at" => timestamp, "track" => { "id" => "dup", "name" => "Dup" } }
+      final_item = { "played_at" => (now - 2.minutes).iso8601, "track" => { "id" => "keep", "name" => "Keep" } }
+
+      allow(client).to receive(:get).and_return(
+        { "items" => Array.new(50, dup_item) },
+        { "items" => [ final_item ] } # short page ends pagination
+      )
+
+      results = client.recently_played(limit: 50)
+      expect(results.map(&:id)).to eq([ "dup", "keep" ])
+    end
+
+    it "returns an empty array when Spotify returns nothing" do
+      allow(client).to receive(:get).and_return({ "items" => [] })
+      expect(client.recently_played(limit: 25)).to eq([])
+    end
+  end
 
     describe "#token_expired?" do
         it "returns true if expires_at is missing" do
