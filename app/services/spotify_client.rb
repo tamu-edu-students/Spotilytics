@@ -446,7 +446,11 @@ end
   def clear_user_cache
     user_id = current_user_id
     return unless user_id
-    Rails.cache.delete_matched("spotify_#{user_id}_*")
+
+    TrackSearch.where(spotify_user_id: user_id).destroy_all
+    TopArtistBatch.where(spotify_user_id: user_id).destroy_all
+    TopTrackBatch.where(spotify_user_id: user_id).destroy_all
+    FollowedArtistBatch.where(spotify_user_id: user_id).destroy_all
   end
 
 
