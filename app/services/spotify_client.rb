@@ -22,90 +22,169 @@ class SpotifyClient
     @client_secret = ENV["SPOTIFY_CLIENT_SECRET"]
   end
 
-  def search_tracks(query, limit: 10)
-    cache_for([ "search_tracks", limit ]) do
-      access_token = ensure_access_token!
-      params = {
-        q: query,
-        type: "track",
-        limit: limit
-      }
+  def search_tracks(query, limit: 10, max_age: 4.days)
+    spotify_user_id = session.dig(:spotify_user, "id")
 
-      response = get("/search", access_token, params)
-      items = response.dig("tracks", "items") || []
+    search = TrackSearch
+        .where(spotify_user_id: spotify_user_id, query: query, limit: limit)
+        .fresh(max_age: max_age)
+        .includes(:track_search_results)
+        .first
 
-      items.map do |item|
-        OpenStruct.new(
-          id: item["id"],
-          name: item["name"],
-          artists: (item["artists"] || []).map { |a| a["name"] }.join(", "),
-          album_name: item.dig("album", "name"),
-          album_image_url: item.dig("album", "images", 0, "url"),
-          popularity: item["popularity"],
-          preview_url: item["preview_url"],
-          spotify_url: item.dig("external_urls", "spotify"),
-          duration_ms: item["duration_ms"]
+    if search.present?
+      return search.track_search_results
+                  .sort_by(&:position)
+                  .map { |r| build_track_from_row(r) }
+    end
+
+    access_token = ensure_access_token!
+    params = {
+      q: query,
+      type: "track",
+      limit: limit
+    }
+
+    response = get("/search", access_token, params)
+    items = response.dig("tracks", "items") || []
+
+    TrackSearch.transaction do
+    search = TrackSearch.create!(
+      spotify_user_id: spotify_user_id,
+      query:        query,
+      limit:        limit,
+      fetched_at:   Time.current
+    )
+
+      items.each_with_index do |item, index|
+        TrackSearchResult.create!(
+          track_search:     search,
+          position:         index + 1,
+          spotify_id:       item["id"],
+          name:             item["name"],
+          artists:          (item["artists"] || []).map { |a| a["name"] }.join(", "),
+          album_name:       item.dig("album", "name"),
+          album_image_url:  item.dig("album", "images", 0, "url"),
+          popularity:       item["popularity"],
+          preview_url:      item["preview_url"],
+          spotify_url:      item.dig("external_urls", "spotify"),
+          duration_ms:      item["duration_ms"]
         )
       end
     end
-  end
 
-  def profile
-    cache_for([ "profile" ]) do
-      access_token = ensure_access_token!
-      response = get("/users/#{current_user_id}", access_token)
-
-      items = OpenStruct.new(
-        id: response["id"],
-        display_name: response["display_name"],
-        image_url: response.dig("images", 0, "url"),
-        followers: response.dig("followers", "total") || 0,
-        spotify_url: response.dig("external_urls", "spotify")
+    items.each_with_index.map do |item, index|
+      OpenStruct.new(
+        id: item["id"],
+        name: item["name"],
+        artists: (item["artists"] || []).map { |a| a["name"] }.join(", "),
+        album_name: item.dig("album", "name"),
+        album_image_url: item.dig("album", "images", 0, "url"),
+        popularity: item["popularity"],
+        preview_url: item["preview_url"],
+        spotify_url: item.dig("external_urls", "spotify"),
+        duration_ms: item["duration_ms"]
       )
     end
   end
 
-  def new_releases(limit:)
-    cache_for([ "new_releases", limit ]) do
-      access_token = ensure_access_token!
-      response = get("/browse/new-releases", access_token, limit: limit)
+  def profile
+    access_token = ensure_access_token!
+    response = get("/users/#{current_user_id}", access_token)
 
-      # The response looks like: { "artists": { "items": [ ... ] } }
-      items = response.dig("albums", "items") || []
+    items = OpenStruct.new(
+      id: response["id"],
+      display_name: response["display_name"],
+      image_url: response.dig("images", 0, "url"),
+      followers: response.dig("followers", "total") || 0,
+      spotify_url: response.dig("external_urls", "spotify")
+    )
+  end
 
-      items.map.with_index(1) do |item, index|
-        OpenStruct.new(
-          id: item["id"],
-          name: item["name"],
-          image_url: item.dig("images", 0, "url"),
-          total_tracks: item["total_tracks"] || 0,
-          release_date: item["release_date"] || 0,
-          spotify_url: item.dig("external_urls", "spotify"),
-          artists: (item["artists"] || []).map { |artist| artist["name"] }
+  def new_releases(limit:, max_age: 1.day)
+    batch = NewReleaseBatch.find_or_initialize_by(limit: limit)
+
+    if batch.persisted? && batch.fetched_at.present? && batch.fetched_at >= max_age.ago
+      Rails.logger.info "[NewReleases] cache HIT limit=#{limit}"
+
+      return batch.new_releases
+                  .order(:position)
+                  .map { |r| build_new_release_from_row(r) }
+    end
+
+    Rails.logger.info "[NewReleases] cache MISS/STALE limit=#{limit}"
+
+    access_token = ensure_access_token!
+    response     = get("/browse/new-releases", access_token, limit: limit)
+    items        = response.dig("albums", "items") || []
+
+    NewReleaseBatch.transaction do
+      batch.fetched_at = Time.current
+      batch.save!
+
+      batch.new_releases.delete_all
+
+      items.each_with_index do |item, index|
+        batch.new_releases.create!(
+          position:      index + 1,
+          spotify_id:    item["id"],
+          name:          item["name"],
+          image_url:     item.dig("images", 0, "url"),
+          total_tracks:  item["total_tracks"] || 0,
+          release_date:  item["release_date"] || "",
+          spotify_url:   item.dig("external_urls", "spotify"),
+          artists:       (item["artists"] || []).map { |a| a["name"] }.join(", ")
         )
       end
     end
-  end
 
-  def followed_artists(limit:)
-    cache_for([ "followed_artists", limit ]) do
-      access_token = ensure_access_token!
-      response = get("/me/following", access_token, limit: limit, type: "artist")
+  batch.new_releases.order(:position).map { |r| build_new_release_from_row(r) }
+end
 
-      # The response looks like: { "artists": { "items": [ ... ] } }
-      items = response.dig("artists", "items") || []
+  def followed_artists(limit:, max_age: 4.days)
+    spotify_user_id = session.dig(:spotify_user, "id")
+    raise "Missing user id" if spotify_user_id.blank?
 
-      items.map.with_index(1) do |item, index|
-        OpenStruct.new(
-          id: item["id"],
-          name: item["name"],
-          image_url: item.dig("images", 0, "url"),
-          genres: item["genres"] || [],
-          popularity: item["popularity"] || 0,
+    batch = FollowedArtistBatch
+              .where(spotify_user_id: spotify_user_id, limit: limit)
+              .where("fetched_at >= ?", max_age.ago)
+              .includes(:followed_artists)
+              .first
+
+    if batch.present?
+      Rails.logger.info "[FollowedArtists] Cache HIT"
+      return batch.followed_artists.order(:position).map { |row| build_followed_artist(row) }
+    end
+
+    Rails.logger.info "[FollowedArtists] Cache MISS → Fetching from Spotify"
+
+    access_token = ensure_access_token!
+    response = get("/me/following", access_token, limit: limit, type: "artist")
+    items = response.dig("artists", "items") || []
+
+    FollowedArtistBatch.transaction do
+      batch ||= FollowedArtistBatch.create!(
+        spotify_user_id: spotify_user_id,
+        limit: limit,
+        fetched_at: Time.current
+      )
+
+      batch.update!(fetched_at: Time.current)
+      batch.followed_artists.delete_all
+
+      items.each_with_index do |item, index|
+        batch.followed_artists.create!(
+          position:    index + 1,
+          spotify_id:  item["id"],
+          name:        item["name"],
+          image_url:   item.dig("images", 0, "url"),
+          genres:      item["genres"] || [],
+          popularity:  item["popularity"],
           spotify_url: item.dig("external_urls", "spotify")
         )
       end
     end
+
+    batch.followed_artists.order(:position).map { |row| build_followed_artist(row) }
   end
 
   def recently_played(limit:)
@@ -167,45 +246,111 @@ class SpotifyClient
   end
 
 
-  def top_artists(limit:, time_range:)
-    cache_for([ "top_artists", time_range, limit ]) do
-      access_token = ensure_access_token!
-      response = get("/me/top/artists", access_token, limit: limit, time_range: time_range)
-      items = response.fetch("items", [])
-      items.map.with_index(1) do |item, index|
-        OpenStruct.new(
-          id: item["id"],
-          name: item["name"],
-          rank: index,
-          image_url: item.dig("images", 0, "url"),
-          genres: item["genres"] || [],
-          popularity: item["popularity"] || 0,
-          playcount: item["popularity"] || 0
+  def top_artists(limit:, time_range:, max_age: 4.days)
+    spotify_user_id = session.dig(:spotify_user, "id")
+
+    raise "Missing user ID" if spotify_user_id.blank?
+
+    batch = TopArtistBatch.find_by(
+      spotify_user_id: spotify_user_id,
+      time_range:      time_range,
+      limit:           limit
+    )
+
+    if batch.present? && batch.fetched_at >= max_age.ago
+      Rails.logger.info "[TopArtists] Cache HIT for #{spotify_user_id}, #{time_range}"
+      return batch.top_artist_results
+                  .order(:position)
+                  .map { |row| build_top_artist_from_row(row) }
+    end
+
+    Rails.logger.info "[TopArtists] Cache MISS (fetching fresh data)"
+
+    access_token = ensure_access_token!
+    response = get("/me/top/artists", access_token, limit: limit, time_range: time_range)
+    items = response.fetch("items", [])
+
+    TopArtistBatch.transaction do
+      batch ||= TopArtistBatch.create!(
+        spotify_user_id: spotify_user_id,
+        time_range:      time_range,
+        limit:           limit,
+        fetched_at:      Time.current
+      )
+
+      batch.update!(fetched_at: Time.current)
+      batch.top_artist_results.delete_all
+
+      items.each_with_index do |item, index|
+        batch.top_artist_results.create!(
+          position:   index + 1,
+          spotify_id: item["id"],
+          name:       item["name"],
+          image_url:  item.dig("images", 0, "url"),
+          genres:     (item["genres"] || []).join(", "),
+          popularity: item["popularity"],
+          playcount:  item["popularity"]
         )
       end
     end
+
+    batch.top_artist_results.order(:position).map do |row|
+      build_top_artist_from_row(row)
+    end
   end
 
-  def top_tracks(limit:, time_range:)
-    cache_for([ "top_tracks", time_range, limit ]) do
-      access_token = ensure_access_token!
-      response = get("/me/top/tracks", access_token, limit: limit, time_range: time_range)
-      items = response.fetch("items", [])
+  def top_tracks(limit:, time_range:, max_age: 4.days)
+    spotify_user_id = session.dig(:spotify_user, "id")
+    raise "Missing user id in session" if spotify_user_id.blank?
 
-      items.map.with_index(1) do |item, index|
-        OpenStruct.new(
-          id: item["id"],
-          name: item["name"],
-          rank: index,
-          artists: (item["artists"] || []).map { |a| a["name"] }.join(", "),
-          album_name: item.dig("album", "name"),
+    batch = TopTrackBatch.find_by(
+      spotify_user_id: spotify_user_id,
+      time_range:      time_range,
+      limit:           limit
+    )
+
+    if batch.present? && batch.fetched_at >= max_age.ago
+      Rails.logger.info "[TopTracks] Cache HIT for #{spotify_user_id}, #{time_range}"
+      return batch.top_track_results
+                  .order(:position)
+                  .map { |row| build_top_track_from_row(row) }
+    end
+
+    Rails.logger.info "[TopTracks] Cache MISS (fetching from Spotify)"
+
+    access_token = ensure_access_token!
+    response = get("/me/top/tracks", access_token, limit: limit, time_range: time_range)
+    items = response.fetch("items", [])
+
+    TopTrackBatch.transaction do
+      batch ||= TopTrackBatch.create!(
+        spotify_user_id: spotify_user_id,
+        time_range:      time_range,
+        limit:           limit,
+        fetched_at:      Time.current
+      )
+
+      batch.update!(fetched_at: Time.current)
+      batch.top_track_results.delete_all
+
+      items.each_with_index do |item, index|
+        batch.top_track_results.create!(
+          position:        index + 1,
+          spotify_id:      item["id"],
+          name:            item["name"],
+          artists:         (item["artists"] || []).map { |a| a["name"] }.join(", "),
+          album_name:      item.dig("album", "name"),
           album_image_url: item.dig("album", "images", 0, "url"),
-          popularity: item["popularity"],
-          preview_url: item["preview_url"],
-          spotify_url: item.dig("external_urls", "spotify"),
-          duration_ms: item["duration_ms"]
+          popularity:      item["popularity"],
+          preview_url:     item["preview_url"],
+          spotify_url:     item.dig("external_urls", "spotify"),
+          duration_ms:     item["duration_ms"]
         )
       end
+    end
+
+    batch.top_track_results.order(:position).map do |row|
+      build_top_track_from_row(row)
     end
   end
 
@@ -301,7 +446,11 @@ class SpotifyClient
   def clear_user_cache
     user_id = current_user_id
     return unless user_id
-    Rails.cache.delete_matched("spotify_#{user_id}_*")
+
+    TrackSearch.where(spotify_user_id: user_id).destroy_all
+    TopArtistBatch.where(spotify_user_id: user_id).destroy_all
+    TopTrackBatch.where(spotify_user_id: user_id).destroy_all
+    FollowedArtistBatch.where(spotify_user_id: user_id).destroy_all
   end
 
 
@@ -310,6 +459,79 @@ class SpotifyClient
   attr_reader :session, :client_id, :client_secret
 
   private
+
+  def build_track_from_row(row)
+    OpenStruct.new(
+      id:           row.spotify_id,
+      name:         row.name,
+      artists:      row.artists,
+      album_name:   row.album_name,
+      album_image_url: row.album_image_url,
+      popularity:   row.popularity,
+      preview_url:  row.preview_url,
+      spotify_url:  row.spotify_url,
+      duration_ms:  row.duration_ms
+    )
+  end
+
+  private
+
+  def build_top_artist_from_row(row)
+    OpenStruct.new(
+      id:         row.spotify_id,
+      name:       row.name,
+      rank:       row.position,
+      image_url:  row.image_url,
+      genres:     (row.genres || "").split(", "),
+      popularity: row.popularity,
+      playcount:  row.playcount
+    )
+  end
+
+  private
+
+  def build_followed_artist(row)
+    OpenStruct.new(
+      id:          row.spotify_id,
+      name:        row.name,
+      image_url:   row.image_url,
+      genres:      row.genres,
+      popularity:  row.popularity,
+      spotify_url: row.spotify_url,
+      rank:        row.position
+    )
+  end
+
+  private
+
+  def build_new_release_from_row(row)
+    OpenStruct.new(
+      id:           row.spotify_id,
+      name:         row.name,
+      image_url:    row.image_url,
+      total_tracks: row.total_tracks || 0,
+      release_date: row.release_date || "",
+      spotify_url:  row.spotify_url,
+      artists:      (row.artists || "").split(", ").reject(&:blank?)
+    )
+  end
+
+  private
+
+  def build_top_track_from_row(row)
+    OpenStruct.new(
+      id:              row.spotify_id,
+      name:            row.name,
+      rank:            row.position,
+      artists:         row.artists,
+      album_name:      row.album_name,
+      album_image_url: row.album_image_url,
+      popularity:      row.popularity,
+      preview_url:     row.preview_url,
+      spotify_url:     row.spotify_url,
+      duration_ms:     row.duration_ms
+    )
+  end
 
   def cache_for(key_parts, expires_in: 24.hours)
     user_id = current_user_id
