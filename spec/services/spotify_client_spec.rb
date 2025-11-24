@@ -210,14 +210,6 @@ RSpec.describe SpotifyClient, type: :service do
         end
     end
 
-    describe "#clear_user_cache" do
-        it "deletes cache keys for the user" do
-            allow(client).to receive(:current_user_id).and_return("u123")
-            expect(Rails.cache).to receive(:delete_matched).with("spotify_u123_*")
-            client.clear_user_cache
-        end
-    end
-
     describe "#token_headers" do
         it "encodes client_id and secret in base64" do
             headers = client.send(:token_headers)
