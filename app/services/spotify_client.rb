@@ -6,10 +6,12 @@ require "json"
 require "base64"
 require "ostruct"
 require "set"
+require "time"
 
 class SpotifyClient
   API_ROOT = "https://api.spotify.com/v1"
   TOKEN_URI = URI("https://accounts.spotify.com/api/token").freeze
+  RECENTLY_PLAYED_CACHE_VERSION = "v2"
 
   class Error < StandardError; end
   class UnauthorizedError < Error; end
@@ -183,6 +185,64 @@ end
     end
 
     batch.followed_artists.order(:position).map { |row| build_followed_artist(row) }
+  end
+
+  def recently_played(limit:)
+    limit = limit.to_i
+    limit = 50 if limit <= 0
+    limit = [ limit, 200 ].min
+
+    cache_for([ "recently_played", limit, RECENTLY_PLAYED_CACHE_VERSION ], expires_in: 15.minutes) do
+      access_token = ensure_access_token!
+      collected = []
+      before_cursor = nil
+      seen = {}
+
+      while collected.length < limit
+        page_limit = [ 50, limit - collected.length ].min
+        params = { limit: page_limit }
+        params[:before] = before_cursor if before_cursor
+
+        response = get("/me/player/recently-played", access_token, params)
+        items = Array(response["items"])
+        break if items.empty?
+
+        items.each do |item|
+          stamp = extract_before_cursor(item)
+          next unless stamp
+
+          dedupe_key = [ stamp, (item.dig("track", "id") || "unknown") ]
+          next if seen[dedupe_key]
+
+          seen[dedupe_key] = true
+          collected << item
+        end
+
+        new_cursor = extract_before_cursor(items.last)
+
+        # Stop paginating if there isn't a usable cursor or we got fewer than requested
+        break if new_cursor.nil? || new_cursor == before_cursor || items.length < page_limit
+
+        # Step back 1ms to avoid receiving the last item again
+        before_cursor = new_cursor - 1
+      end
+
+      collected = collected.first(limit)
+
+      collected.map do |item|
+        track = item["track"] || {}
+        OpenStruct.new(
+          id: track["id"],
+          name: track["name"],
+          album_name: track.dig("album", "name"),
+          album_image_url: track.dig("album", "images", 0, "url"),
+          artists: (track["artists"] || []).map { |a| a["name"] }.join(", "),
+          preview_url: track["preview_url"],
+          spotify_url: track.dig("external_urls", "spotify"),
+          played_at: parse_played_at(item["played_at"])
+        )
+      end
+    end
   end
 
 
@@ -582,6 +642,26 @@ end
     JSON.parse(payload)
   rescue JSON::ParserError
     {}
+  end
+
+  def extract_before_cursor(item)
+    return nil unless item
+
+    timestamp = item["played_at"]
+    parsed = parse_played_at(timestamp)
+    return nil unless parsed
+
+    (parsed.to_f * 1000).to_i
+  rescue ArgumentError
+    nil
+  end
+
+  def parse_played_at(value)
+    return nil if value.blank?
+
+    Time.iso8601(value.to_s)
+  rescue ArgumentError
+    nil
   end
 
   def token_headers
