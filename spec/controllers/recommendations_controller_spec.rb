@@ -54,12 +54,10 @@ RSpec.describe RecommendationsController, type: :controller do
                     .and_return(mock_client)
 
                 # Recommendations built using top tracks
-                allow(mock_client).to receive(:top_tracks)
-                .with(limit: 20, time_range: "medium_term")
-                .and_return([])
+                allow(mock_client).to receive(:top_tracks).with(limit: 4, time_range: "medium_term").and_return([])
 
                 # Recommendations also fetches top artists
-                allow(mock_client).to receive(:top_artists).with(limit: 20, time_range: "medium_term").and_return([])
+                allow(mock_client).to receive(:top_artists).with(limit: 4, time_range: "medium_term").and_return([])
 
                 allow(mock_client).to receive(:search_tracks)
                     .with("", limit: 15)
@@ -88,11 +86,11 @@ RSpec.describe RecommendationsController, type: :controller do
 
                 # Recommendations built using top tracks
                 allow(mock_client).to receive(:top_tracks)
-                .with(limit: 20, time_range: "medium_term")
+                .with(limit: 4, time_range: "medium_term")
                 .and_return([])
 
                 # Recommendations also fetches top artists
-                allow(mock_client).to receive(:top_artists).with(limit: 20, time_range: "medium_term").and_return([])
+                allow(mock_client).to receive(:top_artists).with(limit: 4, time_range: "medium_term").and_return([])
 
                 allow(mock_client).to receive(:search_tracks)
                     .with("", limit: 15)
@@ -123,11 +121,11 @@ RSpec.describe RecommendationsController, type: :controller do
 
                 # Recommendations built using top tracks
                 allow(mock_client).to receive(:top_tracks)
-                .with(limit: 20, time_range: "medium_term")
+                .with(limit: 4, time_range: "medium_term")
                 .and_return([])
 
                 # Recommendations also fetches top artists
-                allow(mock_client).to receive(:top_artists).with(limit: 20, time_range: "medium_term").and_return([])
+                allow(mock_client).to receive(:top_artists).with(limit: 4, time_range: "medium_term").and_return([])
 
                 allow(mock_client).to receive(:search_tracks)
                     .with("", limit: 15)

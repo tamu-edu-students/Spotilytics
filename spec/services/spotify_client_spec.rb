@@ -159,206 +159,162 @@ RSpec.describe SpotifyClient, type: :service do
         end
     end
 
-    describe "#search_tracks" do
-        let(:query) { "Daft Punk" }
-        let(:limit) { 10 }
-        let(:base_url) { "https://api.spotify.com/v1" }
-        let(:url) { "#{base_url}/search?q=#{CGI.escape(query)}&type=track&limit=#{limit}" }
+    describe "#search_tracks DB persistence" do
+        let(:query) { "Hass Hass" }
+        let(:limit) { 5 }
+        let(:user_id) { "user123" }
 
-        context "when the request succeeds with track data" do
-            let(:body) do
-                {
-                tracks: {
-                    items: [
-                    {
-                        "id" => "track123",
-                        "name" => "Harder, Better, Faster, Stronger",
-                        "artists" => [ { "name" => "Daft Punk" } ],
-                        "album" => {
-                        "name" => "Discovery",
-                        "images" => [ { "url" => "http://example.com/discovery.jpg" } ]
-                        },
-                        "popularity" => 95,
-                        "preview_url" => "http://example.com/preview.mp3",
-                        "external_urls" => { "spotify" => "https://open.spotify.com/track/track123" },
-                        "duration_ms" => 224000
-                    }
-                    ]
-                }
-                }
-            end
-
-
-            before do
-                stub_request(:get, "#{base_url}/search")
-                .with(query: hash_including(q: query, type: "track", limit: limit.to_s))
-                .to_return(status: 200, body: body.to_json, headers: { 'Content-Type' => 'application/json' })
-
-                stub_spotify_get("/me", body: { id: "user123" })
-            end
-
-            it "returns an array of OpenStruct track objects" do
-                results = client.search_tracks(query, limit: limit)
-
-                expect(results).to be_an(Array)
-                expect(results.size).to eq(1)
-
-                track = results.first
-                expect(track.id).to eq("track123")
-                expect(track.name).to eq("Harder, Better, Faster, Stronger")
-                expect(track.artists).to eq("Daft Punk")
-                expect(track.album_name).to eq("Discovery")
-                expect(track.album_image_url).to eq("http://example.com/discovery.jpg")
-                expect(track.popularity).to eq(95)
-                expect(track.preview_url).to eq("http://example.com/preview.mp3")
-                expect(track.spotify_url).to eq("https://open.spotify.com/track/track123")
-                expect(track.duration_ms).to eq(224000)
-            end
+        let(:api_items) do
+        [
+            {
+            "id" => "t1",
+            "name" => "Song 1",
+            "artists" => [{ "name" => "Artist 1" }],
+            "album" => { "name" => "Album 1", "images" => [{ "url" => "img1.jpg" }] },
+            "popularity" => 80,
+            "preview_url" => "preview1",
+            "external_urls" => { "spotify" => "spotify://t1" },
+            "duration_ms" => 180_000
+            },
+            {
+            "id" => "t2",
+            "name" => "Song 2",
+            "artists" => [{ "name" => "Artist 2" }],
+            "album" => { "name" => "Album 2", "images" => [{ "url" => "img2.jpg" }] },
+            "popularity" => 90,
+            "preview_url" => "preview2",
+            "external_urls" => { "spotify" => "spotify://t2" },
+            "duration_ms" => 200_000
+            }
+        ]
         end
 
-        context "when Spotify returns no items" do
-            before do
-                stub_spotify_get(
-                    "/search",
-                    body: { tracks: { items: [] } }
-                )
-
-                stub_spotify_get("/me", body: { id: "user123" })
-            end
-
-            it "returns an empty array" do
-                results = client.search_tracks(query)
-                expect(results).to eq([])
-            end
+        before do
+            session[:spotify_user] = { "id" => user_id }
+            allow(client).to receive(:current_user_id).and_return(user_id)
+            allow(client).to receive(:ensure_access_token!).and_return("token")
         end
 
-        context "when Spotify response is missing 'tracks' key" do
-            before do
-                stub_spotify_get(
-                    "/search",
-                    body: {}
-                )
+        it "creates TrackSearch + TrackSearchResults when no fresh record exists" do
+        stub_spotify_get("/search", body: { tracks: { items: api_items } })
+        stub_spotify_get("/me", body: { id: user_id })
 
-                stub_spotify_get("/me", body: { id: "user123" })
-            end
+        expect {
+            results = client.search_tracks(query, limit: limit)
+            expect(results.map(&:id)).to match_array(%w[t1 t2])
+        }.to change(TrackSearch, :count).by(1)
+        .and change(TrackSearchResult, :count).by(2)
 
-            it "returns an empty array safely" do
-                results = client.search_tracks(query)
-                expect(results).to eq([])
-            end
+        search = TrackSearch.last
+        expect(search.spotify_user_id).to eq(user_id)
+        expect(search.query).to eq(query)
+        expect(search.limit).to eq(limit)
+        expect(search.track_search_results.order(:position).pluck(:spotify_id)).to eq(%w[t1 t2])
         end
 
-        context "when get raises an error" do
-            before do
-                allow(client).to receive(:get).and_raise(SpotifyClient::Error, "API failed")
-            end
+        it "reuses a fresh TrackSearch from DB and does not hit the API" do
+        search = TrackSearch.create!(
+            spotify_user_id: user_id,
+            query:           query,
+            limit:           limit,
+            fetched_at:      Time.current
+        )
 
-            it "raises SpotifyClient::Error" do
-                expect { client.search_tracks(query) }.to raise_error(SpotifyClient::Error, /API failed/)
-            end
+        TrackSearchResult.create!(
+            track_search: search,
+            position:     1,
+            spotify_id:   "cached-track",
+            name:         "Cached Song"
+        )
+
+        expect(client).not_to receive(:get).with("/search", anything, anything)
+
+        results = client.search_tracks(query, limit: limit)
+        expect(results.map(&:id)).to eq(["cached-track"])
         end
 
-        context "when ensure_access_token! raises UnauthorizedError" do
-            before do
-                allow(client).to receive(:ensure_access_token!).and_raise(SpotifyClient::UnauthorizedError)
-            end
+        it "treats old TrackSearch (older than max_age) as stale and refetches" do
+        old = TrackSearch.create!(
+            spotify_user_id: user_id,
+            query:           query,
+            limit:           limit,
+            fetched_at:      8.days.ago
+        )
+        TrackSearchResult.create!(
+            track_search: old,
+            position:     1,
+            spotify_id:   "old-track",
+            name:         "Old Song"
+        )
 
-            it "raises UnauthorizedError and does not call get" do
-                expect(client).not_to receive(:get)
-                expect { client.search_tracks(query) }.to raise_error(SpotifyClient::UnauthorizedError)
-            end
+        stub_spotify_get("/search", body: { tracks: { items: api_items } })
+        stub_spotify_get("/me", body: { id: user_id })
+
+        expect {
+            client.search_tracks(query, limit: limit)
+        }.to change(TrackSearch, :count).by(1) 
         end
     end
 
-    describe "#top_artists" do
-        let(:limit) { 10 }
+    describe "#top_artists DB persistence" do
+        let(:limit) { 3 }
         let(:time_range) { "long_term" }
+        let(:user_id) { "user123" }
+
+        let(:api_items) do
+        (1..limit).map do |i|
+            {
+            "id" => "artist#{i}",
+            "name" => "Artist #{i}",
+            "images" => [{ "url" => "img#{i}.jpg" }],
+            "genres" => ["g#{i}"],
+            "popularity" => 90 + i
+            }
+        end
+        end
 
         before do
-            # Stub /me for cache_for → current_user_id
-            stub_spotify_get("/me", body: { id: "user123" })
-
-            # Disable actual caching for testing
-            allow(client).to receive(:cache_for).and_wrap_original { |_m, *_args, &block| block.call }
-
-            # Mock access token retrieval
-            allow(client).to receive(:ensure_access_token!).and_return("valid_token")
+            session[:spotify_user] = { "id" => user_id }
+            allow(client).to receive(:current_user_id).and_return(user_id)
+            allow(client).to receive(:ensure_access_token!).and_return("token")
         end
 
-        context "when the request succeeds with artist data" do
-            let(:body) do
-            {
-                items: Array.new(limit) do |i|
-                {
-                    "id" => "artist#{i + 1}",
-                    "name" => "Artist #{i + 1}",
-                    "images" => [ { "url" => "http://example.com/artist#{i + 1}.jpg" } ],
-                    "genres" => [ "genre#{i + 1}" ],
-                    "popularity" => 100 - i
-                }
-                end
-            }
-            end
+        it "creates a TopArtistBatch and TopArtistResult records when empty" do
+        stub_spotify_get("/me", body: { id: user_id })
+        stub_spotify_get("/me/top/artists", body: { items: api_items })
 
-            before do
-                stub_spotify_get("/me/top/artists", body: body)
-            end
+        expect {
+            results = client.top_artists(limit: limit, time_range: time_range)
+            expect(results.size).to eq(limit)
+        }.to change(TopArtistBatch, :count).by(1)
+        .and change(TopArtistResult, :count).by(limit)
 
-            it "returns an array of OpenStruct artist objects with correct rank and data" do
-                results = client.top_artists(limit: limit, time_range: time_range)
-                expect(results.size).to eq(limit)
+        batch = TopArtistBatch.last
+        expect(batch.spotify_user_id).to eq(user_id)
+        expect(batch.limit).to eq(limit)
+        expect(batch.time_range).to eq(time_range)
 
-                results.each_with_index do |artist, i|
-                    expect(artist.id).to eq("artist#{i + 1}")
-                    expect(artist.name).to eq("Artist #{i + 1}")
-                    expect(artist.rank).to eq(i + 1)
-                    expect(artist.image_url).to eq("http://example.com/artist#{i + 1}.jpg")
-                    expect(artist.genres).to eq([ "genre#{i + 1}" ])
-                    expect(artist.popularity).to eq(100 - i)
-                    expect(artist.playcount).to eq(100 - i)
-                end
-            end
+        expect(batch.top_artist_results.order(:position).pluck(:spotify_id)).to eq(%w[artist1 artist2 artist3])
         end
 
-        context "when Spotify returns no items" do
-            before do
-                stub_spotify_get("/me/top/artists", body: { items: [] })
-            end
+        it "reuses a fresh TopArtistBatch and does not hit the API" do
+        batch = TopArtistBatch.create!(
+            spotify_user_id: user_id,
+            time_range:      time_range,
+            limit:           limit,
+            fetched_at:      Time.current
+        )
+        TopArtistResult.create!(
+            top_artist_batch: batch,
+            position:         1,
+            spotify_id:       "cached-artist",
+            name:             "Cached"
+        )
 
-            it "returns an empty array" do
-                expect(client.top_artists(limit: limit, time_range: time_range)).to eq([])
-            end
-        end
+        expect(client).not_to receive(:get).with("/me/top/artists", anything, anything)
 
-        context "when Spotify response is missing 'items' key" do
-            before do
-                stub_spotify_get("/me/top/artists", body: {})
-            end
-
-            it "returns an empty array safely" do
-                expect(client.top_artists(limit: limit, time_range: time_range)).to eq([])
-            end
-        end
-
-        context "when get raises an error" do
-            before do
-                allow(client).to receive(:get).and_raise(SpotifyClient::Error, "API failed")
-            end
-
-            it "raises SpotifyClient::Error" do
-                expect { client.top_artists(limit: limit, time_range: time_range) }.to raise_error(SpotifyClient::Error, /API failed/)
-            end
-        end
-
-        context "when ensure_access_token! raises UnauthorizedError" do
-            before do
-                allow(client).to receive(:ensure_access_token!).and_raise(SpotifyClient::UnauthorizedError)
-            end
-
-            it "raises UnauthorizedError and does not call get" do
-                expect(client).not_to receive(:get)
-                expect { client.top_artists(limit: limit, time_range: time_range) }.to raise_error(SpotifyClient::UnauthorizedError)
-            end
+        results = client.top_artists(limit: limit, time_range: time_range)
+        expect(results.map(&:id)).to eq(["cached-artist"])
         end
     end
 
@@ -418,6 +374,187 @@ RSpec.describe SpotifyClient, type: :service do
                 client.follow_artists("abc123")
             }.to raise_error(SpotifyClient::Error, /Bad Request/)
             end
+        end
+    end
+
+    describe "#top_tracks DB persistence" do
+        let(:limit) { 3 }
+        let(:time_range) { "medium_term" }
+        let(:user_id) { "user123" }
+
+        let(:api_items) do
+        (1..limit).map do |i|
+            {
+            "id" => "track#{i}",
+            "name" => "Track #{i}",
+            "artists" => [{ "name" => "Artist #{i}" }],
+            "album" => { "name" => "Album #{i}", "images" => [{ "url" => "img#{i}.jpg" }] },
+            "popularity" => 70 + i,
+            "preview_url" => "preview#{i}",
+            "external_urls" => { "spotify" => "spotify://track#{i}" },
+            "duration_ms" => 200_000 + i
+            }
+        end
+        end
+
+        before do
+            session[:spotify_user] = { "id" => user_id }
+            allow(client).to receive(:current_user_id).and_return(user_id)
+            allow(client).to receive(:ensure_access_token!).and_return("token")
+        end
+
+        it "creates a TopTrackBatch and TopTrack records when empty" do
+        stub_spotify_get("/me", body: { id: user_id })
+        stub_spotify_get("/me/top/tracks", body: { items: api_items })
+
+        expect {
+            results = client.top_tracks(limit: limit, time_range: time_range)
+            expect(results.size).to eq(limit)
+        }.to change(TopTrackBatch, :count).by(1)
+        .and change(TopTrackResult, :count).by(limit)
+
+        batch = TopTrackBatch.last
+        expect(batch.spotify_user_id).to eq(user_id)
+        expect(batch.limit).to eq(limit)
+        expect(batch.time_range).to eq(time_range)
+        expect(batch.top_track_results.order(:position).pluck(:spotify_id)).to eq(%w[track1 track2 track3])
+        end
+
+        it "reuses a fresh TopTrackBatch and does not hit the API" do
+        batch = TopTrackBatch.create!(
+            spotify_user_id: user_id,
+            time_range:      time_range,
+            limit:           limit,
+            fetched_at:      Time.current
+        )
+        TopTrackResult.create!(
+            top_track_batch: batch,
+            position:        1,
+            spotify_id:      "cached-track",
+            name:            "Cached track"
+        )
+
+        expect(client).not_to receive(:get).with("/me/top/tracks", anything, anything)
+
+        results = client.top_tracks(limit: limit, time_range: time_range)
+        expect(results.map(&:id)).to eq(["cached-track"])
+        end
+    end
+
+    describe "#new_releases DB persistence" do
+        let(:limit) { 4 }
+        let(:user_id) { "user123" }
+
+        let(:api_items) do
+        (1..limit).map do |i|
+            {
+            "id" => "album#{i}",
+            "name" => "Album #{i}",
+            "images" => [{ "url" => "img#{i}.jpg" }],
+            "total_tracks" => i,
+            "release_date" => "2025-01-0#{i}",
+            "external_urls" => { "spotify" => "spotify://album#{i}" },
+            "artists" => [{ "name" => "Artist #{i}" }]
+            }
+        end
+        end
+
+        before do
+            session[:spotify_user] = { "id" => user_id }
+            allow(client).to receive(:current_user_id).and_return(user_id)
+            allow(client).to receive(:ensure_access_token!).and_return("token")
+        end
+
+        it "creates a NewReleaseBatch + NewRelease records when empty" do
+        stub_spotify_get("/browse/new-releases", body: { albums: { items: api_items } })
+        stub_spotify_get("/me", body: { id: user_id })
+
+        expect {
+            results = client.new_releases(limit: limit)
+            expect(results.size).to eq(limit)
+        }.to change(NewReleaseBatch, :count).by(1)
+        .and change(NewRelease, :count).by(limit)
+
+        batch = NewReleaseBatch.last
+        expect(batch.limit).to eq(limit)
+        expect(batch.new_releases.order(:position).pluck(:spotify_id)).to eq(%w[album1 album2 album3 album4])
+        end
+
+        it "reuses a fresh NewReleaseBatch and does not hit the API" do
+        batch = NewReleaseBatch.create!(
+            limit:           limit,
+            fetched_at:      Time.current
+        )
+        NewRelease.create!(
+            new_release_batch: batch,
+            position:          1,
+            spotify_id:        "cached-album",
+            name:              "Cached Album"
+        )
+
+        expect(client).not_to receive(:get).with("/browse/new-releases", anything, anything)
+
+        results = client.new_releases(limit: limit)
+        expect(results.map(&:id)).to eq(["cached-album"])
+        end
+    end
+
+    describe "#followed_artists DB persistence" do
+        let(:limit) { 5 }
+        let(:user_id) { "user123" }
+
+        let(:api_items) do
+        (1..limit).map do |i|
+            {
+            "id" => "a#{i}",
+            "name" => "Followed #{i}",
+            "images" => [{ "url" => "img#{i}.jpg" }],
+            "genres" => ["g#{i}"],
+            "popularity" => 50 + i,
+            "external_urls" => { "spotify" => "spotify://a#{i}" }
+            }
+        end
+        end
+
+        before do
+            session[:spotify_user] = { "id" => user_id }
+            allow(client).to receive(:current_user_id).and_return(user_id)
+            allow(client).to receive(:ensure_access_token!).and_return("token")
+        end
+
+        it "creates a FollowedArtistBatch + FollowedArtist records when empty" do
+        stub_spotify_get("/me", body: { id: user_id })
+        stub_spotify_get("/me/following", body: { artists: { items: api_items } })
+
+        expect {
+            results = client.followed_artists(limit: limit)
+            expect(results.size).to eq(limit)
+        }.to change(FollowedArtistBatch, :count).by(1)
+        .and change(FollowedArtist, :count).by(limit)
+
+        batch = FollowedArtistBatch.last
+        expect(batch.spotify_user_id).to eq(user_id)
+        expect(batch.limit).to eq(limit)
+        expect(batch.followed_artists.order(:position).pluck(:spotify_id)).to eq(%w[a1 a2 a3 a4 a5])
+        end
+
+        it "reuses a fresh FollowedArtistBatch and does not hit the API" do
+        batch = FollowedArtistBatch.create!(
+            spotify_user_id: user_id,
+            limit:           limit,
+            fetched_at:      Time.current
+        )
+        FollowedArtist.create!(
+            followed_artist_batch: batch,
+            position:              1,
+            spotify_id:            "cached-followed",
+            name:                  "Cached Artist"
+        )
+
+        expect(client).not_to receive(:get).with("/me/following", anything, anything)
+
+        results = client.followed_artists(limit: limit)
+        expect(results.map(&:id)).to eq(["cached-followed"])
         end
     end
 

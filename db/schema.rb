@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_22_025638) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_23_234244) do
   create_table "followed_artist_batches", force: :cascade do |t|
     t.string "spotify_user_id"
     t.integer "limit"
@@ -132,7 +132,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_22_025638) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "spotify_user_id"
-    t.index ["query", "limit"], name: "index_track_searches_on_user_id_and_query_and_limit", unique: true
+    t.index ["spotify_user_id", "query", "limit"], name: "index_track_searches_on_user_and_query_and_limit"
   end
 
   add_foreign_key "followed_artists", "followed_artist_batches"
