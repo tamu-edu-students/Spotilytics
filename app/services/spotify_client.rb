@@ -23,7 +23,7 @@ class SpotifyClient
   end
 
   def search_tracks(query, limit: 10, max_age: 4.days)
-    spotify_user_id = session.dig(:spotify_user, "id") 
+    spotify_user_id = session.dig(:spotify_user, "id")
 
     search = TrackSearch
         .where(spotify_user_id: spotify_user_id, query: query, limit: limit)
@@ -49,7 +49,7 @@ class SpotifyClient
 
     TrackSearch.transaction do
     search = TrackSearch.create!(
-      spotify_user_id: spotify_user_id, 
+      spotify_user_id: spotify_user_id,
       query:        query,
       limit:        limit,
       fetched_at:   Time.current
@@ -289,7 +289,7 @@ end
           image_url:  item.dig("images", 0, "url"),
           genres:     (item["genres"] || []).join(", "),
           popularity: item["popularity"],
-          playcount:  item["popularity"] 
+          playcount:  item["popularity"]
         )
       end
     end

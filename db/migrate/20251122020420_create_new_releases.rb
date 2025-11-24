@@ -9,12 +9,12 @@ class CreateNewReleases < ActiveRecord::Migration[7.1]
       t.integer    :total_tracks
       t.string     :release_date
       t.string     :spotify_url
-      t.text       :artists 
+      t.text       :artists
 
       t.timestamps
     end
 
-    add_index :new_releases, [:new_release_batch_id, :position],
+    add_index :new_releases, [ :new_release_batch_id, :position ],
               unique: true,
               name: "index_new_releases_on_batch_and_position"
   end

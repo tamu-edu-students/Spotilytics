@@ -31,7 +31,7 @@ RSpec.describe FollowedArtistBatch, type: :model do
         position: 2
       )
 
-      expect(batch.followed_artists).to match_array([a1, a2])
+      expect(batch.followed_artists).to match_array([ a1, a2 ])
     end
   end
 end

@@ -96,7 +96,7 @@ RSpec.describe TopTrackBatch, type: :model do
       )
 
       expect { batch.destroy }.to change(TopTrackResult, :count).by(-2)
-      expect(TopTrackResult.where(id: [result1.id, result2.id])).to be_empty
+      expect(TopTrackResult.where(id: [ result1.id, result2.id ])).to be_empty
     end
   end
 end

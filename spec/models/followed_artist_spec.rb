@@ -24,7 +24,7 @@ RSpec.describe FollowedArtist, type: :model do
         image_url: "http://example.com/a.jpg",
         popularity: 50,
         spotify_url: "http://spotify.com/a",
-        genres: ["rock", "pop"],
+        genres: [ "rock", "pop" ],
         position: 1
       )
 

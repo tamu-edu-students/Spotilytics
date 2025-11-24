@@ -38,7 +38,7 @@ RSpec.describe NewReleaseBatch, type: :model do
         position: 2
       )
 
-      expect(batch.new_releases).to match_array([r1, r2])
+      expect(batch.new_releases).to match_array([ r1, r2 ])
     end
   end
 end

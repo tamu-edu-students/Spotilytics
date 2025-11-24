@@ -9,6 +9,6 @@ class CreateTrackSearches < ActiveRecord::Migration[7.1]
       t.timestamps
     end
 
-    add_index :track_searches, [:user_id, :query, :limit], unique: true
+    add_index :track_searches, [ :user_id, :query, :limit ], unique: true
   end
 end

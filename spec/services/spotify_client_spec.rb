@@ -235,8 +235,8 @@ RSpec.describe SpotifyClient, type: :service do
             {
             "id" => "t1",
             "name" => "Song 1",
-            "artists" => [{ "name" => "Artist 1" }],
-            "album" => { "name" => "Album 1", "images" => [{ "url" => "img1.jpg" }] },
+            "artists" => [ { "name" => "Artist 1" } ],
+            "album" => { "name" => "Album 1", "images" => [ { "url" => "img1.jpg" } ] },
             "popularity" => 80,
             "preview_url" => "preview1",
             "external_urls" => { "spotify" => "spotify://t1" },
@@ -245,8 +245,8 @@ RSpec.describe SpotifyClient, type: :service do
             {
             "id" => "t2",
             "name" => "Song 2",
-            "artists" => [{ "name" => "Artist 2" }],
-            "album" => { "name" => "Album 2", "images" => [{ "url" => "img2.jpg" }] },
+            "artists" => [ { "name" => "Artist 2" } ],
+            "album" => { "name" => "Album 2", "images" => [ { "url" => "img2.jpg" } ] },
             "popularity" => 90,
             "preview_url" => "preview2",
             "external_urls" => { "spotify" => "spotify://t2" },
@@ -296,7 +296,7 @@ RSpec.describe SpotifyClient, type: :service do
         expect(client).not_to receive(:get).with("/search", anything, anything)
 
         results = client.search_tracks(query, limit: limit)
-        expect(results.map(&:id)).to eq(["cached-track"])
+        expect(results.map(&:id)).to eq([ "cached-track" ])
         end
 
         it "treats old TrackSearch (older than max_age) as stale and refetches" do
@@ -318,7 +318,7 @@ RSpec.describe SpotifyClient, type: :service do
 
         expect {
             client.search_tracks(query, limit: limit)
-        }.to change(TrackSearch, :count).by(1) 
+        }.to change(TrackSearch, :count).by(1)
         end
     end
 
@@ -332,8 +332,8 @@ RSpec.describe SpotifyClient, type: :service do
             {
             "id" => "artist#{i}",
             "name" => "Artist #{i}",
-            "images" => [{ "url" => "img#{i}.jpg" }],
-            "genres" => ["g#{i}"],
+            "images" => [ { "url" => "img#{i}.jpg" } ],
+            "genres" => [ "g#{i}" ],
             "popularity" => 90 + i
             }
         end
@@ -380,7 +380,7 @@ RSpec.describe SpotifyClient, type: :service do
         expect(client).not_to receive(:get).with("/me/top/artists", anything, anything)
 
         results = client.top_artists(limit: limit, time_range: time_range)
-        expect(results.map(&:id)).to eq(["cached-artist"])
+        expect(results.map(&:id)).to eq([ "cached-artist" ])
         end
     end
 
@@ -453,8 +453,8 @@ RSpec.describe SpotifyClient, type: :service do
             {
             "id" => "track#{i}",
             "name" => "Track #{i}",
-            "artists" => [{ "name" => "Artist #{i}" }],
-            "album" => { "name" => "Album #{i}", "images" => [{ "url" => "img#{i}.jpg" }] },
+            "artists" => [ { "name" => "Artist #{i}" } ],
+            "album" => { "name" => "Album #{i}", "images" => [ { "url" => "img#{i}.jpg" } ] },
             "popularity" => 70 + i,
             "preview_url" => "preview#{i}",
             "external_urls" => { "spotify" => "spotify://track#{i}" },
@@ -503,7 +503,7 @@ RSpec.describe SpotifyClient, type: :service do
         expect(client).not_to receive(:get).with("/me/top/tracks", anything, anything)
 
         results = client.top_tracks(limit: limit, time_range: time_range)
-        expect(results.map(&:id)).to eq(["cached-track"])
+        expect(results.map(&:id)).to eq([ "cached-track" ])
         end
     end
 
@@ -516,11 +516,11 @@ RSpec.describe SpotifyClient, type: :service do
             {
             "id" => "album#{i}",
             "name" => "Album #{i}",
-            "images" => [{ "url" => "img#{i}.jpg" }],
+            "images" => [ { "url" => "img#{i}.jpg" } ],
             "total_tracks" => i,
             "release_date" => "2025-01-0#{i}",
             "external_urls" => { "spotify" => "spotify://album#{i}" },
-            "artists" => [{ "name" => "Artist #{i}" }]
+            "artists" => [ { "name" => "Artist #{i}" } ]
             }
         end
         end
@@ -561,7 +561,7 @@ RSpec.describe SpotifyClient, type: :service do
         expect(client).not_to receive(:get).with("/browse/new-releases", anything, anything)
 
         results = client.new_releases(limit: limit)
-        expect(results.map(&:id)).to eq(["cached-album"])
+        expect(results.map(&:id)).to eq([ "cached-album" ])
         end
     end
 
@@ -574,8 +574,8 @@ RSpec.describe SpotifyClient, type: :service do
             {
             "id" => "a#{i}",
             "name" => "Followed #{i}",
-            "images" => [{ "url" => "img#{i}.jpg" }],
-            "genres" => ["g#{i}"],
+            "images" => [ { "url" => "img#{i}.jpg" } ],
+            "genres" => [ "g#{i}" ],
             "popularity" => 50 + i,
             "external_urls" => { "spotify" => "spotify://a#{i}" }
             }
@@ -620,7 +620,7 @@ RSpec.describe SpotifyClient, type: :service do
         expect(client).not_to receive(:get).with("/me/following", anything, anything)
 
         results = client.followed_artists(limit: limit)
-        expect(results.map(&:id)).to eq(["cached-followed"])
+        expect(results.map(&:id)).to eq([ "cached-followed" ])
         end
     end
 

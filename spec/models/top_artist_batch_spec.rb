@@ -96,7 +96,7 @@ RSpec.describe TopArtistBatch, type: :model do
       )
 
       expect { batch.destroy }.to change(TopArtistResult, :count).by(-2)
-      expect(TopArtistResult.where(id: [result1.id, result2.id])).to be_empty
+      expect(TopArtistResult.where(id: [ result1.id, result2.id ])).to be_empty
     end
   end
 end

@@ -10,7 +10,7 @@ class CreateTopArtistBatches < ActiveRecord::Migration[7.1]
     end
 
     add_index :top_artist_batches,
-              [:spotify_user_id, :time_range, :limit],
+              [ :spotify_user_id, :time_range, :limit ],
               unique: true,
               name: "index_top_artist_batches_user_range_limit"
   end
