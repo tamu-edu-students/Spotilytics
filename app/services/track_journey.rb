@@ -13,7 +13,7 @@ class TrackJourney
     :artists,
     :album_name,
     :album_image_url,
-    :ranks,        
+    :ranks,
     :badge,
     :badge_label,
     :journey_summary,

@@ -30,7 +30,7 @@ class PagesController < ApplicationController
     spotify_user = session[:spotify_user]
     if spotify_user && spotify_user["id"].present?
       journey          = TrackJourney.new(spotify_user_id: spotify_user["id"])
-      @tracks_by_badge = journey.grouped_by_badge || {}     
+      @tracks_by_badge = journey.grouped_by_badge || {}
     else
       @tracks_by_badge = {}
     end
