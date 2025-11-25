@@ -30,7 +30,7 @@ class PagesController < ApplicationController
     spotify_user = session[:spotify_user]
     if spotify_user && spotify_user["id"].present?
       journey          = TrackJourney.new(spotify_user_id: spotify_user["id"])
-      @tracks_by_badge = journey.grouped_by_badge || {}      # 👈 remove max_per_badge if you want all
+      @tracks_by_badge = journey.grouped_by_badge || {}     
     else
       @tracks_by_badge = {}
     end
@@ -67,7 +67,7 @@ class PagesController < ApplicationController
     journey         = TrackJourney.new(spotify_user_id: spotify_user_id)
 
     @time_ranges     = journey.time_ranges
-    @tracks_by_badge = journey.grouped_by_badge(max_per_badge: 2) || {}
+    @tracks_by_badge = journey.grouped_by_badge(max_per_badge: 3) || {}
 
     @available_badges = @tracks_by_badge.keys.map(&:to_s)
 
