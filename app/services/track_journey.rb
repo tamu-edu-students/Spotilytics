@@ -34,7 +34,7 @@ class TrackJourney
     @limit_per_range = limit_per_range
   end
 
-  def grouped_by_badge(max_per_badge: 2)
+  def grouped_by_badge(max_per_badge: 3)
     items_by_badge = Hash.new { |h, k| h[k] = [] }
 
     combined_tracks.each do |item|
