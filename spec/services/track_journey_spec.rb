@@ -26,7 +26,7 @@ RSpec.describe TrackJourney do
       )
     end
 
-    let(:evergreen_items)    { Array.new(4) { build_item(:evergreen) } }   
+    let(:evergreen_items)    { Array.new(4) { build_item(:evergreen) } }
     let(:new_obsession_item) { build_item(:new_obsession) }
     let(:nil_badge_item)     { build_item(nil) }
 
