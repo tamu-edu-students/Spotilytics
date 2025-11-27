@@ -1,0 +1,52 @@
+<!-- app/views/playlists/sort.html.erb -->
+<% content_for :extra_css do %>
+  <%= stylesheet_link_tag "playlists", media: "all" %>
+<% end %>
+
+<main class="playlist-sort container">
+
+  <h1 class="playlist-title">Genre Breakdown</h1>
+  <h3 class="playlist-sub"><%= @playlist.name %></h3>
+
+  <div class="sort-header">
+    <%= button_to "Generate Genre Playlists",
+          create_genre_playlists_playlist_path(@playlist.id),
+          method: :post,
+          class: "btn spotify-btn" %>
+
+    <%= link_to "Back to Playlists", playlists_path, class: "btn outline-btn" %>
+  </div>
+
+  <% if @grouped.present? %>
+    <% @grouped.each do |genre, tracks| %>
+      <section class="genre-block">
+        <h2 class="genre-name"><%= genre.capitalize %></h2>
+
+        <div class="tracks-grid">
+          <% tracks.each do |t| %>
+            <div class="track-card">
+              <img src="<%= t[:album_image_url] %>" alt="<%= t[:name] %>">
+
+              <div class="info">
+                <p class="tname"><%= t[:name] %></p>
+                <p class="tartists"><%= t[:artists] %></p>
+
+                <div class="track-actions">
+                  <% if t[:preview_url].present? %>
+                    <audio controls src="<%= t[:preview_url] %>" class="audio-preview"></audio>
+                  <% end %>
+
+                  <%= link_to "Open", t[:spotify_url], target: "_blank", class: "open-btn" %>
+                </div>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </section>
+    <% end %>
+  <% else %>
+    <p class="text-muted mt-3">No tracks available.</p>
+  <% end %>
+
+</main>
+

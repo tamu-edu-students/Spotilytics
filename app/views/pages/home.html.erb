@@ -15,14 +15,232 @@
   <section class="home-description text-center mt-5">
     <h1>Discover Your Sound</h1>
     <p>
-      Access your stats anytime, anywhere, at your fingertips. Spotilytics is an all-in-one web application for spotify users to view and access their spotify account statistics whenever and wherever they want. Curious about your top tracks this year or your most listened to artist? Look no further, we have you covered.
+      Access your stats anytime, anywhere, at your fingertips. Spotilytics is an all-in-one web application for Spotify users to view and access their Spotify account statistics whenever and wherever they want. Curious about your top tracks this year or your most listened to artist? Look no further, we have you covered.
     </p>
     <% if current_user %>
-      <%= link_to 'My Dashboard', "/dashboard", class: 'home-page-button' %>
+      <%= link_to 'My Dashboard', dashboard_path, class: 'home-page-button' %>
     <% else %>
       <%= link_to 'Get Started Now', "/auth/spotify", class: 'home-page-button' %>
     <% end %>
   </section>
+
+  <%# -------------------- SEARCH RESULTS -------------------- %>
+  <% if params[:query].present? %>
+    <section class="search-results mt-5">
+      <h2 class="text-center mb-3">Search results for "<%= h params[:query] %>"</h2>
+
+      <%# ---- Helpers for templates to deal with Hash vs Object ---- %>
+      <%# artist name accessor %>
+      <% def artist_name(a)
+           a.respond_to?(:name) ? a.name : (a["name"] || a[:name])
+         end %>
+
+      <% def artist_image(a)
+           if a.respond_to?(:images) && a.images.present?
+             # RSpotify or OpenStruct artist
+             img = a.images.first
+             img.respond_to?(:[] ) ? img["url"] : img
+           else
+             # Hash-style
+             a.dig("images", 0, "url") || a.dig(:images, 0, :url)
+           end
+         end %>
+
+      <% def artist_spotify_url(a)
+           a.respond_to?(:external_urls) ? (a.external_urls && a.external_urls["spotify"]) : (a.dig("external_urls", "spotify") || a.dig(:external_urls, :spotify))
+         end %>
+
+      <% def track_field(t, key)
+           if t.respond_to?(key)
+             t.public_send(key)
+           else
+             t[key.to_s] || t[key.to_sym]
+           end
+         end %>
+
+      <%# filter playable tracks: prefer preview_url, fallback to is_playable or spotify_url presence %>
+      <% playable_tracks = Array(@tracks).select do |t|
+           preview = track_field(t, "preview_url")
+           is_playable = track_field(t, "is_playable")
+           spotify_url = track_field(t, "external_urls") || track_field(t, "spotify_url")
+           # if external_urls is a hash or string
+           spotify_href = if spotify_url.is_a?(Hash)
+                            spotify_url["spotify"] || spotify_url[:spotify]
+                          else
+                            spotify_url
+                          end
+           preview.present? || is_playable == true || spotify_href.present?
+         end %>
+
+      <%# ---------------- Artists ---------------- %>
+      <div class="artists mb-4">
+        <h3>Artists</h3>
+        <% if @artists.present? && @artists.any? %>
+          <div class="row">
+            <% @artists.first(6).each do |artist| %>
+              <div class="col-12 col-sm-6 col-md-4 mb-3">
+                <div class="artist-card p-3" style="background:#0f0f0f;border-radius:8px;">
+                  <% img = artist_image(artist) %>
+                  <% if img.present? %>
+                    <%= link_to artist_spotify_url(artist) || "#", target: "_blank", rel: "noopener" do %>
+                      <%= image_tag img, alt: artist_name(artist), style: "width:100%;height:140px;object-fit:cover;border-radius:6px;margin-bottom:8px;" %>
+                    <% end %>
+                  <% else %>
+                    <div style="width:100%;height:140px;background:#222;border-radius:6px;margin-bottom:8px;display:flex;align-items:center;justify-content:center;color:#888;">
+                      No image
+                    </div>
+                  <% end %>
+
+                  <h5 style="margin:0;color:white;"><%= artist_name(artist) %></h5>
+                  <% spotify_link = artist_spotify_url(artist) %>
+                  <% if spotify_link.present? %>
+                    <p style="margin:6px 0 0;"><a href="<%= spotify_link %>" target="_blank" rel="noopener" style="color:#1db954;">Open in Spotify</a></p>
+                  <% end %>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        <% else %>
+          <p>No artists found.</p>
+        <% end %>
+      </div>
+
+      <%# ---------------- Tracks ---------------- %>
+      <div class="tracks mb-4">
+        <h3>Tracks</h3>
+        <% if playable_tracks.present? && playable_tracks.any? %>
+          <% playable_tracks.each_with_index do |track, idx| %>
+            <%# fields with fallbacks for hash/object %>
+            <% track_name = track_field(track, "name") || "Unknown" %>
+            <% artists_field = track_field(track, "artists") %>
+            <% artist_text = if artists_field.is_a?(String)
+                                artists_field
+                              elsif artists_field.is_a?(Array)
+                                # array of hashes or objects
+                                artists_field.map { |a| (a.respond_to?(:name) ? a.name : (a["name"] || a[:name])) }.join(", ")
+                              else
+                                # some wrappers (OpenStruct row -> artists string)
+                                artists_field.to_s
+                              end %>
+            <% album_name = track_field(track, "album") %>
+            <% album_text = if album_name.is_a?(Hash) || album_name.respond_to?(:[]) 
+                               album_name.dig("name") || album_name.dig(:name)
+                             else
+                               track_field(track, "album_name") || ""
+                             end %>
+            <% album_image = if track_field(track, "album").respond_to?(:dig)
+                               track_field(track, "album").dig("images", 0, "url") rescue nil
+                             else
+                               track_field(track, "album_image_url")
+                             end %>
+            <% popularity = track_field(track, "popularity") || 0 %>
+            <% preview = track_field(track, "preview_url") %>
+            <% spotify_url_field = track_field(track, "external_urls") || track_field(track, "spotify_url") %>
+            <% spotify_href = if spotify_url_field.is_a?(Hash)
+                                 spotify_url_field["spotify"] || spotify_url_field[:spotify]
+                               else
+                                 spotify_url_field
+                               end %>
+
+            <div class="d-flex align-items-center p-3 mb-3" style="background:#111;border-radius:10px;">
+              <div style="width:52px;text-align:center;margin-right:12px;">
+                <div style="background:#222;color:#bbb;border-radius:6px;padding:6px 8px;font-weight:bold;">
+                  <%= idx + 1 %>
+                </div>
+              </div>
+
+              <div style="width:70px;height:70px;flex-shrink:0;margin-right:14px;">
+                <% if album_image.present? %>
+                  <%= image_tag album_image, alt: track_name, style: "width:70px;height:70px;object-fit:cover;border-radius:6px;" %>
+                <% else %>
+                  <div style="width:70px;height:70px;background:#222;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#666;">
+                    No cover
+                  </div>
+                <% end %>
+              </div>
+
+              <div class="flex-grow-1">
+                <div style="display:flex;align-items:center;justify-content:space-between;">
+                  <div>
+                    <h5 style="margin:0;color:white;"><%= track_name %></h5>
+                    <p style="margin:0;color:#bbb;"><%= artist_text %></p>
+                    <% if album_text.present? %>
+                      <p style="margin:0;color:#888;font-size:0.9em;">Album: <%= album_text %></p>
+                    <% end %>
+                  </div>
+                </div>
+
+                <div style="margin-top:8px;display:flex;align-items:center;gap:10px;">
+                  <% if preview.present? %>
+                    <audio controls preload="none" style="height:32px;">
+                      <source src="<%= preview %>" type="audio/mpeg">
+                      Your browser does not support the audio element.
+                    </audio>
+                  <% end %>
+
+                  <% if spotify_href.present? %>
+                    <a href="<%= spotify_href %>" target="_blank" rel="noopener" style="background:#1db954;padding:8px 12px;border-radius:8px;color:white;text-decoration:none;">
+                      ▶ Play on Spotify
+                    </a>
+                  <% else %>
+                    <span style="color:#666;padding:6px 8px;border-radius:6px;">No external link</span>
+                  <% end %>
+
+                  <span style="color:#999;">Popularity: <%= popularity %></span>
+                </div>
+              </div>
+            </div>
+          <% end %>
+        <% else %>
+          <p>No playable tracks found.</p>
+        <% end %>
+      </div>
+
+      <%# ---------------- Albums ---------------- %>
+      <div class="albums mb-4">
+        <h3>Albums</h3>
+        <% if @albums.present? && @albums.any? %>
+          <div class="row">
+            <% @albums.first(8).each do |album| %>
+              <div class="col-6 col-md-3 mb-3">
+                <div class="album-card p-2" style="background:#0f0f0f;border-radius:8px;">
+                  <% # album may be hash or object %>
+                  <% album_name = album.respond_to?(:name) ? album.name : (album["name"] || album[:name]) %>
+                  <% album_img = if album.respond_to?(:images) && album.images.present?
+                                   album.images.first.respond_to?(:[]) ? album.images.first["url"] : album.images.first
+                                 else
+                                   album.dig("images", 0, "url") rescue nil
+                                 end %>
+                  <% album_artists = if album.respond_to?(:artists)
+                                       (album.artists || []).map { |a| a.respond_to?(:name) ? a.name : (a["name"] || a[:name]) }.join(", ")
+                                     else
+                                       Array(album["artists"] || album[:artists]).map { |a| a["name"] || a[:name] }.join(", ")
+                                     end %>
+
+                  <% if album_img.present? %>
+                    <%= image_tag album_img, alt: album_name, style: "width:100%;height:140px;object-fit:cover;border-radius:6px;margin-bottom:8px;" %>
+                  <% else %>
+                    <div style="width:100%;height:140px;background:#222;border-radius:6px;margin-bottom:8px;display:flex;align-items:center;justify-content:center;color:#888;">No image</div>
+                  <% end %>
+
+                  <strong style="color:white;"><%= album_name %></strong>
+                  <p style="margin:4px 0 0;color:#ccc;font-size:0.9em;"><%= album_artists %></p>
+
+                  <% album_spotify = album.respond_to?(:external_urls) ? (album.external_urls && album.external_urls["spotify"]) : (album.dig("external_urls", "spotify") || album.dig(:external_urls, :spotify)) %>
+                  <% if album_spotify.present? %>
+                    <p style="margin-top:6px;"><a href="<%= album_spotify %>" target="_blank" rel="noopener" style="color:#1db954;">Open in Spotify</a></p>
+                  <% end %>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        <% else %>
+          <p>No albums found.</p>
+        <% end %>
+      </div>
+    </section>
+  <% end %>
+  <%# -------------------- END SEARCH RESULTS -------------------- %>
 
   <section class="contributors-section mt-5">
     <h2 class="text-center mb-4">Our Contributors</h2>

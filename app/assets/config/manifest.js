@@ -5,4 +5,8 @@
 //= link dashboard.css
 //= link profile.css
 //= link recommendations.css
+//= link listening_patterns.css
 //= link_tree ../../javascript .js
+//= link wrapped.css   
+//= link playlists.css
+
