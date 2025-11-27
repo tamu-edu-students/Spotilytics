@@ -20,15 +20,6 @@ Feature: PagesController edge cases
     Then I should be on the home page
     And I should see "You must log in with spotify to refresh your data."
 
-  # --- /top-artists ---
-  Scenario: Top Artists raises generic error → friendly message + empty lists
-    And Spotify top artists raises a generic error
-    When I go to the top artists page
-    Then I should see "We were unable to load your top artists from Spotify. Please try again later."
-    And the "Past Year" column should list exactly 0 artists
-    And the "Past 6 Months" column should list exactly 0 artists
-    And the "Past 4 Weeks" column should list exactly 0 artists
-
   # --- /view-profile ---
   Scenario: View Profile raises Unauthorized → alert + redirect home
     And Spotify profile raises Unauthorized

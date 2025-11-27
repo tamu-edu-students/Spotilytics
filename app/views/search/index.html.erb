@@ -1,0 +1,210 @@
+<h1>Spotify Search</h1>
+
+<%= form_with url: search_path, method: :get, local: true do |form| %>
+  <%= form.text_field :query, placeholder: "Search for artists, tracks, albums...", value: params[:query], class: "form-control" %>
+  <%= form.submit "Search", class: "btn btn-primary mt-2" %>
+<% end %>
+
+<% if params[:query].present? %>
+  <% query = params[:query].to_s.strip %>
+
+  <%# ----------------- helpers to safely access Hash / OpenStruct / object ----------------- %>
+  <% def safe_get(obj, key)
+       if obj.respond_to?(key)
+         obj.public_send(key)
+       else
+         obj[key.to_s] || obj[key.to_sym]
+       end
+     end %>
+
+  <% def name_for(entity)
+       safe_get(entity, :name) || safe_get(entity, :id) || "Unknown"
+     end %>
+
+  <% def artists_text(entity)
+       a = safe_get(entity, :artists)
+       if a.is_a?(String)
+         a
+       elsif a.is_a?(Array)
+         # array of strings or hashes/objects
+         if a.first.respond_to?(:name)
+           a.map { |x| x.name }.join(", ")
+         else
+           a.map { |x| x["name"] || x[:name] || x.to_s }.join(", ")
+         end
+       else
+         a.to_s
+       end
+     end %>
+
+  <% def album_image_url(track)
+       album = safe_get(track, :album) || {}
+       if album.respond_to?(:dig)
+         album.dig("images", 0, "url") || album.dig(:images, 0, :url)
+       elsif album.respond_to?(:images)
+         img = album.images&.first
+         img.is_a?(Hash) ? img["url"] : img
+       else
+         safe_get(track, :album_image_url)
+       end
+     end %>
+
+  <% def preview_url_for(track)
+       p = safe_get(track, :preview_url) || safe_get(track, :preview)
+       p.present? ? p : nil
+     end %>
+
+  <% def spotify_href_for(obj)
+       ext = safe_get(obj, :external_urls) || safe_get(obj, :external_url) || safe_get(obj, :spotify_url)
+       if ext.is_a?(Hash)
+         ext["spotify"] || ext[:spotify]
+       else
+         ext
+       end
+     end %>
+
+  <%# ----------------- ARTISTS ----------------- %>
+  <h2 class="mt-4">Artists</h2>
+  <% if @artists.present? && @artists.any? %>
+    <div class="row">
+      <% @artists.first(8).each do |artist| %>
+        <div class="col-12 col-sm-6 col-md-4 mb-3">
+          <div class="p-3" style="background:#0f0f0f;border-radius:8px;">
+            <% img = nil
+               if artist.respond_to?(:images) && artist.images.present?
+                 img_obj = artist.images.first
+                 img = img_obj.is_a?(Hash) ? img_obj["url"] : img_obj
+               else
+                 img = artist.dig("images", 0, "url") rescue nil
+               end %>
+
+            <% if img.present? %>
+              <%= link_to (spotify_href_for(artist) || "#"), target: "_blank", rel: "noopener" do %>
+                <%= image_tag img, alt: name_for(artist), style: "width:100%;height:140px;object-fit:cover;border-radius:6px;margin-bottom:8px;" %>
+              <% end %>
+            <% else %>
+              <div style="width:100%;height:140px;background:#222;border-radius:6px;margin-bottom:8px;display:flex;align-items:center;justify-content:center;color:#888;">
+                No image
+              </div>
+            <% end %>
+
+            <strong style="color:white;"><%= name_for(artist) %></strong>
+            <% if spotify_href_for(artist).present? %>
+              <div><a href="<%= spotify_href_for(artist) %>" target="_blank" rel="noopener" style="color:#1db954;">Open in Spotify</a></div>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% else %>
+    <p>No artists found.</p>
+  <% end %>
+
+  <%# ----------------- TRACKS ----------------- %>
+  <h2 class="mt-4">Tracks</h2>
+
+  <% # normalize tracks to array %>
+  <% tracks_list = Array(@tracks) %>
+
+  <% # select only playable tracks: preview_url present or spotify external url present or is_playable flag true %>
+  <% playable_tracks = tracks_list.select do |t|
+       preview = preview_url_for(t)
+       is_playable = safe_get(t, :is_playable)
+       spotify_link = spotify_href_for(t)
+       preview.present? || is_playable == true || spotify_link.present?
+     end %>
+
+  <% if playable_tracks.any? %>
+    <% playable_tracks.each_with_index do |track, i| %>
+      <% track_name = name_for(track) %>
+      <% artists_text_val = artists_text(track) %>
+      <% album_img = album_image_url(track) %>
+      <% preview = preview_url_for(track) %>
+      <% spotify_href = spotify_href_for(track) %>
+      <% popularity = safe_get(track, :popularity) || 0 %>
+
+      <div class="d-flex align-items-center p-3 mb-3" style="background:#111;border-radius:10px;">
+        <div style="width:50px;text-align:center;margin-right:12px;">
+          <div style="background:#222;color:#bbb;border-radius:6px;padding:6px 8px;font-weight:bold;">
+            <%= i + 1 %>
+          </div>
+        </div>
+
+        <div style="width:64px;height:64px;flex-shrink:0;margin-right:14px;">
+          <% if album_img.present? %>
+            <%= image_tag album_img, alt: track_name, style: "width:64px;height:64px;object-fit:cover;border-radius:6px;" %>
+          <% else %>
+            <div style="width:64px;height:64px;background:#222;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#666;">
+              No cover
+            </div>
+          <% end %>
+        </div>
+
+        <div class="flex-grow-1">
+          <h5 style="margin:0;color:white;"><%= track_name %></h5>
+          <p style="margin:0;color:#bbb;"><%= artists_text_val %></p>
+          <div style="margin-top:8px;display:flex;align-items:center;gap:10px;">
+            <% if preview.present? %>
+              <audio controls preload="none" style="height:28px;">
+                <source src="<%= preview %>" type="audio/mpeg">
+                Your browser does not support the audio element.
+              </audio>
+            <% end %>
+
+            <% if spotify_href.present? %>
+              <a href="<%= spotify_href %>" target="_blank" rel="noopener" style="background:#1db954;padding:8px 12px;border-radius:8px;color:white;text-decoration:none;">
+                ▶ Play on Spotify
+              </a>
+            <% end %>
+
+            <span style="color:#999;">Popularity: <%= popularity %></span>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  <% else %>
+    <p>No playable tracks found.</p>
+  <% end %>
+
+  <%# ----------------- ALBUMS ----------------- %>
+  <h2 class="mt-4">Albums</h2>
+  <% if @albums.present? && @albums.any? %>
+    <div class="row">
+      <% @albums.first(8).each do |album| %>
+        <% album_name = name_for(album) %>
+        <% album_img = begin
+                         if album.respond_to?(:images) && album.images.present?
+                           img = album.images.first
+                           img.is_a?(Hash) ? img["url"] : img
+                         else
+                           album.dig("images", 0, "url") rescue nil
+                         end
+                       end %>
+        <% album_artists = if album.respond_to?(:artists)
+                             (album.artists || []).map { |a| safe_get(a, :name) }.join(", ")
+                           else
+                             Array(album["artists"] || album[:artists]).map { |a| a["name"] || a[:name] || a.to_s }.join(", ")
+                           end %>
+
+        <div class="col-6 col-md-3 mb-3">
+          <div style="background:#0f0f0f;border-radius:8px;padding:8px;">
+            <% if album_img.present? %>
+              <%= image_tag album_img, alt: album_name, style: "width:100%;height:140px;object-fit:cover;border-radius:6px;margin-bottom:8px;" %>
+            <% else %>
+              <div style="width:100%;height:140px;background:#222;border-radius:6px;margin-bottom:8px;display:flex;align-items:center;justify-content:center;color:#888;">No image</div>
+            <% end %>
+
+            <strong style="color:white;"><%= album_name %></strong>
+            <p style="margin:4px 0 0;color:#ccc;font-size:0.9em;"><%= album_artists %></p>
+
+            <% if spotify_href_for(album).present? %>
+              <p style="margin-top:6px;"><a href="<%= spotify_href_for(album) %>" target="_blank" rel="noopener" style="color:#1db954;">Open in Spotify</a></p>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% else %>
+    <p>No albums found.</p>
+  <% end %>
+<% end %>

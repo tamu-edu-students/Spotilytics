@@ -300,7 +300,7 @@ RSpec.describe PagesController, type: :controller do
         get :top_artists
 
         expect(response).to have_http_status(:ok)
-        expect(flash.now[:alert]).to eq("We were unable to load your top artists from Spotify. Please try again later.")
+        expect(flash.now[:alert]).to eq("We were unable to load your Spotify data right now. Please try again later.")
         expect(assigns(:top_artists_by_range)).to eq({
           "long_term"   => [],
           "medium_term" => [],

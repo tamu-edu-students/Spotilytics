@@ -1,0 +1,21 @@
+.navbar-search-form {
+  display: inline-block;
+  margin-left: 20px;
+
+  .navbar-search-input {
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid #666;
+    background-color: #222;
+    color: white;
+    width: 190px;
+    transition: width 0.2s ease;
+
+    &:focus {
+      width: 260px;
+      outline: none;
+      border-color: #1db954;
+      background-color: #111;
+    }
+  }
+}

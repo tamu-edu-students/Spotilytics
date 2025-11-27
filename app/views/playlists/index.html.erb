@@ -1,0 +1,65 @@
+<!-- app/views/playlists/index.html.erb -->
+<% content_for :extra_css do %>
+  <%= stylesheet_link_tag "playlists", media: "all" %>
+<% end %>
+
+<main class="playlist-page container mt-4">
+
+  <h1 class="playlist-title">Your Spotify Playlists</h1>
+
+  <% if @playlists.blank? %>
+    <p class="text-muted mt-3">No playlists found.</p>
+  <% else %>
+    <div class="playlist-grid">
+      <% @playlists.each do |p| %>
+        <div class="playlist-card">
+          <div class="img-wrapper">
+            <% if p.image_url.present? %>
+              <img src="<%= p.image_url %>" alt="<%= p.name %>">
+            <% else %>
+              <div class="no-img">No Image</div>
+            <% end %>
+          </div>
+
+          <h3 class="pname"><%= p.name %></h3>
+          <p class="pdesc"><%= p.description.presence || "No description" %></p>
+
+          <div class="p-actions">
+            <%= link_to "View in Spotify", p.spotify_url, target: "_blank", class: "btn btn-sm spotify-btn" %>
+            <%= link_to "Genre Split", sort_playlist_path(p.id), class: "btn btn-sm outline-btn" %>
+
+            <!-- SHARE BUTTON -->
+            <button class="btn btn-sm share-btn"
+                    data-url="<%= p.spotify_url %>">
+              Share
+            </button>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+
+</main>
+
+<!-- COPY TO CLIPBOARD SCRIPT -->
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll(".share-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const url = btn.dataset.url;
+
+        navigator.clipboard.writeText(url).then(() => {
+          btn.textContent = "Copied!";
+          btn.style.backgroundColor = "#1db954";
+          btn.style.color = "white";
+
+          setTimeout(() => {
+            btn.textContent = "Share";
+            btn.style.backgroundColor = "";
+            btn.style.color = "";
+          }, 1500);
+        });
+      });
+    });
+  });
+</script>

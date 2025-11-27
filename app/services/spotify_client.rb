@@ -16,6 +16,72 @@ class SpotifyClient
   class Error < StandardError; end
   class UnauthorizedError < Error; end
 
+
+  # app/services/spotify_client.rb
+
+  # Return basic user playlists (array of OpenStruct)
+  def user_playlists(limit: 50)
+    access_token = ensure_access_token!
+    response = get("/me/playlists", access_token, limit: limit)
+    items = response.fetch("items", [])
+    items.map do |p|
+      OpenStruct.new(
+        id: p["id"],
+        name: p["name"],
+        description: p["description"],
+        owner_id: p.dig("owner", "id"),
+        tracks_count: p.dig("tracks", "total"),
+        spotify_url: p.dig("external_urls", "spotify"),
+        image_url: p.dig("images", 0, "url")
+      )
+    end
+  end
+
+  # Return playlist tracks enriched with first-artist genres
+  # Returns array of hashes: { id:, name:, artists:, album_name:, album_image_url:, preview_url:, spotify_url:, genres: [] }
+  def playlist_tracks_with_genres(playlist_id, limit: 100)
+    access_token = ensure_access_token!
+    # fetch playlist tracks
+    response = get("/playlists/#{playlist_id}/tracks", access_token, limit: limit)
+    items = Array(response["items"])
+
+    # collect all artist ids to do a batched artists lookup
+    artist_ids = items.flat_map do |it|
+      track = it["track"] || {}
+      (track["artists"] || []).map { |a| a["id"] }
+    end.compact.uniq
+
+    artist_genres_map = {}
+    if artist_ids.any?
+      artist_ids.each_slice(50) do |slice|
+        artists_resp = get("/artists", access_token, ids: slice.join(","))
+        (artists_resp["artists"] || []).each do |a|
+          artist_genres_map[a["id"]] = (a["genres"] || [])
+        end
+      end
+    end
+
+    items.map do |it|
+      track = it["track"] || {}
+      artists = (track["artists"] || []).map { |a| a["name"] }.join(", ")
+      # find genres from first artist id if present
+      first_artist_id = track.dig("artists", 0, "id")
+      genres = artist_genres_map[first_artist_id] || []
+
+      {
+        id:             track["id"],
+        name:           track["name"],
+        artists:        artists,
+        album_name:     track.dig("album", "name"),
+        album_image_url: track.dig("album", "images", 0, "url"),
+        preview_url:    track["preview_url"],
+        spotify_url:    track.dig("external_urls", "spotify"),
+        genres:         genres
+      }
+    end
+  end
+
+
   def initialize(session:)
     @session = session
     @client_id = ENV["SPOTIFY_CLIENT_ID"]
@@ -86,6 +152,24 @@ class SpotifyClient
       )
     end
   end
+  def search(query, limit: 10)
+    access_token = ensure_access_token!
+
+    params = {
+      q: query,
+      type: "artist,track,album",
+      limit: limit
+    }
+
+    response = get("/search", access_token, params)
+
+    {
+      artists: response.dig("artists", "items") || [],
+      tracks:  response.dig("tracks",  "items") || [],
+      albums:  response.dig("albums",  "items") || []
+    }
+  end
+
 
   def profile
     access_token = ensure_access_token!
