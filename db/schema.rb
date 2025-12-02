@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_23_234244) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_24_000000) do
   create_table "followed_artist_batches", force: :cascade do |t|
     t.string "spotify_user_id"
     t.integer "limit"
@@ -31,6 +31,22 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_23_234244) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["followed_artist_batch_id"], name: "index_followed_artists_on_followed_artist_batch_id"
+  end
+
+  create_table "listening_plays", force: :cascade do |t|
+    t.string "spotify_user_id", null: false
+    t.string "track_id"
+    t.string "track_name"
+    t.string "artists"
+    t.string "album_name"
+    t.string "album_image_url"
+    t.datetime "played_at", null: false
+    t.string "preview_url"
+    t.string "spotify_url"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["spotify_user_id", "played_at"], name: "index_listening_plays_on_spotify_user_id_and_played_at"
+    t.index ["spotify_user_id", "track_id", "played_at"], name: "index_listening_plays_on_user_track_played_at", unique: true
   end
 
   create_table "new_release_batches", force: :cascade do |t|
