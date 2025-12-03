@@ -3,6 +3,7 @@ require "rails_helper"
 RSpec.describe ListeningPatternsController, type: :controller do
   let(:session_user) do
     {
+      "id"           => "spotify-user-1",
       "display_name" => "Test Listener",
       "email"        => "listener@example.com",
       "image"        => "http://example.com/user.jpg"
@@ -13,6 +14,7 @@ RSpec.describe ListeningPatternsController, type: :controller do
 
   describe "GET #hourly" do
     let(:mock_client) { instance_double(SpotifyClient) }
+    let(:mock_history) { instance_double(ListeningHistory) }
     let(:plays) do
       [
         OpenStruct.new(id: "t1", name: "One", artists: "A", played_at: Time.utc(2025, 1, 1, 10, 0, 0)),
@@ -22,15 +24,18 @@ RSpec.describe ListeningPatternsController, type: :controller do
 
     before do
       allow(SpotifyClient).to receive(:new).with(session: anything).and_return(mock_client)
+      allow(ListeningHistory).to receive(:new).with(spotify_user_id: "spotify-user-1").and_return(mock_history)
     end
 
     context "when Spotify data loads successfully" do
       before do
-        allow(mock_client).to receive(:recently_played).with(limit: 25).and_return(plays)
+        allow(mock_client).to receive(:recently_played).and_return(plays)
+        allow(mock_history).to receive(:ingest!).with(plays)
+        allow(mock_history).to receive(:recent_entries).with(limit: 50).and_return(plays)
       end
 
       it "assigns chart data and responds with success" do
-        get :hourly, params: { limit: 25 }
+        get :hourly, params: { limit: 50 }
 
         expect(response).to have_http_status(:ok)
         expect(assigns(:sample_size)).to eq(2)
@@ -82,6 +87,50 @@ RSpec.describe ListeningPatternsController, type: :controller do
         get :hourly
         expect(response).to redirect_to(home_path)
         expect(flash[:alert]).to eq("You must log in with spotify to view this page.")
+      end
+    end
+  end
+
+  describe "GET #calendar" do
+    let(:mock_client) { instance_double(SpotifyClient) }
+    let(:mock_history) { instance_double(ListeningHistory) }
+    let(:plays) do
+      [
+        OpenStruct.new(id: "t1", name: "One", artists: "A", played_at: Time.utc(2025, 1, 1, 10, 0, 0)),
+        OpenStruct.new(id: "t2", name: "Two", artists: "B", played_at: Time.utc(2025, 1, 2, 12, 0, 0))
+      ]
+    end
+
+    before do
+      allow(SpotifyClient).to receive(:new).with(session: anything).and_return(mock_client)
+      allow(ListeningHistory).to receive(:new).with(spotify_user_id: "spotify-user-1").and_return(mock_history)
+    end
+
+    context "when Spotify data loads successfully" do
+      before do
+        allow(mock_client).to receive(:recently_played).and_return(plays)
+        allow(mock_history).to receive(:ingest!).with(plays)
+        allow(mock_history).to receive(:recent_entries).with(limit: 500).and_return(plays)
+      end
+
+      it "assigns weeks data and sample size" do
+        get :calendar
+
+        expect(response).to have_http_status(:ok)
+        expect(assigns(:weeks)).to be_present
+        expect(assigns(:sample_size)).to eq(2)
+      end
+    end
+
+    context "when Spotify requires re-authentication" do
+      before do
+        allow(mock_client).to receive(:recently_played).and_raise(SpotifyClient::UnauthorizedError.new("expired"))
+      end
+
+      it "redirects to home with alert" do
+        get :calendar
+        expect(response).to redirect_to(home_path)
+        expect(flash[:alert]).to eq("You must log in with spotify to view your listening patterns.")
       end
     end
   end

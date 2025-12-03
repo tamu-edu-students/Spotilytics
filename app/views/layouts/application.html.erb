@@ -43,6 +43,7 @@
             <%= link_to "Top Tracks", top_tracks_path, class: "nav-link #{'active' if current_page?(top_tracks_path)}" %>
             <%= link_to "Top Artists", top_artists_path, class: "nav-link #{'active' if current_page?(top_artists_path)}" %>
             <%= link_to "Listening Pattern", listening_patterns_path, class: "nav-link #{'active' if current_page?(listening_patterns_path)}" %>
+            <%= link_to "Listening Heatmap", listening_heatmap_path, class: "nav-link #{'active' if current_page?(listening_heatmap_path)}" %>
             <%= link_to "Recommendations", recommendations_path, class: "nav-link #{'active' if current_page?(recommendations_path)}" %>
           <% end %>
         </div>

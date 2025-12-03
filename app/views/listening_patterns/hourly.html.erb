@@ -8,7 +8,7 @@
       <p class="eyebrow text-uppercase mb-1">Hour-of-Day Listening Pattern</p>
       <h1 class="text-light mb-2">When you hit play</h1>
       <p class="text-secondary mb-0">
-        We look at your recently played tracks and chart how often you listen during each hour of the day.
+        We look at your played tracks (we keep syncing them for you) and chart how often you listen during each hour of the day.
         Times are shown in <%= Time.zone.name || "UTC" %>.
       </p>
     </div>
@@ -17,7 +17,13 @@
       <%= form_with url: listening_patterns_path, method: :get, local: true, class: "d-flex align-items-center gap-2 limit-form" do %>
         <label class="text-secondary fw-semibold">Use last</label>
         <%= select_tag :limit,
-              options_for_select([["25 plays", 25], ["50 plays (max)", 50]], @limit),
+              options_for_select([
+                ["50 plays", 50],
+                ["100 plays", 100],
+                ["250 plays", 250],
+                ["500 plays", 500],
+                ["1000 plays", 1000]
+              ], @limit),
               class: "form-select form-select-sm bg-dark text-white border-secondary",
               onchange: "this.form.submit();" %>
         <button class="btn btn-dark btn-sm js-hidden" type="submit">↻</button>
@@ -56,7 +62,7 @@
             Bars show how many of your last <%= @sample_size %> plays happened during each hour of the day.
           </p>
           <p class="text-secondary small mb-0">
-            Spotify caps Recently Played at ~50 tracks from roughly the past 24 hours, so this view will top out there.
+            We keep a running history per account so you can request up to <%= @limit %> plays beyond Spotify's short window.
           </p>
         </div>
       </div>
