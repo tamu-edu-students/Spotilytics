@@ -10,50 +10,60 @@
 
     <%= yield :head %>
 
-    <%# Enable PWA manifest for installable apps (make sure to enable in config/routes.rb too!) %>
     <%#= tag.link rel: "manifest", href: pwa_manifest_path(format: :json) %>
 
     <link rel="icon" href="/icon.png" type="image/png">
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/icon.png">
 
-    <%# Includes all stylesheet files in app/assets/stylesheets %>
     <%= stylesheet_link_tag "https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" %>
     <%= stylesheet_link_tag "application", media: "all" %>
     <%= javascript_importmap_tags %>
     <%= yield :extra_css %>
+
     <script>
       document.documentElement.classList.add('js');
     </script>
   </head>
 
-  <body>
+  <body class="no-js">
     <header>
       <nav class="spotify-nav d-flex align-items-center justify-content-between px-3">
         <!-- Left-aligned nav links -->
         <div class="nav-left d-flex">
           <a class="nav-logo" href="<%= home_path %>">
-            <%= image_tag "spotilytics-logo-white.png", alt: "Spotilytics Logo", class: "nav-bar-logo" %>
+            <%= image_tag "spotilytics-logo-white.png",
+                          alt: "Spotilytics Logo",
+                          class: "nav-bar-logo" %>
           </a>
-          <%= link_to 'Home', home_path, class: "nav-link #{'active' if (current_page?(home_path) || current_page?(root_path))}"%>
+          <%= link_to 'Home', home_path,
+                      class: "nav-link #{'active' if (current_page?(home_path) || current_page?(root_path))}" %>
 
-          <%# checks if user is signed in %>
           <% if session[:spotify_user] %>
-            <%= link_to 'Dashboard', dashboard_path, class: "nav-link #{'active' if current_page?(dashboard_path)}" %>
-            <%= link_to "Top Tracks", top_tracks_path, class: "nav-link #{'active' if current_page?(top_tracks_path)}" %>
-            <%= link_to "Top Artists", top_artists_path, class: "nav-link #{'active' if current_page?(top_artists_path)}" %>
-            <%= link_to "Listening Pattern", listening_patterns_path, class: "nav-link #{'active' if current_page?(listening_patterns_path)}" %>
-            <%= link_to "Recommendations", recommendations_path, class: "nav-link #{'active' if current_page?(recommendations_path)}" %>
+            <%= link_to 'Dashboard', dashboard_path,
+                        class: "nav-link #{'active' if current_page?(dashboard_path)}" %>
+            <%= link_to "Top Tracks", top_tracks_path,
+                        class: "nav-link #{'active' if current_page?(top_tracks_path)}" %>
+            <%= link_to "Top Artists", top_artists_path,
+                        class: "nav-link #{'active' if current_page?(top_artists_path)}" %>
+            <%= link_to "Listening Pattern", listening_patterns_path,
+                        class: "nav-link #{'active' if current_page?(listening_patterns_path)}" %>
+            <%= link_to "Recommendations", recommendations_path,
+                        class: "nav-link #{'active' if current_page?(recommendations_path)}" %>
           <% end %>
         </div>
 
         <!-- Right-aligned user links -->
         <div class="nav-right d-flex">
-          <%# checks if user is signed in %>
           <% if session[:spotify_user] %>
             <%= link_to 'Refresh Data', clear_path, class: "refresh-button" %>
-            <%= link_to  view_profile_path, class: "nav-link #{'active' if current_page?(view_profile_path)}", rel: "noopener noreferrer" do %>
-              <p style="margin-bottom: 0 !important;">Logged in as <strong><%= current_user['display_name'] || current_user['email'] %></strong></p>
+            <%= link_to view_profile_path,
+                        class: "nav-link #{'active' if current_page?(view_profile_path)}",
+                        rel: "noopener noreferrer" do %>
+              <p style="margin-bottom: 0 !important;">
+                Logged in as
+                <strong><%= current_user['display_name'] || current_user['email'] %></strong>
+              </p>
             <% end %>
             <%= button_to "Log out", logout_path, method: :delete, class: "nav-link" %>
           <% else %>
@@ -62,18 +72,18 @@
         </div>
       </nav>
     </header>
-    
 
-    <% if notice.present? || alert.present? %> 
-      <div class="flash-div"> 
-        <% if notice.present? %> 
-          <p class="flash flash-notice spotify-notice"><%= notice %></p> 
-        <% end %> 
-        <% if alert.present? %> 
-          <p class="flash flash-alert spotify-alert"><%= alert %></p> 
+    <% if notice.present? || alert.present? %>
+      <div class="flash-div">
+        <% if notice.present? %>
+          <p class="flash flash-notice spotify-notice"><%= notice %></p>
         <% end %>
-      </div> 
+        <% if alert.present? %>
+          <p class="flash flash-alert spotify-alert"><%= alert %></p>
+        <% end %>
+      </div>
     <% end %>
+
     <%= yield %>
   </body>
 </html>

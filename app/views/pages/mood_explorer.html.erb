@@ -5,7 +5,7 @@
 </p>
 
 <div class="mood-layout">
-  <section class="mood-nav-card">
+  <section class="mood-nav-card js-only">
     <h2 class="panel-title">Mood Navigator</h2>
 
     <div class="mood-wheel">
@@ -25,6 +25,17 @@
       Tap a mood on the wheel to filter songs. Tap again to reset.
     </p>
   </section>
+
+  <noscript>
+    <section class="mood-nav-card">
+      <h2 class="panel-title">Mood Navigator</h2>
+      <p>
+        The interactive mood wheel requires JavaScript.
+        You can still view per-track mood analysis using the
+        “View Mood Analysis” buttons on each song card.
+      </p>
+    </section>
+  </noscript>
 
   <section class="mood-list-card">
     <div class="panel-header-row">
@@ -77,6 +88,13 @@
                   <div class="chip-row">
                     <span class="chip chip-soft"><%= mood.to_s.titleize %></span>
                   </div>
+
+                  <!-- Fallback for NO JS: normal link to server-side analysis page -->
+                  <noscript>
+                    <%= link_to "View Mood Analysis",
+                      "/mood-analysis/#{track.id}",
+                      class: "fallback-analysis-btn" %>
+                  </noscript>
                 </div>
               </article>
             <% end %>
@@ -122,6 +140,9 @@
 
 <script>
   document.addEventListener("DOMContentLoaded", function () {
+
+    document.body.classList.remove("no-js");
+    document.body.classList.add("has-js");
     const cards   = document.querySelectorAll(".mood-track-card");
     const radarEl = document.getElementById("moodRadar");
 

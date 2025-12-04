@@ -13,6 +13,16 @@ class MoodExplorerService
     @features   = features.index_by { |f| f["spotify_id"] } 
   end
 
+  def self.detect_single(features_hash)
+    return :misc unless features_hash
+
+    MOOD_GROUPS.each do |name, rule|
+      return name if rule.call(features_hash)
+    end
+
+    :misc
+  end
+
   def clustered
     clusters = Hash.new { |h, k| h[k] = [] }
 

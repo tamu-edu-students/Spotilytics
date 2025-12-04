@@ -1,0 +1,112 @@
+<%# app/views/pages/mood_analysis.html.erb %>
+<% energy        = @features["energy"].to_f %>
+<% danceability  = @features["danceability"].to_f %>
+<% valence       = @features["valence"].to_f %>
+<% acousticness  = @features["acousticness"].to_f %>
+<% tempo         = @features["tempo"].to_f %>
+
+<main class="ma-page container mt-4">
+  <div class="ma-top-row">
+    <%= link_to "← Back to Mood Explorer", mood_explorer_path, class: "ma-back-link" %>
+  </div>
+
+  <section class="ma-shell">
+    <!-- LEFT: Artwork + basic info -->
+    <div class="ma-left">
+      <div class="ma-cover-card">
+        <img src="<%= @track.image %>"
+             alt="<%= @track.name %> cover"
+             class="ma-cover-img">
+
+        <div class="ma-cover-shadow"></div>
+      </div>
+
+      <div class="ma-meta">
+        <p class="ma-label">Track</p>
+        <h1 class="ma-title"><%= @track.name %></h1>
+
+        <p class="ma-artist"><%= @track.artists %></p>
+
+        <% if @mood %>
+          <span class="ma-mood-chip ma-mood-<%= @mood %>">
+            <%= @mood.to_s.titleize %> Mood
+          </span>
+        <% end %>
+      </div>
+    </div>
+
+    <!-- RIGHT: Feature breakdown -->
+    <div class="ma-right">
+      <h2 class="ma-section-title">Feature Breakdown</h2>
+
+      <div class="ma-grid">
+        <div class="ma-stat-card">
+          <div class="ma-stat-header">
+            <span class="ma-stat-label">Energy</span>
+            <span class="ma-stat-value"><%= sprintf("%.3f", energy) %></span>
+          </div>
+          <div class="ma-stat-bar">
+            <div class="ma-stat-fill" style="width: <%= (energy * 100).round %>%"></div>
+          </div>
+          <p class="ma-stat-caption">
+            Perceived intensity &amp; activity of the track.
+          </p>
+        </div>
+
+        <div class="ma-stat-card">
+          <div class="ma-stat-header">
+            <span class="ma-stat-label">Danceability</span>
+            <span class="ma-stat-value"><%= sprintf("%.3f", danceability) %></span>
+          </div>
+          <div class="ma-stat-bar">
+            <div class="ma-stat-fill" style="width: <%= (danceability * 100).round %>%"></div>
+          </div>
+          <p class="ma-stat-caption">
+            How suitable the track is for dancing.
+          </p>
+        </div>
+
+        <div class="ma-stat-card">
+          <div class="ma-stat-header">
+            <span class="ma-stat-label">Valence</span>
+            <span class="ma-stat-value"><%= sprintf("%.3f", valence) %></span>
+          </div>
+          <div class="ma-stat-bar">
+            <div class="ma-stat-fill" style="width: <%= (valence * 100).round %>%"></div>
+          </div>
+          <p class="ma-stat-caption">
+            Musical positiveness (happy vs. sad).
+          </p>
+        </div>
+
+        <div class="ma-stat-card">
+          <div class="ma-stat-header">
+            <span class="ma-stat-label">Acousticness</span>
+            <span class="ma-stat-value"><%= sprintf("%.3f", acousticness) %></span>
+          </div>
+          <div class="ma-stat-bar">
+            <div class="ma-stat-fill" style="width: <%= (acousticness * 100).round %>%"></div>
+          </div>
+          <p class="ma-stat-caption">
+            Confidence that the track is acoustic.
+          </p>
+        </div>
+
+        <div class="ma-stat-card ma-stat-card--wide">
+          <div class="ma-stat-header">
+            <span class="ma-stat-label">Tempo</span>
+            <span class="ma-stat-value"><%= tempo.round %> BPM</span>
+          </div>
+          <div class="ma-stat-bar">
+            <%# 60–200 BPM roughly mapped to 0–100% for the bar %>
+            <% tempo_norm = [[(tempo - 60) / 140.0 * 100, 0].max, 100].min %>
+            <div class="ma-stat-fill" style="width: <%= tempo_norm.round %>%"></div>
+          </div>
+          <p class="ma-stat-caption">
+            Estimated overall speed of the track.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>

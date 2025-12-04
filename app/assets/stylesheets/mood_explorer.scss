@@ -296,3 +296,9 @@
     grid-template-columns: 1fr;
   }
 }
+
+.no-js .js-only      { display: none !important; }
+.no-js .no-js-only   { display: block; }
+
+.has-js .js-only     { display: block; }
+.has-js .no-js-only  { display: none !important; }
