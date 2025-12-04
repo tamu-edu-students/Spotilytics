@@ -48,4 +48,24 @@ RSpec.describe ReccoBeatsClient do
       expect(described_class.fetch_audio_features([ "x" ])).to eq([])
     end
   end
+
+  describe ".fetch_audio_features" do
+    let(:track_ids) { [ "some-spotify-id" ] }
+
+    context "when an exception is raised while calling the API" do
+      before do
+        allow(Net::HTTP).to receive(:get_response)
+          .and_raise(RuntimeError, "boom")
+      end
+
+      it "logs the exception and returns an empty array" do
+        expect(Rails.logger).to receive(:error)
+          .with(/\[ReccoBeats\] Exception: RuntimeError – boom/)
+
+        result = described_class.fetch_audio_features(track_ids)
+
+        expect(result).to eq([])
+      end
+    end
+  end
 end

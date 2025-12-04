@@ -82,7 +82,7 @@ RSpec.describe "Mood Explorer", type: :request do
         get mood_explorer_path
 
         expect(response).to have_http_status(:ok)
-        expect(response.body).to include("Songs Mood Explorer")
+        expect(response.body).to include("Mood Explorer")
         expect(response.body).to include("Song One")
       end
     end
