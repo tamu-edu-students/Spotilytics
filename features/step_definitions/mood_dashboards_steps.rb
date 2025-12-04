@@ -96,7 +96,7 @@ end
 
 Then("I should see an energy value") do
   expect(page).to have_content("Energy")
-  expect(page).to have_content(/\d\.\d{3}/) 
+  expect(page).to have_content(/\d\.\d{3}/)
 end
 
 Then("I should see a tempo value in BPM") do

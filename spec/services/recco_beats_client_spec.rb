@@ -21,7 +21,7 @@ RSpec.describe ReccoBeatsClient do
 
       fake_response = instance_double(
         Net::HTTPOK,
-        is_a?: true, 
+        is_a?: true,
         body: fake_body,
         code: "200"
       )
