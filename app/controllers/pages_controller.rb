@@ -111,7 +111,7 @@ class PagesController < ApplicationController
         alert: "Track not found in your top 10 tracks."
     end
 
-    features = ReccoBeatsClient.fetch_audio_features([track_id])
+    features = ReccoBeatsClient.fetch_audio_features([ track_id ])
     @features = features.first
 
     @mood = MoodExplorerService.detect_single(@features)

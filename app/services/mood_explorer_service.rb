@@ -1,5 +1,5 @@
 class MoodExplorerService
-  MOOD_GROUPS = 
+  MOOD_GROUPS =
 {
     hype:      ->(f) { f["energy"].to_f > 0.7 && f["valence"].to_f > 0.6 },
     party:     ->(f) { f["danceability"].to_f > 0.7 && f["energy"].to_f > 0.6 && f["valence"].to_f > 0.5 },
@@ -10,7 +10,7 @@ class MoodExplorerService
 
   def initialize(top_tracks, features)
     @top_tracks = top_tracks
-    @features   = features.index_by { |f| f["spotify_id"] } 
+    @features   = features.index_by { |f| f["spotify_id"] }
   end
 
   def self.detect_single(features_hash)
@@ -27,7 +27,7 @@ class MoodExplorerService
     clusters = Hash.new { |h, k| h[k] = [] }
 
     @top_tracks.each do |track|
-      feat = @features[track.id] 
+      feat = @features[track.id]
       next unless feat
 
       mood = detect_mood(feat)
