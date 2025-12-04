@@ -1,0 +1,70 @@
+<% content_for :extra_css do %>
+  <%= stylesheet_link_tag "listening_patterns", media: "all" %>
+<% end %>
+
+<main class="container listening-patterns mt-4">
+  <div class="page-heading d-flex flex-column flex-lg-row align-items-lg-center justify-content-lg-between">
+    <div>
+      <p class="eyebrow text-uppercase mb-1">Listening Calendar</p>
+      <h1 class="text-light mb-2">Your activity heatmap</h1>
+      <p class="text-secondary mb-0">
+        GitHub-style calendar showing when you hit play. We sync your recent plays and keep them so the grid can fill up over time.
+      </p>
+      <% if @history_window.present? %>
+        <% start_time, end_time = @history_window %>
+        <p class="text-secondary small mb-0">
+          Window: <%= start_time.strftime("%b %-d, %l:%M %p %Z") %> – <%= end_time.strftime("%b %-d, %l:%M %p %Z") %>
+        </p>
+      <% end %>
+    </div>
+
+    <div class="total-chip text-light mt-3 mt-lg-0">
+      <span class="label text-secondary">Plays captured</span>
+      <span class="value text-light"><%= @sample_size %></span>
+    </div>
+  </div>
+
+  <% if @weeks.present? %>
+    <div class="spotify-card p-3 mt-4">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+          <h5 class="text-light mb-1">Calendar heatmap</h5>
+          <p class="text-secondary small mb-0">
+            Shows the last ~8 weeks from your Recently Played feed. Darker squares mean more plays that day.
+          </p>
+        </div>
+        <div class="heatmap-legend d-flex align-items-center gap-1">
+          <span class="text-secondary small me-2">Less</span>
+          <% (0..4).each do |level| %>
+            <span class="legend-cell level-<%= level %>"></span>
+          <% end %>
+          <span class="text-secondary small ms-2">More</span>
+        </div>
+      </div>
+
+      <div class="heatmap-wrapper">
+        <div class="heatmap-grid" style="grid-template-columns: repeat(<%= @weeks.size %>, 22px);">
+          <% @weeks.each do |week| %>
+            <div class="heatmap-week">
+              <% week.each do |cell| %>
+                <div
+                  class="heatmap-cell level-<%= cell[:level] %>"
+                  title="<%= "#{cell[:date].strftime('%b %-d')}: #{cell[:count]} play#{'s' unless cell[:count] == 1}" %>">
+                </div>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  <% else %>
+    <div class="spotify-card p-4 mt-4">
+      <h5 class="text-light">No recent plays yet</h5>
+      <p class="text-secondary mb-2">
+        We need a little listening history to build your calendar. Play a few tracks on Spotify,
+        then refresh this page.
+      </p>
+      <%= link_to "Refresh", listening_heatmap_path, class: "btn btn-spotify" %>
+    </div>
+  <% end %>
+</main>
