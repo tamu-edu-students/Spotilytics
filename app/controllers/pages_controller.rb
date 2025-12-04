@@ -92,6 +92,25 @@ class PagesController < ApplicationController
     @profile = nil
   end
 
+  def mood_explorer
+    spotify_user = session[:spotify_user]
+    return redirect_to(home_path, alert: "Log in with Spotify first.") unless spotify_user
+
+    client = SpotifyClient.new(session: session)
+
+    @top_tracks = client.top_tracks_1(limit: 10)
+
+    spotify_ids = @top_tracks.map(&:id)
+    features = ReccoBeatsClient.fetch_audio_features(spotify_ids) || []
+
+    @clusters = MoodExplorerService.new(@top_tracks, features).clustered
+    Rails.logger.info "[MoodExplorer] Loaded #{spotify_ids.size}, features #{features.size}, top tracks #{@top_tracks.size} into #{@clusters.keys.size} mood clusters."
+
+  rescue => e
+    Rails.logger.error "[MoodExplorer] Error: #{e}"
+    redirect_to dashboard_path, alert: "Could not load mood insights."
+  end
+
   def top_artists
     @time_ranges = TOP_ARTIST_TIME_RANGES
     @top_artists_by_range = {}

@@ -17,6 +17,7 @@ Rails.application.routes.draw do
   get "/view-profile", to: "pages#view_profile", as: :view_profile
   get "/clear", to: "pages#clear", as: :clear
   get "/listening-patterns", to: "listening_patterns#hourly", as: :listening_patterns
+  get "/mood-explorer", to: "pages#mood_explorer"
   root "pages#home"
 
   # Callback from Spotify
