@@ -257,6 +257,7 @@ end
         OpenStruct.new(
           id: track["id"],
           name: track["name"],
+          duration_ms: track["duration_ms"],
           album_name: track.dig("album", "name"),
           album_image_url: track.dig("album", "images", 0, "url"),
           artists: (track["artists"] || []).map { |a| a["name"] }.join(", "),

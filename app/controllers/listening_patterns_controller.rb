@@ -87,6 +87,35 @@ class ListeningPatternsController < ApplicationController
     end
   end
 
+  def monthly
+    @limit = params[:limit].present? ? normalize_limit(params[:limit]) : 500
+    client = SpotifyClient.new(session: session)
+    stats_service = MonthlyListeningStats.new(client: client, time_zone: Time.zone)
+
+    summary = stats_service.chart_data(limit: @limit)
+
+    @chart_data = summary[:chart]
+    @buckets = summary[:buckets]
+    @sample_size = summary[:sample_size]
+    @history_window = summary[:history_window]
+    @total_hours = hours_from_ms(summary[:total_duration_ms])
+  rescue SpotifyClient::UnauthorizedError
+    redirect_to home_path, alert: "You must log in with spotify to view your listening patterns." and return
+  rescue SpotifyClient::Error => e
+    if insufficient_scope?(e)
+      reset_spotify_session!
+      redirect_to login_path, alert: "Spotify now needs permission to read your Recently Played history. Please sign in again." and return
+    else
+      Rails.logger.warn "Failed to fetch monthly listening data: #{e.message}"
+      flash.now[:alert] = "We weren't able to load your listening history from Spotify right now."
+      @chart_data = nil
+      @buckets = []
+      @sample_size = 0
+      @history_window = nil
+      @total_hours = 0
+    end
+  end
+
   private
 
   def normalize_limit(value)
@@ -182,6 +211,10 @@ class ListeningPatternsController < ApplicationController
 
   def insufficient_scope?(error)
     error.message.to_s.downcase.include?("insufficient client scope")
+  end
+
+  def hours_from_ms(ms)
+    (ms.to_f / 3_600_000.0).round(1)
   end
 
   def reset_spotify_session!

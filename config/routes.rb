@@ -17,6 +17,7 @@ Rails.application.routes.draw do
   get "/view-profile", to: "pages#view_profile", as: :view_profile
   get "/clear", to: "pages#clear", as: :clear
   get "/listening-patterns", to: "listening_patterns#hourly", as: :listening_patterns
+  get "/listening-monthly", to: "listening_patterns#monthly", as: :listening_monthly
   get "/mood-explorer", to: "pages#mood_explorer"
   get "/mood-analysis/:id", to: "pages#mood_analysis", as: :mood_analysis
   get "/listening-heatmap", to: "listening_patterns#calendar", as: :listening_heatmap

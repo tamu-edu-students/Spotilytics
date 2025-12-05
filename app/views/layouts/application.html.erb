@@ -48,6 +48,8 @@
                         class: "nav-link #{'active' if current_page?(top_artists_path)}" %>
             <%= link_to "Listening Pattern", listening_patterns_path,
                         class: "nav-link #{'active' if current_page?(listening_patterns_path)}" %>
+            <%= link_to "Monthly Hours", listening_monthly_path,
+                        class: "nav-link #{'active' if current_page?(listening_monthly_path)}" %>
             <%= link_to "Listening Heatmap", listening_heatmap_path, class: "nav-link #{'active' if current_page?(listening_heatmap_path)}" %>
             <%= link_to "Discover", recommendations_path,
                         class: "nav-link #{'active' if current_page?(recommendations_path)}" %>
