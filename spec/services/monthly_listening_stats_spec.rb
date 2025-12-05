@@ -26,7 +26,7 @@ RSpec.describe MonthlyListeningStats do
       expect(summary[:buckets].last[:hours]).to eq(1.0)
       expect(summary[:sample_size]).to eq(3)
       expect(summary[:total_duration_ms]).to eq(3_900_000)
-      expect(summary[:history_window]).to eq([plays.first.played_at, plays.last.played_at])
+      expect(summary[:history_window]).to eq([ plays.first.played_at, plays.last.played_at ])
     end
   end
 
