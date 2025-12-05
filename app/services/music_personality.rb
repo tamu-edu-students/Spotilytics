@@ -33,7 +33,7 @@ class MusicPersonality
   private
 
   def headline
-    [daypart_title, energy_title].compact.join(" ")
+    [ daypart_title, energy_title ].compact.join(" ")
   end
 
   def subtitle
@@ -41,7 +41,7 @@ class MusicPersonality
   end
 
   def traits
-    [dance_title, acoustic_title, instrumental_title].compact
+    [ dance_title, acoustic_title, instrumental_title ].compact
   end
 
   def basis_text
