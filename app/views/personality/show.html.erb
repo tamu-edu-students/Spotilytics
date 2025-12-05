@@ -1,0 +1,80 @@
+<% content_for :extra_css do %>
+  <%= stylesheet_link_tag "personality", media: "all" %>
+<% end %>
+
+<main class="container mt-4 personality-page">
+  <div class="d-flex flex-column flex-lg-row justify-content-between personality-hero mb-4">
+    <div>
+      <p class="eyebrow text-uppercase mb-1">Music personality</p>
+      <h1 class="mb-2 text-light"><%= @summary&.title || "Your music personality" %></h1>
+      <p class="text-secondary mb-1"><%= @summary&.subtitle %></p>
+      <p class="text-secondary small mb-0"><%= @summary&.basis %></p>
+
+      <% if @summary&.traits.present? %>
+        <div class="mt-3">
+          <% @summary.traits.each do |trait| %>
+            <span class="trait-badge"><%= trait %></span>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+
+    <div class="total-chip text-light mt-3 mt-lg-0">
+      <span class="label text-secondary">Tracks analyzed</span>
+      <span class="value text-light"><%= @sample_size %></span>
+    </div>
+  </div>
+
+  <% if @summary.present? %>
+    <div class="row g-3">
+      <div class="col-12 col-lg-7">
+        <div class="spotify-card p-3 h-100">
+          <h5 class="text-light mb-2">Who you are</h5>
+          <p class="text-secondary mb-3">
+            <%= @summary.subtitle %> You tend to listen <%= @summary.hour_focus %>-style.
+          </p>
+
+          <div class="row g-2">
+            <% @stats.each do |key, value| %>
+              <div class="col-6 col-md-4">
+                <div class="stat-pill">
+                  <div class="stat-label text-uppercase"><%= key.to_s.humanize %></div>
+                  <div class="stat-value">
+                    <% if key == :tempo %>
+                      <%= value.round %> BPM
+                    <% else %>
+                      <%= (value * 100).round %>%
+                    <% end %>
+                  </div>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 col-lg-5">
+        <div class="spotify-card p-3 h-100">
+          <h5 class="text-light mb-2">Sample tracks</h5>
+          <% if @examples.present? %>
+            <ul class="list-unstyled mb-0">
+              <% @examples.each do |track| %>
+                <li class="mb-2">
+                  <span class="text-light fw-semibold"><%= track.name %></span>
+                  <div class="text-secondary small"><%= track.artists %></div>
+                </li>
+              <% end %>
+            </ul>
+          <% else %>
+            <p class="text-secondary mb-0">We need top tracks to generate examples.</p>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  <% else %>
+    <div class="spotify-card p-4 mt-3">
+      <h5 class="text-light">No personality yet</h5>
+      <p class="text-secondary mb-0">We need a bit of listening data to build this summary. Try again after playing some tracks.</p>
+    </div>
+  <% end %>
+</main>
