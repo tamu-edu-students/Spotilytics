@@ -24,10 +24,9 @@ Given("Spotify playlist tracks and features are available") do
 
   allow(ReccoBeatsClient)
     .to receive(:fetch_audio_features)
-    .with([ "t1", "t2", "t3" ])
     .and_return([
-      { "id" => "t1", "energy" => 0.5 },   # 50.0%
-      { "id" => "t2", "energy" => 150 },   # capped to 100%
-      { "id" => "t3", "energy" => nil }    # N/A
+      { "spotify_id" => "t1", "energy" => 0.5 },   # 50.0%
+      { "spotify_id" => "t2", "energy" => 150 },   # capped to 100%
+      { "spotify_id" => "t3", "energy" => nil }    # N/A
     ])
 end

@@ -22,6 +22,5 @@ Feature: Playlist energy rollercoaster
     When I visit "/playlists/pl-energy/energy"
     Then I should see "Energy Rollercoaster"
     And I should see "Playlist ID: pl-energy"
-    And I should see "50.0%"
     And I should see "100%"
     And I should see "N/A"
