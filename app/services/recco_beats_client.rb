@@ -11,7 +11,9 @@ class ReccoBeatsClient
     query = URI.encode_www_form(ids: ids)
     url   = URI("#{BASE_URL}/audio-features?#{query}")
 
-    response = Net::HTTP.get_response(url)
+    response = with_http(url) do |http|
+      http.get(url.request_uri)
+    end
 
     unless response.is_a?(Net::HTTPSuccess)
       Rails.logger.error "[ReccoBeats] API error: #{response.code} – #{response.body}"
@@ -36,4 +38,32 @@ class ReccoBeatsClient
     Rails.logger.error "[ReccoBeats] Exception: #{e.class} – #{e.message}"
     []
   end
+
+  def self.with_http(url)
+    http = Net::HTTP.new(url.host, url.port)
+    http.use_ssl = url.scheme == "https"
+    http.verify_mode = ssl_verify_mode
+    http.cert_store = build_cert_store
+
+    yield http
+  end
+  private_class_method :with_http
+
+  def self.ssl_verify_mode
+    if ENV["RECCOBEATS_DISABLE_SSL_VERIFY"] == "true"
+      OpenSSL::SSL::VERIFY_NONE
+    else
+      OpenSSL::SSL::VERIFY_PEER
+    end
+  end
+  private_class_method :ssl_verify_mode
+
+  def self.build_cert_store
+    store = OpenSSL::X509::Store.new
+    store.set_default_paths
+    ca_file = ENV["RECCOBEATS_CA_FILE"]
+    store.add_file(ca_file) if ca_file.present? && File.exist?(ca_file)
+    store
+  end
+  private_class_method :build_cert_store
 end
