@@ -21,6 +21,7 @@ Given("a test endpoint that proxies to pages#top_tracks") do
     get '/view-profile', to: 'pages#view_profile', as: :view_profile
     get '/clear',        to: 'pages#clear',        as: :clear
     get '/listening-patterns', to: 'listening_patterns#hourly', as: :listening_patterns
+    get '/listening-monthly',  to: 'listening_patterns#monthly', as: :listening_monthly
     get '/listening-heatmap',  to: 'listening_patterns#calendar', as: :listening_heatmap
     root 'pages#home'
     match '/auth/spotify/callback', to: 'sessions#create', via: %i[get post]
