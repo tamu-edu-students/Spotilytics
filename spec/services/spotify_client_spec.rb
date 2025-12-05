@@ -676,6 +676,34 @@ RSpec.describe SpotifyClient, type: :service do
         end
     end
 
+    describe "#top_tracks_1" do
+        it "maps Spotify JSON to OpenStructs with id, name, artists, image" do
+        payload = {
+            "items" => [
+            {
+                "id" => "t1",
+                "name" => "Song One",
+                "artists" => [ { "name" => "Artist A" } ],
+                "album" => { "images" => [ { "url" => "http://img/1" } ] }
+            }
+            ]
+        }
+
+        allow(client).to receive(:ensure_access_token!).and_return("token")
+        allow(client).to receive(:get).with("/me/top/tracks", "token", hash_including(limit: 10))
+                                        .and_return(payload)
+
+        tracks = client.top_tracks_1(limit: 10)
+
+        expect(tracks.size).to eq(1)
+        track = tracks.first
+        expect(track.id).to eq("t1")
+        expect(track.name).to eq("Song One")
+        expect(track.artists).to eq("Artist A")
+        expect(track.image).to eq("http://img/1")
+        end
+    end
+
     describe "#followed_artist_ids" do
         let(:access_token) { "valid_token" }
 

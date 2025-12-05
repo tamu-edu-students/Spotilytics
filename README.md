@@ -9,10 +9,10 @@ The app uses Spotify OAuth 2.0 authentication via the official Spotify Developer
 
 ## Useful URLs
 
-- **Heroku Dashboard:** [https://spotilytics-app-41dbe947e18e.herokuapp.com/home](https://spotilytics-app-41dbe947e18e.herokuapp.com/home)
-- **GitHub Projects Dashboard:** [https://github.com/orgs/tamu-edu-students/projects/154](https://github.com/orgs/tamu-edu-students/projects/154)
-- **Burn up chart** [https://github.com/orgs/tamu-edu-students/projects/154/insights](https://github.com/orgs/tamu-edu-students/projects/154/insights)
-- **Slack Group** (to track Scrum Events) - #csce606-proj2-group1 - [https://tamu.slack.com/archives/C09KM1BV4TW](https://tamu.slack.com/archives/C09KM1BV4TW)
+- **Heroku Dashboard:** [https://spotilytics-v2-df4cb8734a44.herokuapp.com/home](https://spotilytics-v2-df4cb8734a44.herokuapp.com/home)
+- **GitHub Projects Dashboard:** [https://github.com/orgs/tamu-edu-students/projects/183](https://github.com/orgs/tamu-edu-students/projects/183)
+- **Burn up chart** [https://github.com/orgs/tamu-edu-students/projects/183/insights](https://github.com/orgs/tamu-edu-students/projects/183/insights)
+- **Slack Group** (to track Scrum Events) - #csce606-proj2-group1 - [https://tamu.slack.com/archives/C09SF9LJ6TT](https://tamu.slack.com/archives/C09SF9LJ6TT)
 
 
 ## Features
@@ -576,10 +576,10 @@ This section provides **useful context for developers** trying to debug issues i
 
 # Developed by Team 1 - CSCE 606 (Fall 2025)
 ## Team Members
-- **Aurora Jitrskul**
-- **Pablo Pineda**
-- **Aditya Vellampalli**
 - **Spoorthy Kumbashi Raghavendra**
+- **Cameron Yoffe**
+- **Charlie Chiu**
+- **Venkateshwarlu Nagineni**
 
 > “Discover Your Sound”
 

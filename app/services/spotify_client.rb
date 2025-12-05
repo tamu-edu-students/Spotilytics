@@ -187,6 +187,29 @@ end
     batch.followed_artists.order(:position).map { |row| build_followed_artist(row) }
   end
 
+  def fetch_mood_features(spotify_track_ids)
+    ReccoBeatsClient.fetch_audio_features(spotify_track_ids)
+  end
+
+  def top_tracks_1(limit: 10, time_range: "medium_term")
+    access_token = ensure_access_token!
+    response = get("/me/top/tracks", access_token, {
+      limit: limit,
+      time_range: time_range
+    })
+
+    items = response["items"] || []
+
+    items.map do |t|
+      OpenStruct.new(
+        id: t["id"],
+        name: t["name"],
+        artists: t["artists"].map { |a| a["name"] }.join(", "),
+        image: t.dig("album", "images", 0, "url")
+      )
+    end
+  end
+
   def recently_played(limit:)
     limit = limit.to_i
     limit = 50 if limit <= 0
