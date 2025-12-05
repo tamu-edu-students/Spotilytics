@@ -143,12 +143,13 @@ RSpec.describe ListeningPatternsController, type: :controller do
       end_time = Time.utc(2025, 3, 5, 18, 0, 0)
 
       {
-        chart: { labels: [ "Jan 2025" ], datasets: [ { data: [ 1.5 ] } ] },
+        chart: { labels: [ "Dec 2024", "Jan 2025" ], datasets: [ { data: [ 2.0, 1.5 ] } ] },
         buckets: [
+          { label: "Dec 2024", hours: 2.0, play_count: 40, month: start_time.beginning_of_month - 1.month, duration_ms: 7_200_000 },
           { label: "Jan 2025", hours: 1.5, play_count: 30, month: start_time.beginning_of_month, duration_ms: 5_400_000 }
         ],
-        sample_size: 30,
-        total_duration_ms: 5_400_000,
+        sample_size: 70,
+        total_duration_ms: 12_600_000,
         history_window: [ start_time, end_time ]
       }
     end
@@ -169,8 +170,9 @@ RSpec.describe ListeningPatternsController, type: :controller do
         expect(response).to have_http_status(:ok)
         expect(assigns(:chart_data)).to eq(chart_summary[:chart])
         expect(assigns(:buckets)).to eq(chart_summary[:buckets])
-        expect(assigns(:sample_size)).to eq(30)
-        expect(assigns(:total_hours)).to eq(1.5)
+        expect(assigns(:sample_size)).to eq(70)
+        expect(assigns(:total_hours)).to eq(3.5)
+        expect(assigns(:previous_month)).to eq(chart_summary[:buckets].first)
       end
     end
 

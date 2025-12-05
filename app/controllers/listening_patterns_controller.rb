@@ -99,6 +99,7 @@ class ListeningPatternsController < ApplicationController
     @sample_size = summary[:sample_size]
     @history_window = summary[:history_window]
     @total_hours = hours_from_ms(summary[:total_duration_ms])
+    @previous_month = find_previous_month(@buckets)
   rescue SpotifyClient::UnauthorizedError
     redirect_to home_path, alert: "You must log in with spotify to view your listening patterns." and return
   rescue SpotifyClient::Error => e
@@ -215,6 +216,16 @@ class ListeningPatternsController < ApplicationController
 
   def hours_from_ms(ms)
     (ms.to_f / 3_600_000.0).round(1)
+  end
+
+  def find_previous_month(buckets)
+    return nil if buckets.blank?
+
+    months = buckets.map { |b| b[:month].to_date }
+    latest_month = months.max
+    target = latest_month << 1 # previous month
+
+    buckets.find { |bucket| bucket[:month].to_date == target }
   end
 
   def reset_spotify_session!
