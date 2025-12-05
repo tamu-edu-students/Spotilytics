@@ -1,7 +1,7 @@
 require "set"
 
 class PagesController < ApplicationController
-  before_action :require_spotify_auth!, only: %i[dashboard top_artists top_tracks view_profile clear]
+  before_action :require_spotify_auth!, only: %i[dashboard top_artists top_tracks view_profile clear playlist_energy]
 
   TOP_ARTIST_TIME_RANGES = [
     { key: "long_term", label: "Past Year" },
@@ -138,6 +138,30 @@ class PagesController < ApplicationController
   rescue => e
     Rails.logger.error "[MoodExplorer] Error: #{e}"
     redirect_to dashboard_path, alert: "Could not load mood insights."
+  end
+
+  def playlist_energy
+    @playlist_id = params[:id].to_s.strip
+    if @playlist_id.blank?
+      redirect_to dashboard_path, alert: "Please provide a playlist ID." and return
+    end
+
+    service = PlaylistEnergyService.new(client: spotify_client)
+    @points = service.energy_profile(playlist_id: @playlist_id)
+    @labels = @points.map { |p| p[:label] }
+    @energies = @points.map { |p| p[:energy] }
+
+    if @points.empty?
+      flash.now[:alert] = "No tracks found for that playlist."
+    end
+  rescue SpotifyClient::UnauthorizedError
+    redirect_to home_path, alert: "You must log in with spotify to view playlist energy." and return
+  rescue SpotifyClient::Error => e
+    Rails.logger.warn "Failed to load playlist energy: #{e.message}"
+    flash.now[:alert] = "We couldn't load that playlist right now."
+    @points = []
+    @labels = []
+    @energies = []
   end
 
   def top_artists

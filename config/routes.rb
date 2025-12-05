@@ -21,6 +21,7 @@ Rails.application.routes.draw do
   get "/mood-explorer", to: "pages#mood_explorer"
   get "/mood-analysis/:id", to: "pages#mood_analysis", as: :mood_analysis
   get "/listening-heatmap", to: "listening_patterns#calendar", as: :listening_heatmap
+  get "/playlists/:id/energy", to: "pages#playlist_energy", as: :playlist_energy
   root "pages#home"
 
   # Callback from Spotify

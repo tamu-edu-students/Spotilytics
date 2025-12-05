@@ -210,6 +210,36 @@ end
     end
   end
 
+  def playlist_tracks(playlist_id:, limit: 100)
+    access_token = ensure_access_token!
+    collected = []
+    offset = 0
+
+    while collected.length < limit
+      page_limit = [ 100, limit - collected.length ].min
+      response = get("/playlists/#{playlist_id}/tracks", access_token, limit: page_limit, offset: offset)
+      items = Array(response["items"])
+      break if items.empty?
+
+      items.each do |item|
+        track = item["track"] || {}
+        collected << OpenStruct.new(
+          id: track["id"],
+          name: track["name"],
+          artists: (track["artists"] || []).map { |a| a["name"] }.join(", "),
+          duration_ms: track["duration_ms"],
+          spotify_url: track.dig("external_urls", "spotify")
+        )
+      end
+
+      break if items.length < page_limit
+
+      offset += page_limit
+    end
+
+    collected
+  end
+
   def recently_played(limit:)
     limit = limit.to_i
     limit = 50 if limit <= 0
