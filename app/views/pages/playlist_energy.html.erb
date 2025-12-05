@@ -83,8 +83,11 @@
         data.datasets[0].borderColor = '#1db954';
         data.datasets[0].backgroundColor = gradient;
         data.datasets[0].fill = true;
-        data.datasets[0].tension = 0.35;
-        data.datasets[0].pointRadius = 3;
+        data.datasets[0].tension = 0.45;
+        data.datasets[0].cubicInterpolationMode = 'monotone';
+        data.datasets[0].spanGaps = true;
+        data.datasets[0].borderWidth = 2;
+        data.datasets[0].pointRadius = 4;
         data.datasets[0].pointBackgroundColor = '#1db954';
 
         new Chart(ctx, {
