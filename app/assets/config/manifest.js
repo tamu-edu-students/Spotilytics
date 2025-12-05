@@ -5,4 +5,6 @@
 //= link dashboard.css
 //= link profile.css
 //= link recommendations.css
+//= link listening_patterns.css
+//= link personality.css
 //= link_tree ../../javascript .js

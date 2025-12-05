@@ -4,11 +4,11 @@ class RecommendationsController < ApplicationController
     def recommendations
         spotify_client = SpotifyClient.new(session: session)
 
-        top_artists = spotify_client.top_artists(limit: 20, time_range: "medium_term")
-        top_tracks  = spotify_client.top_tracks(limit: 20, time_range: "medium_term")
+        top_artists = spotify_client.top_artists(limit: 4, time_range: "medium_term")
+        top_tracks  = spotify_client.top_tracks(limit: 4, time_range: "medium_term")
 
         # Combine and randomly select 5 total seeds
-        sampled_seeds = (top_artists.map(&:name) + top_tracks.map(&:name)).sample(5)
+        sampled_seeds = (top_artists.map(&:name) + top_tracks.map(&:name)).sample(2)
 
         # Build query for Spotify Search
         search_queries = sampled_seeds.join(" OR ")

@@ -1,0 +1,306 @@
+<main class="container mt-4">
+<h1 class="text-light">Mood Explorer</h1>
+<p class="subtitle">
+  How your music feels based on Energy, Valence &amp; Danceability.
+</p>
+
+<div class="mood-layout">
+  <section class="mood-nav-card js-only">
+    <h2 class="panel-title">Mood Navigator</h2>
+
+    <div class="mood-wheel">
+      <div class="mood-wheel-inner">
+        <div class="mood-wheel-center">
+          <span>EXPLORE<br>MOODS</span>
+        </div>
+
+        <button class="mood-segment mood-segment--hype"  data-mood="hype">Hype</button>
+        <button class="mood-segment mood-segment--party" data-mood="party">Party</button>
+        <button class="mood-segment mood-segment--chill" data-mood="chill">Chill</button>
+        <button class="mood-segment mood-segment--sad"   data-mood="sad">Sad</button>
+      </div>
+    </div>
+
+    <p class="mood-nav-hint">
+      Tap a mood on the wheel to filter songs. Tap again to reset.
+    </p>
+  </section>
+
+  <noscript>
+    <section class="mood-nav-card">
+      <h2 class="panel-title">Mood Navigator</h2>
+      <p>
+        The interactive mood wheel requires JavaScript.
+        You can still view per-track mood analysis using the
+        “View Mood Analysis” buttons on each song card.
+      </p>
+    </section>
+  </noscript>
+
+  <section class="mood-list-card">
+    <div class="panel-header-row">
+      <h2 class="panel-title">Mood-Mapped Song List</h2>
+      <span class="panel-subtitle">
+        Top 10 tracks clustered by emotional profile
+      </span>
+    </div>
+
+    <div class="mood-song-scroll">
+      <% @clusters.each do |mood, items| %>
+        <% next if items.blank? %>
+
+        <div class="mood-group">
+          <h3 class="mood-group-title">
+            <%= mood.to_s.titleize %> (<%= items.size %>)
+          </h3>
+
+          <div class="mood-song-grid">
+            <% items.each do |item| %>
+              <% track = item[:track] %>
+              <% feat  = item[:features] %>
+
+              <article
+                class="mood-track-card"
+                data-track-id="<%= track.id %>"
+                data-track-name="<%= track.name %>"
+                data-track-artist="<%= track.artists %>"
+                data-track-image="<%= track.image %>"
+                data-mood="<%= mood %>"
+                data-energy="<%= feat['energy'] %>"
+                data-danceability="<%= feat['danceability'] %>"
+                data-valence="<%= feat['valence'] %>"
+                data-acousticness="<%= feat['acousticness'] %>"
+                data-tempo="<%= feat['tempo'] %>"
+              >
+                <div class="mood-track-media">
+                  <img src="<%= track.image %>" class="track-thumbnail" alt="<%= track.name %> cover">
+                </div>
+
+                <div class="mood-track-body">
+                  <p class="track-title"><%= track.name %></p>
+                  <p class="track-artist"><%= track.artists %></p>
+
+                  <div class="feature-row">
+                    <span class="feature-dot feature-energy">Energy <%= feat['energy'].round(3) %></span>
+                    <span class="feature-dot feature-dance">Danceability <%= feat['danceability'].round(3) %></span>
+                  </div>
+
+                  <div class="chip-row">
+                    <span class="chip chip-soft"><%= mood.to_s.titleize %></span>
+                  </div>
+
+                  <!-- Fallback for NO JS: normal link to server-side analysis page -->
+                  <noscript>
+                    <%= link_to "View Mood Analysis",
+                      "/mood-analysis/#{track.id}",
+                      class: "fallback-analysis-btn" %>
+                  </noscript>
+                </div>
+              </article>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </section>
+
+  <section class="micro-card">
+    <h2 class="panel-title">
+      Micro-Analysis:
+      <span id="micro-track-name" class="micro-track-name">Select a track</span>
+    </h2>
+
+    <p id="micro-track-artist" class="micro-track-artist"></p>
+
+    <div class="micro-radar-wrapper">
+      <canvas id="moodRadar" width="260" height="260"></canvas>
+    </div>
+
+    <div class="micro-meta-row">
+      <div class="micro-pill">
+        <span class="label">Energy</span>
+        <span id="micro-energy" class="value">–</span>
+      </div>
+      <div class="micro-pill">
+        <span class="label">Danceability</span>
+        <span id="micro-dance" class="value">–</span>
+      </div>
+      <div class="micro-pill">
+        <span class="label">Valence</span>
+        <span id="micro-valence" class="value">–</span>
+      </div>
+    </div>
+
+    <h3 class="micro-related-title">Related Moods</h3>
+    <div id="micro-tags" class="chip-row"></div>
+  </section>
+</div>
+ <div class="spotify-card p-3 mt-3">
+        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+          <div>
+            <h6 class="text-light mb-1">View playlist energy</h6>
+            <p class="text-secondary small mb-0">Paste a Spotify playlist ID to see its energy rollercoaster.</p>
+          </div>
+          <div class="d-flex gap-2 w-100 w-md-auto">
+            <input id="playlistEnergyInput" type="text" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="Playlist ID">
+            <button class="btn btn-spotify btn-sm" type="button" onclick="(function(){var v=document.getElementById('playlistEnergyInput').value.trim(); if(!v){return;} window.location = '/playlists/' + encodeURIComponent(v) + '/energy';})();">View</button>
+          </div>
+        </div>
+      </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+
+    document.body.classList.remove("no-js");
+    document.body.classList.add("has-js");
+    const cards   = document.querySelectorAll(".mood-track-card");
+    const radarEl = document.getElementById("moodRadar");
+
+    // even if no cards, we still want navigator JS not to crash
+    if (!radarEl || cards.length === 0) return;
+
+    const ctx = radarEl.getContext("2d");
+
+    const radarConfig = {
+      type: 'radar',
+      data: {
+        labels: ['Energy', 'Dance', 'Valence', 'Acoustic', 'Tempo'],
+        datasets: [{
+          label: 'Mood Profile',
+          data: [0, 0, 0, 0, 0],
+          backgroundColor: 'rgba(80, 196, 255, 0.28)',
+          borderColor: 'rgba(80, 196, 255, 0.85)',
+          borderWidth: 2,
+          pointRadius: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          r: {
+            beginAtZero: true,
+            suggestedMax: 1,
+            angleLines: { color: 'rgba(255,255,255,0.05)' },
+            grid: { color: 'rgba(255,255,255,0.06)' },
+            pointLabels: {
+              color: 'rgba(255,255,255,0.6)',
+              font: { size: 11 }
+            },
+            ticks: { display: false }
+          }
+        }
+      }
+    };
+
+    let radarChart = new Chart(ctx, radarConfig);
+
+    const nameEl    = document.getElementById("micro-track-name");
+    const artistEl  = document.getElementById("micro-track-artist");
+    const energyEl  = document.getElementById("micro-energy");
+    const danceEl   = document.getElementById("micro-dance");
+    const valenceEl = document.getElementById("micro-valence");
+    const tagsEl    = document.getElementById("micro-tags");
+
+    function tempoToUnit(t) {
+      const tempo = parseFloat(t || 0);
+      return Math.max(0, Math.min(1, tempo / 200.0)); // assume 200 bpm top
+    }
+
+    function moodToTags(mood) {
+      switch (mood) {
+        case 'hype':  return ['Upbeat', 'Intense', 'High Energy'];
+        case 'party': return ['Dancefloor', 'Groovy', 'Loud'];
+        case 'sad':   return ['Melancholic', 'Reflective'];
+        case 'chill': return ['Relaxing', 'Dreamy'];
+        default:      return ['Mixed Vibes'];
+      }
+    }
+
+    function selectCard(card) {
+      if (!card) return;
+
+      cards.forEach(c => c.classList.toggle("is-selected", c === card));
+
+      const energy   = parseFloat(card.dataset.energy || 0);
+      const dance    = parseFloat(card.dataset.danceability || 0);
+      const valence  = parseFloat(card.dataset.valence || 0);
+      const acoustic = parseFloat(card.dataset.acousticness || 0);
+      const tempo    = tempoToUnit(card.dataset.tempo);
+
+      radarChart.data.datasets[0].data = [energy, dance, valence, acoustic, tempo];
+      radarChart.update();
+
+      nameEl.textContent   = card.dataset.trackName;
+      artistEl.textContent = card.dataset.trackArtist;
+
+      energyEl.textContent  = energy.toFixed(3);
+      danceEl.textContent   = dance.toFixed(3);
+      valenceEl.textContent = valence.toFixed(3);
+
+      tagsEl.innerHTML = '';
+      const mood = card.dataset.mood;
+      moodToTags(mood).forEach(t => {
+        const span = document.createElement('span');
+        span.className = 'chip chip-pill';
+        span.textContent = t;
+        tagsEl.appendChild(span);
+      });
+    }
+
+    cards.forEach(card => {
+      card.addEventListener("click", () => selectCard(card));
+    });
+
+    const moodButtons = document.querySelectorAll(".mood-segment");
+
+    function applyMoodFilter(mood) {
+      let firstVisible = null;
+
+      cards.forEach(card => {
+        const cardMood = card.dataset.mood;
+        const visible = !mood || cardMood === mood;
+
+        card.style.display = visible ? "" : "none";
+        if (visible && !firstVisible) firstVisible = card;
+      });
+
+      // after filtering, auto-select first visible card (if any)
+      if (firstVisible) {
+        selectCard(firstVisible);
+      } else {
+        // if nothing visible, clear selection + chart
+        cards.forEach(c => c.classList.remove("is-selected"));
+        radarChart.data.datasets[0].data = [0, 0, 0, 0, 0];
+        radarChart.update();
+        nameEl.textContent   = "No tracks for this mood";
+        artistEl.textContent = "";
+        energyEl.textContent = danceEl.textContent = valenceEl.textContent = "–";
+        tagsEl.innerHTML = '';
+      }
+    }
+
+    moodButtons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        const mood = btn.dataset.mood;
+        const wasActive = btn.classList.contains("is-active");
+
+        // clear all active states
+        moodButtons.forEach(b => b.classList.remove("is-active"));
+
+        if (wasActive) {
+          // clicking again clears filter
+          applyMoodFilter(null);
+        } else {
+          btn.classList.add("is-active");
+          applyMoodFilter(mood);
+        }
+      });
+    });
+
+    selectCard(cards[0]);
+  });
+</script>
+</main>

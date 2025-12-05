@@ -16,6 +16,13 @@ Rails.application.routes.draw do
   get "/home", to: "pages#home", as: :home
   get "/view-profile", to: "pages#view_profile", as: :view_profile
   get "/clear", to: "pages#clear", as: :clear
+  get "/listening-patterns", to: "listening_patterns#hourly", as: :listening_patterns
+  get "/listening-monthly", to: "listening_patterns#monthly", as: :listening_monthly
+  get "/mood-explorer", to: "pages#mood_explorer"
+  get "/mood-analysis/:id", to: "pages#mood_analysis", as: :mood_analysis
+  get "/listening-heatmap", to: "listening_patterns#calendar", as: :listening_heatmap
+  get "/playlists/:id/energy", to: "pages#playlist_energy", as: :playlist_energy
+  get "/personality", to: "personality#show", as: :personality
   root "pages#home"
 
   # Callback from Spotify
