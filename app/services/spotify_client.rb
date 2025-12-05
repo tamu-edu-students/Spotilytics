@@ -7,6 +7,7 @@ require "base64"
 require "ostruct"
 require "set"
 require "time"
+require "digest"
 
 class SpotifyClient
   API_ROOT = "https://api.spotify.com/v1"
@@ -98,6 +99,41 @@ class SpotifyClient
       followers: response.dig("followers", "total") || 0,
       spotify_url: response.dig("external_urls", "spotify")
     )
+  end
+
+  def track_audio_features(ids)
+    ids = Array(ids).map(&:to_s).reject(&:blank?).uniq.first(100)
+    return {} if ids.empty?
+
+    key = Digest::SHA1.hexdigest(ids.sort.join("-"))
+
+    cache_for([ "audio_features", key ], expires_in: 2.hours) do
+      access_token = ensure_access_token!
+      features = {}
+
+      ids.each_slice(50) do |slice|
+        begin
+          response = get("/audio-features", access_token, ids: slice.join(","))
+          items = Array(response["audio_features"])
+          items.each do |item|
+            next unless item
+            features[item["id"]] = OpenStruct.new(
+              id: item["id"],
+              danceability: item["danceability"],
+              energy: item["energy"],
+              valence: item["valence"],
+              tempo: item["tempo"],
+              acousticness: item["acousticness"],
+              instrumentalness: item["instrumentalness"]
+            )
+          end
+        rescue Error => e
+          Rails.logger.warn "[Spotify] Skipping audio-features slice due to error: #{e.message}"
+        end
+      end
+
+      features
+    end
   end
 
   def new_releases(limit:, max_age: 1.day)
