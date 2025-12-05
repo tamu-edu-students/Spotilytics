@@ -134,4 +134,59 @@ RSpec.describe ListeningPatternsController, type: :controller do
       end
     end
   end
+
+  describe "GET #monthly" do
+    let(:mock_client) { instance_double(SpotifyClient) }
+    let(:stats_service) { instance_double(MonthlyListeningStats) }
+    let(:chart_summary) do
+      start_time = Time.utc(2025, 1, 1, 12, 0, 0)
+      end_time = Time.utc(2025, 3, 5, 18, 0, 0)
+
+      {
+        chart: { labels: [ "Dec 2024", "Jan 2025" ], datasets: [ { data: [ 2.0, 1.5 ] } ] },
+        buckets: [
+          { label: "Dec 2024", hours: 2.0, play_count: 40, month: start_time.beginning_of_month - 1.month, duration_ms: 7_200_000 },
+          { label: "Jan 2025", hours: 1.5, play_count: 30, month: start_time.beginning_of_month, duration_ms: 5_400_000 }
+        ],
+        sample_size: 70,
+        total_duration_ms: 12_600_000,
+        history_window: [ start_time, end_time ]
+      }
+    end
+
+    before do
+      allow(SpotifyClient).to receive(:new).with(session: anything).and_return(mock_client)
+      allow(MonthlyListeningStats).to receive(:new).with(client: mock_client, time_zone: Time.zone).and_return(stats_service)
+    end
+
+    context "when Spotify data loads successfully" do
+      before do
+        allow(stats_service).to receive(:chart_data).with(limit: 500).and_return(chart_summary)
+      end
+
+      it "assigns chart data and responds with success" do
+        get :monthly
+
+        expect(response).to have_http_status(:ok)
+        expect(assigns(:chart_data)).to eq(chart_summary[:chart])
+        expect(assigns(:buckets)).to eq(chart_summary[:buckets])
+        expect(assigns(:sample_size)).to eq(70)
+        expect(assigns(:total_hours)).to eq(3.5)
+        expect(assigns(:previous_month)).to eq(chart_summary[:buckets].first)
+      end
+    end
+
+    context "when Spotify requires re-authentication" do
+      before do
+        allow(stats_service).to receive(:chart_data).and_raise(SpotifyClient::UnauthorizedError.new("expired"))
+      end
+
+      it "redirects to home with alert" do
+        get :monthly
+
+        expect(response).to redirect_to(home_path)
+        expect(flash[:alert]).to eq("You must log in with spotify to view your listening patterns.")
+      end
+    end
+  end
 end
