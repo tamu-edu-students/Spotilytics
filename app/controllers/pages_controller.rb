@@ -148,7 +148,7 @@ class PagesController < ApplicationController
 
     service = PlaylistEnergyService.new(client: spotify_client)
     @points = service.energy_profile(playlist_id: @playlist_id)
-    @labels = @points.map { |p| p[:label] }
+    @labels = @points.map { |p| p[:position] }
     @energies = @points.map { |p| p[:energy] }
 
     if @points.empty?
