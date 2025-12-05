@@ -135,6 +135,18 @@
     <div id="micro-tags" class="chip-row"></div>
   </section>
 </div>
+ <div class="spotify-card p-3 mt-3">
+        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+          <div>
+            <h6 class="text-light mb-1">View playlist energy</h6>
+            <p class="text-secondary small mb-0">Paste a Spotify playlist ID to see its energy rollercoaster.</p>
+          </div>
+          <div class="d-flex gap-2 w-100 w-md-auto">
+            <input id="playlistEnergyInput" type="text" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="Playlist ID">
+            <button class="btn btn-spotify btn-sm" type="button" onclick="(function(){var v=document.getElementById('playlistEnergyInput').value.trim(); if(!v){return;} window.location = '/playlists/' + encodeURIComponent(v) + '/energy';})();">View</button>
+          </div>
+        </div>
+      </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
