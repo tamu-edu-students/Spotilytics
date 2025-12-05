@@ -51,7 +51,7 @@ class ReccoBeatsClient
     end
 
   rescue => e
-    Rails.logger.error "[ReccoBeats] Batch exception: #{e.class} – #{e.message}"
+    Rails.logger.error "[ReccoBeats] Batch exception: #{e.class} - #{e.message}"
     []
   end
   private_class_method :fetch_audio_features_batch

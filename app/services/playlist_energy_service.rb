@@ -27,20 +27,20 @@ class PlaylistEnergyService
 
   def fetch_feature_map(track_ids)
     features = features_client.fetch_audio_features(track_ids) || []
-    
+
     # Debug logging
     Rails.logger.info "[PlaylistEnergy] Fetched #{features.size} features for #{track_ids.size} tracks"
-    
+
     features.each_with_object({}) do |feat, acc|
       # ReccoBeats returns hash with string keys
       spotify_id = feat["spotify_id"] || feat[:spotify_id]
       next unless spotify_id
 
       energy = feat["energy"] || feat[:energy]
-      
+
       # Debug log each mapping
       Rails.logger.debug "[PlaylistEnergy] Mapping #{spotify_id} => #{energy}"
-      
+
       acc[spotify_id] = energy
     end
   end

@@ -19,14 +19,10 @@ RSpec.describe ReccoBeatsClient do
         ]
       }.to_json
 
-      fake_response = instance_double(
-        Net::HTTPOK,
-        is_a?: true,
-        body: fake_body,
-        code: "200"
-      )
-
-      allow(Net::HTTP).to receive(:get_response).and_return(fake_response)
+      fake_response = instance_double(Net::HTTPOK, is_a?: true, body: fake_body, code: "200")
+      fake_http = instance_double(Net::HTTP)
+      allow(fake_http).to receive(:get).and_return(fake_response)
+      allow(described_class).to receive(:with_http).and_yield(fake_http)
 
       result = described_class.fetch_audio_features([ "track123" ])
       expect(result.size).to eq(1)
@@ -35,14 +31,10 @@ RSpec.describe ReccoBeatsClient do
     end
 
     it "logs and returns [] on non-success" do
-      fake_response = instance_double(
-        Net::HTTPBadRequest,
-        is_a?: false,
-        body: "error",
-        code: "400"
-      )
-
-      allow(Net::HTTP).to receive(:get_response).and_return(fake_response)
+      fake_response = instance_double(Net::HTTPBadRequest, is_a?: false, body: "error", code: "400")
+      fake_http = instance_double(Net::HTTP)
+      allow(fake_http).to receive(:get).and_return(fake_response)
+      allow(described_class).to receive(:with_http).and_yield(fake_http)
 
       expect(Rails.logger).to receive(:error).with(/ReccoBeats/)
       expect(described_class.fetch_audio_features([ "x" ])).to eq([])
@@ -54,13 +46,14 @@ RSpec.describe ReccoBeatsClient do
 
     context "when an exception is raised while calling the API" do
       before do
-        allow(Net::HTTP).to receive(:get_response)
-          .and_raise(RuntimeError, "boom")
+        fake_http = instance_double(Net::HTTP)
+        allow(fake_http).to receive(:get).and_raise(RuntimeError, "boom")
+        allow(described_class).to receive(:with_http).and_yield(fake_http)
       end
 
       it "logs the exception and returns an empty array" do
         expect(Rails.logger).to receive(:error)
-          .with(/\[ReccoBeats\] Exception: RuntimeError – boom/)
+          .with("[ReccoBeats] Batch exception: RuntimeError - boom")
 
         result = described_class.fetch_audio_features(track_ids)
 
