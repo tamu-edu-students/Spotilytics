@@ -2,7 +2,7 @@
   <div class="page-heading d-flex flex-column flex-lg-row align-items-lg-center justify-content-lg-between">
     <div>
       <p class="eyebrow text-uppercase mb-1">Playlist Energy</p>
-      <h1 class="text-light mb-2">Energy “rollercoaster”</h1>
+      <h1 class="text-light mb-2">Energy Rollercoaster</h1>
       <p class="text-secondary mb-0">
         We plot the energy score of each track in playlist order so you can see build-ups, dips, and drops.
       </p>
@@ -46,7 +46,7 @@
                 <p class="text-light fw-semibold mb-1"><%= point[:label] %></p>
                 <p class="text-secondary small mb-0"><%= point[:track].artists %></p>
               </div>
-              <span class="badge bg-dark-subtle text-light">
+              <span class="badge bg-light-subtle text-dark-emphasis">
                 <%= point[:energy].present? ? "#{point[:energy]}%" : "N/A" %>
               </span>
             </div>
@@ -65,7 +65,7 @@
 </main>
 
 <% if @points.present? %>
-  <script type="application/json" id="energyData"><%= raw({ labels: @labels, datasets: [ { label: "Energy", data: @energies } ] }.to_json) %></script>
+  <script type="application/json" id="energyData"><%= raw({ labels: @labels, energies: @energies, points: @points.size }.to_json) %></script>
   <script>
     (function() {
       function renderEnergyChart() {
@@ -73,26 +73,39 @@
         if (!canvas) { return; }
         if (!window.Chart) { return setTimeout(renderEnergyChart, 50); }
 
-        var data = JSON.parse(document.getElementById('energyData').textContent);
+        var rawData = JSON.parse(document.getElementById('energyData').textContent);
+        
+        // Debug: Log the data
+        console.log('Energy chart data:', rawData);
+        console.log('Labels:', rawData.labels);
+        console.log('Energies:', rawData.energies);
+        
         var ctx = canvas.getContext('2d');
 
         var gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
         gradient.addColorStop(0, 'rgba(29, 185, 84, 0.8)');
         gradient.addColorStop(1, 'rgba(29, 185, 84, 0.1)');
 
-        data.datasets[0].borderColor = '#1db954';
-        data.datasets[0].backgroundColor = gradient;
-        data.datasets[0].fill = true;
-        data.datasets[0].tension = 0.45;
-        data.datasets[0].cubicInterpolationMode = 'monotone';
-        data.datasets[0].spanGaps = true;
-        data.datasets[0].borderWidth = 2;
-        data.datasets[0].pointRadius = 4;
-        data.datasets[0].pointBackgroundColor = '#1db954';
+        var chartData = {
+          labels: rawData.labels,  // Use numeric positions 1, 2, 3...
+          datasets: [{
+            label: 'Energy',
+            data: rawData.energies,
+            borderColor: '#1db954',
+            backgroundColor: gradient,
+            fill: true,
+            tension: 0.45,
+            cubicInterpolationMode: 'monotone',
+            spanGaps: false,
+            borderWidth: 2,
+            pointRadius: 4,
+            pointBackgroundColor: '#1db954'
+          }]
+        };
 
         new Chart(ctx, {
           type: 'line',
-          data: data,
+          data: chartData,
           options: {
             responsive: true,
             maintainAspectRatio: false,
@@ -104,18 +117,36 @@
                 borderWidth: 1,
                 titleColor: '#fff',
                 callbacks: {
+                  title: function(ctx) {
+                    return 'Track #' + ctx[0].label;
+                  },
                   label: function(ctx) {
-                    return ctx.parsed.y + '% energy';
+                    var energy = ctx.parsed.y;
+                    return energy !== null ? energy + '% energy' : 'No data';
                   }
                 }
               }
             },
             scales: {
               x: {
-                ticks: { color: '#b3b3b3', autoSkip: false },
+                title: {
+                  display: true,
+                  text: 'Track Order',
+                  color: '#b3b3b3'
+                },
+                ticks: { 
+                  color: '#b3b3b3',
+                  autoSkip: true,
+                  maxTicksLimit: 20
+                },
                 grid: { color: 'rgba(255,255,255,0.05)' }
               },
               y: {
+                title: {
+                  display: true,
+                  text: 'Energy Level',
+                  color: '#b3b3b3'
+                },
                 min: 0,
                 max: 100,
                 ticks: { color: '#b3b3b3' },

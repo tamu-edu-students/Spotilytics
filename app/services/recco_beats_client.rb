@@ -8,7 +8,23 @@ class ReccoBeatsClient
   def self.fetch_audio_features(ids)
     return [] if ids.blank?
 
-    query = URI.encode_www_form(ids: ids)
+    # ReccoBeats API limits to 40 IDs per request, so batch them
+    all_features = []
+    Array(ids).each_slice(40) do |batch|
+      batch_features = fetch_audio_features_batch(batch)
+      all_features.concat(batch_features)
+    end
+
+    all_features
+  rescue => e
+    Rails.logger.error "[ReccoBeats] Exception: #{e.class} – #{e.message}"
+    []
+  end
+
+  def self.fetch_audio_features_batch(ids)
+    return [] if ids.blank?
+
+    query = URI.encode_www_form(ids: ids.join(","))
     url   = URI("#{BASE_URL}/audio-features?#{query}")
 
     response = with_http(url) do |http|
@@ -35,9 +51,10 @@ class ReccoBeatsClient
     end
 
   rescue => e
-    Rails.logger.error "[ReccoBeats] Exception: #{e.class} – #{e.message}"
+    Rails.logger.error "[ReccoBeats] Batch exception: #{e.class} – #{e.message}"
     []
   end
+  private_class_method :fetch_audio_features_batch
 
   def self.with_http(url)
     http = Net::HTTP.new(url.host, url.port)
