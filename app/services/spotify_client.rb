@@ -645,21 +645,27 @@ end
   end
 
   def perform_request(uri, request)
-    response = Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == "https") do |http|
-      http.open_timeout = 5
-      http.read_timeout = 5
-      http.request(request)
-    end
+  response = Net::HTTP.start(
+    uri.host,
+    uri.port,
+    use_ssl: uri.scheme == "https",
+    open_timeout: 5,
+    read_timeout: 5,
+    verify_mode: (Rails.env.development? ? OpenSSL::SSL::VERIFY_NONE : OpenSSL::SSL::VERIFY_PEER)
+  ) do |http|
+    http.request(request)
+  end
 
-    body = parse_json(response.body)
+  body = parse_json(response.body)
 
-    if response.code.to_i >= 400
-      message = body["error_description"] || body.dig("error", "message") || response.message
-      raise Error, message
-    end
+  if response.code.to_i >= 400
+    message = body["error_description"] || body.dig("error", "message") || response.message
+    raise Error, message
+  end
 
-    body
-  rescue SocketError, Errno::ECONNREFUSED, Net::OpenTimeout, Net::ReadTimeout => e
+  body
+  rescue SocketError, Errno::ECONNREFUSED, Net::OpenTimeout, Net::ReadTimeout, OpenSSL::SSL::SSLError => e
+    Rails.logger.error "[SpotifyClient] network/SSL error: #{e.class}: #{e.message}"
     raise Error, e.message
   end
 
