@@ -1,7 +1,7 @@
-# 🎧 Spotilytics
+# 🎧 Spotilytics 2.0
 
 Spotilytics is a Ruby on Rails web application that connects to the Spotify Web API to generate an on-demand “Spotify Wrapped” experience.
-Users can log in with their Spotify account to instantly view their Top Tracks, Top Artists and Genre insights, all powered by live Spotify data.
+Users can log in with their Spotify account to instantly view their Top Tracks, Top Artists, Genre insights, Mood Dashboard, Listening Patterns and a lot more.
 
 The app uses Spotify OAuth 2.0 authentication via the official Spotify Developer APIs and all data is fetched directly from Spotify in real time.
 
@@ -16,32 +16,79 @@ The app uses Spotify OAuth 2.0 authentication via the official Spotify Developer
 
 
 ## Features
-1. Login securely using Spotify OAuth 2.0 authentication and fetch live Spotify data directly via the Spotify Web API
+Spotilytics V1 had the following features:
+1. Login securely using Spotify OAuth 2.0 authentication
 2. Personalized Dashboard showing:
     - Top Tracks of the Year
 	- Top Artists of the Year
 	- Top Genres (with interactive pie chart visualization)
 	- Followed Artists list with direct Spotify links
-3. Dynamic Top Tracks display including:
-	- Rank, track name, artist(s), album name, and popularity score
+3. Dynamic Top Tracks and Top Artists display including:
+	- Artist images, track name, artist(s), album name, and popularity score
 	- Three time ranges — Last 4 Weeks, Last 6 Months, and Last 1 Year
 	- Options to view Top 10, Top 25, or Top 50 tracks
 	- “Play on Spotify” buttons linking directly to each track
-4. Dynamic Top Artists view including:
-	- Artist images, names, and play counts
-	- Three time ranges — Past 4 Weeks, Past 6 Months, and Past Year
-	- Rank indicators and selectable display limits (Top 10 / 25 / 50)
 5. Artist Follow/Unfollow feature:
-	- View your currently followed artists
-	- Follow or unfollow artists directly within the Top Artists tab
-	- Changes sync instantly with your Spotify account via the API
 6. Genre Analytics:
 	- Auto-generated pie chart summarizing top genres
 	- Visual breakdown of listening distribution (e.g., Pop, Indie, Hip-Hop, etc.)
-	- Groups minor genres under an “Other” category for clarity
 7. Playlist Creation:
 	- Create new Spotify playlists from your top tracks for any time range
 	- Automatically name and describe playlists (e.g., “Your Top Tracks – Last 6 Months”)
+
+Adding on top of the first version of Spotiliytics we have the following features:
+1. Database Caching for Top Tracks & Top Artists
+	-	The app stores the user’s top tracks and artists in a local database.
+	-	Prevents excessive Spotify API calls and significantly improves load time.
+	-	Cached data is reused until:
+        -	The user clicks Refresh Data or
+        -	Stored records become older than 4 days.
+
+2. Refresh Data System (Manual + Automatic)
+	-	A “Refresh Data” button forces an immediate re-sync.
+	-	A background scheduler auto-refreshes user data every 4 days.
+	-	Dashboard always shows up-to-date listening insights.
+
+3. Track Journey — Taste Evolution Over Time
+Shows how a user’s music preference changes over 4 weeks → 6 months → 1 year.
+
+Tracks are categorized into:
+	-	Evergreen — Appears in all 3 ranges
+	-	New Obsession — Appears only in recent 4 weeks
+	-	Short-Term Crush — In 4 weeks + 6 months but not 1 year
+	-	Fading Out — Decreasing popularity over time
+
+4. Listening Habit Calendar (Heatmap)
+	-	GitHub-style heatmap of listening frequency.
+	-	Shows daily listening intensity across months.
+	-	Uses timestamps from recently played tracks.
+
+5. Mood Explorer — Interactive JS Dashboard
+
+A fully interactive mood-based music explorer with the following features:
+	-	Interactive Mood Wheel (Hype, Party, Chill, Sad)
+	-	Real-time filtering of tracks by mood category
+	-	Animated radar chart micro-analysis panel that auto-updates:
+        -	Track name & artist
+        -	Feature values
+        -	Mood descriptors
+        -	Visual radar profile
+
+6. Mood Explorer — No-JavaScript Fallback version
+For users with JS disabled:
+	-	A static Mood Navigator replaces the mood wheel.
+	-	Each track displays a “View Mood Analysis” button. Clicking opens a fully server-rendered track analysis page showing:
+        -	Audio feature values
+        -	Derived mood cluster
+        -	Track name, artist, and image
+
+7. AI-Style Music Personality Summary
+
+8. Playlist Energy Curve Visualization
+
+9. Listening Hours Trendline (Long-Term Visualization)
+
+10. Compare Playlist With a Friend (Overlap Score)
 
 ## Getting Started — From Zero to Deployed
 
@@ -63,19 +110,27 @@ Make sure you have the following installed:
 ### 2️⃣ Clone the Repository
 
 ```bash
-git clone https://github.com/tamu-edu-students/Spotilytics.git
-cd Spotilytics
+git https://github.com/tamu-edu-students/Spotilytics-project3-team2
+cd Spotilytics-project3-team2
 ```
 
 ---
 
-### 3️⃣ Install Dependencies
+### 3️⃣ Install Dependencies and Setup the Database
 
 ```bash
 bundle install
 ```
 
---- 
+```bash
+# Create, migrate, and prepare test DB
+rails db:migrate
+
+# (Optional) Seed with sample users, notes and collaborations
+rails db:seed
+```
+
+---
 
 ### 4️⃣ Spotify Developer Setup
 
@@ -88,7 +143,7 @@ To access user data, you must register the app with Spotify:
 4.	Under Redirect URIs, add:
     1. https://localhost:3000/auth/spotify/callback
     2. http://127.0.0.1:3000/auth/spotify/callback
-    3. https://spotilytics-app-41dbe947e18e.herokuapp.com/auth/spotify/callback
+    3. https://spotilytics-v2-df4cb8734a44.herokuapp.com/auth/spotify/callback
 5. In User Management add your Name and Spotify mail ID
 6. Click Save
 
@@ -111,7 +166,7 @@ Do not to commit .env files to Git
 rails server
 ```
 
-Visit: http://localhost:3000
+Visit: http://[127.0.0.1:3000/](http://127.0.0.1:3000/)
 
 You can log in using your Spotify mail ID which you added in User Management:
 1. Click Log in with Spotify
@@ -139,7 +194,8 @@ bundle exec cucumber
 **View Coverage Report (Coverage is generated after test runs):**
 
 ```bash
-open coverage/index.html
+open coverage/cucumber/index.html
+open coverage/rspec/index.html
 ```
 
 ---
@@ -153,7 +209,14 @@ heroku login
 heroku create <your-app-name>  # in this case 'heroku create spotilytics'
 ```
 
-#### Step 2: Set GitHub Secrets/ Heroku Secrets
+#### Step 2: Add PostgreSQL Add-on
+
+```bash
+heroku addons:create heroku-postgresql:mini --app <your-app-name>
+```
+You can execute `git remote` to show a list of all remote Git repos associated with your app, among which heroku should now appear. You can execute `git remote show heroku` to verify that pushing to the heroku "repo" will deploy to a URL on Heroku whose name matches the name you picked for your app ('note-together').
+
+#### Step 3: Set GitHub Secrets/ Heroku Secrets
 
 In **GitHub** → **Settings → Secrets and Variables → Actions**, add the following secrets in Repository Secrets section:
 
@@ -164,8 +227,23 @@ In **GitHub** → **Settings → Secrets and Variables → Actions**, add the fo
 | `SPOTIFY_CLIENT_ID` | Your Spotify Client ID |
 | `SPOTIFY_CLIENT_SECRET` | Your Spotify Client Secret |
 
+#### Step 4: DB setup and deployment:
+
+#### Migrate Database (first deploy only)
+
+```bash
+heroku run bin/rails db:migrate --app spotilytics-v2
+heroku run bin/rails db:seed --app spotilytics-v2
+```
+- These steps are added as worker processes in `Procfile` to avoid manually typing them after every change.
+- Every time a pull request is merged into main, the app is automatically deploys to Heroku through the Github Actions workflow setup in .github/workflows/ci.yml 
+- You can verify deployment progress under the Actions tab in your repository.
+- The deployment starts only after all the check/tests pass.
+
 #### To manually deploy using the Heroku CLI if you’re not using GitHub Actions:
 ```bash
+heroku run bin/rails db:migrate --app spotilytics-v2
+heroku run bin/rails db:seed --app spotilytics-v2
 git push heroku main
 heroku open
 ```
@@ -173,13 +251,13 @@ heroku open
 ### 9️⃣ Access the App
 
 Once deployed, visit your live Heroku URL:
-https://spotilytics-demo.herokuapp.com
+https://spotilytics-v2-df4cb8734a44.herokuapp.com/
 
 You’ll be able to:
 1. Log in with Spotify
-2. View your top artists and tracks by timeframe
-3. Explore your genre breakdowns
-4. Generate playlists from your top songs
+2. View your top artists, tracks, dahboard, mood board and listening patterns by timeframe
+3. Generate playlists from your top songs
+4. Track your listening habits and how your music taste has changed over time
 
 ## Useful Commands
 
@@ -187,23 +265,21 @@ You’ll be able to:
 |----------------|------------------|
 | **start server**  | `rails server` |
 | **run rspec tests**    | `bundle exec rspec` |
-| **run single RSpec test**    | `bundle exec rspec spec/models/note_spec.rb` |
 | **run cucumber tests**    | `bundle exec cucumber` |
-| **run single Cucumber scenario**    | `bundle exec cucumber features/notes.feature` |
-| **check test coverage**       | `open coverage/index.html` |
+| **check test coverage**       | `open coverage/rspec/index.html` |
 | **check last few lines of error log messages from Heroku**       | `heroku logs` |
 
 # User Guide — Spotilytics
 
-Welcome to Spotilytics, your personalized Spotify analytics dashboard!
-Spotilytics lets you view your listening history, top artists, top tracks, and genres anytime - like having Spotify Wrapped on demand.
+Welcome to Spotilytics v2, your personalized Spotify analytics dashboard!
+Spotilytics lets you view your listening history, track your music journey and listening pattern, view your top artists and tracks and also compare your playlist with that of a friend anytime - like having Spotify Wrapped on demand.
 
 ---
 
 ### Getting Started
 
 1. **Access the App**  
-   Visit your deployed app [https://spotilytics-app-41dbe947e18e.herokuapp.com/](https://spotilytics-app-41dbe947e18e.herokuapp.com/)
+   Visit your deployed app [https://spotilytics-v2-df4cb8734a44.herokuapp.com/](https://spotilytics-v2-df4cb8734a44.herokuapp.com/)
 
    Requirements
 	- A Spotify account (Free or Premium)
@@ -229,7 +305,7 @@ Spotilytics lets you view your listening history, top artists, top tracks, and g
     After logging in, you’ll see the Home Page featuring:
         - The Spotilytics logo and Spotify branding
         - A short description of what the app does
-        - A “My Dashboard” button that takes you to your personalized analytics
+        - A “My Dashboard”, "Mood Explorer" button that takes you to your personalized analytics
         This page acts as your entry point to explore your listening statistics.
 
 4. **Dashboard Overview**
@@ -239,17 +315,9 @@ Spotilytics lets you view your listening history, top artists, top tracks, and g
 
     *Top Tracks This Year*
     - Displays your most-listened-to songs over the past year.
-    - Shows the top 5 tracks with:
-        - Rank number
-        - Track name and artist
-        - Album name and popularity (out of 100)
 
     *Top Artists This Year*
     - Displays your most-played artists this year.
-    - Shows:
-        - Rank and artist photo
-        - Total plays count
-        - Includes a “View Top Artists” button to explore more.
 
     *Top Genres*
     - A pie chart visualization of your most-listened-to genres.
@@ -257,31 +325,45 @@ Spotilytics lets you view your listening history, top artists, top tracks, and g
 
     *Followed Artists & New Releases*
     - Lists artists you follow on Spotify, with profile images and “View on Spotify” links.
-    - Shows recent releases from your favorite artists, including:
-        - Album art
-        - Artist name
-        - Track count and release date
-        - Direct link to the album on Spotify
+    - Shows recent releases from your favorite artists.
 
-5. **Top Tracks Page**
+5. **Mood Explorer Overview**
 
-    Navigate to Top Tracks using the navigation bar or via the dashboard.
+    The Mood Explorer helps you understand how your top songs feel based on their audio features — Energy, Valence, Danceability, Tempo, and Acousticness.
+    It’s divided into three interactive sections:
 
-    This page lets you view your top tracks over different time periods.
+    A. Mood Navigator
+	-	A visual mood wheel that groups songs into emotional categories such as Hype, Party, Chill, and Sad.
+	-	Tap any segment to instantly filter your songs by that mood.
+	-	Tap again to reset and view all tracks.
+
+    B. Mood-Mapped Song List
+	-	Shows your Top 10 tracks, automatically clustered based on emotional similarity.
+	-	Each song card displays:
+	    -	Track name, artist(s), and album art
+	    -	Key mood metrics (Energy & Danceability)
+	    -	Assigned mood label
+	-	Selecting a song updates the Micro-Analysis panel on the right.
+
+    C. Micro-Analysis Panel
+	-	Provides a detailed breakdown of the selected track using a radar (spider) chart.
+	-	Visualizes five emotional/audio attributes:
+	    -	Energy
+	    -	Danceability
+	    -	Valence
+	    -	Acousticness
+	    -	Tempo
+
+6. **Top Tracks & Top Artists Page**
+
+    Navigate to Top Tracks & Top Artists using the navigation bar or via the dashboard.
+
+    This page lets you view your top tracks and top artists over different time periods.
 
     *Time Ranges*:
     - Last 4 Weeks
     - Last 6 Months
     - Last 1 Year
-
-    *Track Details*:
-
-    For each time range, Spotilytics shows:
-    - Song title
-    - Artist name
-    - Album title
-    - Popularity score
-    - “Play on Spotify” button
 
     *Adjustable Limits*:
 
@@ -292,62 +374,44 @@ Spotilytics lets you view your listening history, top artists, top tracks, and g
 
     Your results update automatically when you change the selection.
 
-6. **Top Artists Page**
-
-    The Top Artists page provides detailed insights into your most-played artists.
-
-    *Time Ranges*
-
-    You can view:
-    - Past Year
-    - Past 6 Months
-    - Past 4 Weeks
-
-    *Artist Details*
-
-    Each section lists:
-    - Rank (1–50)
-    - Artist image and name
-    - Estimated play count
-
     Follow / Unfollow Artists
     - Next to each artist, you’ll see a Follow / Unfollow button.
     - Click to modify your followed artists directly through Spotilytics.
     - Changes reflect instantly in your Spotify account.
 
-7. **Playlist Creation**
+7. **Listening Pattern Page**
 
-    You can instantly turn your top tracks into a Spotify playlist.
+    The Listening Pattern page uncovers your daily listening habits by analyzing timestamps from your recent Spotify history. The system groups your plays by hour of the day (in UTC) and visualizes them with a histogram, showing exactly when you tend to hit play—morning commutes, afternoon focus sessions, evening wind-downs etc
 
-    How to Create a Playlist:
-    1.	Go to the Top Tracks page.
-    2.	Choose a time range (e.g. “Last 6 Months”).
-    3.	Click the “Create Playlist” button.
-    4.	Spotilytics will:
-        - Generate a new playlist in your Spotify account
-        - Named like “Your Top Tracks – Last 6 Months”
-        - Add your top 10 songs automatically
+    A “Your Peaks” panel summarizes your top three listening hours, helping you quickly identify the times of day when you are most active musically. 
 
-8. **Recommendations Page**
+8. **Monthly Hours**
+
+    The Monthly Listening dashboard visualizes how many hours of music a user has listened to each month based on their Spotify Recently Played history. The page fetches the most recent track plays, sums their durations by calendar month and displays the results using a clear bar-chart visualization. This feature provides a simple, data-driven look at changing listening habits over time.
+
+9. **Music Personality**
+
+    The Music Personality page analyzes a user’s listening patterns and audio features to generate a personalized identity that reflects their overall vibe and listening behavior. The page highlights key mood tags, provides a short personality summary, and showcases example tracks that match the user’s musical style. It helps users understand not just what they listen to, but who they are as a listener.
+
+10. **Recommendations Page**
 
     The Recommendations tab generates personalized music recommendations based on your recent listening history and top artists.
 
     What You’ll See:
     - A curated grid of recommended tracks and albums.
 
-    Each recommendation includes:
-    - Album artwork
-    - Song or album title
-    - Artist name(s)
-    - “Open in Spotify” button to play directly.
+
 
 ---
 
 ### Tips for Best Use
 
-- Log in regularly - Refresh your Spotify connection every few days to keep recommendations and stats up to date.
 - Use “Refresh Data” button on the nav bar after major listening changes (e.g. a new playlist binge) to see updated top tracks instantly.
-- Try different time ranges (4 weeks / 6 months / 1 year) to compare your short-term and long-term listening trends.
+- Review the Listening Pattern graphs weekly to spot trends (e.g., rising artists, shifting genres, repeat-heavy weeks).
+- Use the genre distribution chart to understand your dominant listening moods and how they change over time.
+-	In Mood Explorer, click tracks to reveal their emotional profile and identify the mood clusters you gravitate toward.
+-	Filter by a mood (Hype, Chill, Sad, Party) to discover what kind of energy your recent listening reflects.
+-	Try selecting different songs — the micro-analysis panel updates instantly with deeper feature insights (energy, valence, acousticness, tempo).
 - Explore Recommendations often — they’re dynamically personalized based on your recent activity and top artists.
 
 ---
@@ -363,21 +427,7 @@ Spotilytics lets you view your listening history, top artists, top tracks, and g
 
 # Architecture Decision Records (ADRs)
 
-## ADR 0001 – Use Spotify API as the primary Source (No DB)
-**Status:** Accepted
-
-**Context**  
-Spotilytics retrieves real-time Spotify data. Storing a local copy adds complexity and compliance risk without long-term benefit.
-
-**Decision**  
-Do not maintain an internal database. Fetch data directly from Spotify APIs and cache short-lived results only.
-
-**Consequences**  
-- Advantage: Always fresh and consistent data  
-- Downside: Dependent on Spotify API uptime and latency  
-- Downside: Must respect API rate limits
-
-## ADR 0002 – Authentication via Spotify OAuth
+## ADR 0001 – Authentication via Spotify OAuth
 **Status:** Accepted
 
 **Context**  
@@ -392,20 +442,32 @@ Implement Spotify OAuth 2.0 using `omniauth` and `rspotify`. Tokens are stored i
 - Downside: Relies on RSpotify library abstractions  
 - Downside: Must handle expired sessions gracefully
 
-## ADR 0003 – Short-Lived Caching in Memory/Session
+## ADR 0002 – Short-Lived Caching in Memory/Session
 **Status:** Accepted
 
 **Context**  
-Frequent Spotify API calls could slow page loads and hit rate limits.
+Originally, Spotify API responses were cached briefly in memory/session to reduce API usage and improve page performance.
+However, this cache was volatile—lost on dyno restarts—and provided no persistence or historical visibility.
+Rate limits and repeated API calls remained a concern.
 
 **Decision**  
-Cache lightweight API responses (e.g. top artists/tracks) in session or memory for minutes; invalidate via “Refresh Data”.
+Move caching from in-memory/session storage to a local database–backed caching layer.
+Each dataset (Top Tracks, Top Artists, New Releases, Followed Artists, Search Results, etc.) is now persisted in dedicated tables.
+Every fetch stores a “batch” with spotify_user_id, parameters (limit, time_range), and fetched_at.
+On subsequent requests, the system returns cached DB rows if they remain within the defined max_age window.
+Users can manually trigger a “Refresh Data” action to invalidate cached entries and force new API calls.
 
-**Consequences**  
-- Advantage: Faster user experience  
-- Advantage: Fewer external API calls  
-- Downside: Cache lost on dyno restart  
-- Downside: Potential stale data if not refreshed
+Advantages:
+-	Cached data now persists across dyno restarts
+-	Significant reduction in repeated Spotify API calls
+-	Much faster page load times for heavy views (Top Tracks, Top Artists, Mood Explorer, etc.)
+-	Supports historical debugging, as batches can be inspected
+-	Provides a more reliable foundation for advanced features (Mood Explorer, Track Journey)
+
+Downsides:
+-	Local DB grows over time; requires occasional cleanup
+-	Slightly higher storage and ORM overhead compared to session caching
+-	Potential for stale data if refresh intervals are too long (mitigated via max_age + manual refresh)
 
 ## ADR 0004 – Server-Side Playlist Creation
 **Status:** Accepted
@@ -444,13 +506,46 @@ When clicked, it clears temporary session-level caches and re-requests data from
 - Downside: Increases API traffic if users refresh too frequently  
 - Downside: Adds minor latency (API round-trip before page render)
 
+## ADR 006 - Add Mood Explorer Using External Audio-Features API
+**Status:** Accepted
+
+**Context** 
+Spotify deprecated the original /audio-features endpoint for external use.
+To visualize emotional characteristics of music (energy, valence, danceability, acousticness), we needed an alternative data source.
+The ReccoBeats API provides audio-feature vectors compatible with Spotify track IDs.
+
+**Decision**
+Implement a Mood Explorer feature with two layers:
+1.	Mood Clustering
+-	Fetch audio features for the user’s Top 10 tracks via ReccoBeats
+-	Classify songs into predefined moods (Hype, Party, Chill, Sad, Aggressive)
+-	Display them in an interactive layout
+2.	Micro-Analysis Panel
+-	When a song is selected, show a radar chart visualizing its emotional profile
+-	Provide descriptive mood tags and a clean UI for deep inspection
+
+Fallback:
+-	When JavaScript is disabled, users can still view per-track mood analysis via a server-side “View Mood Analysis” page.
+
+**Consequences**
+Advantages:
+-	Restores audio-feature analysis even after Spotify API deprecation
+	-	Engaging, highly interactive UI with mood filtering and radar charts
+	-	Works even without JavaScript (SSR fallback)
+
+Downsides:
+-	External API dependency → adds latency & potential failure modes
+	-	Mood classifications are heuristic and may not match user perception
+	-	Requires maintaining consistent mapping between Spotify IDs and ReccoBeats IDs
+
+
 ---
 
 # Postmortem: 
 
 ## Incident 001 – Limited User Data for Inactive Spotify Accounts
 
-Date: 2025-28-10
+Date: 2025-28-11
 Status: Closed
 
 ### Impact
@@ -468,29 +563,9 @@ Spotify’s “Top Items” endpoints return limited results when a user’s lis
 ### Follow-Up
 - Consider hybrid display using Spotify featured playlists as filler data to enhance UI.
 
-## Incident 002 – Follow/Unfollow Rate Limit Exceeded
+## Incident 002 – Restricted Access in Spotify Developer “Development Mode”
 
-Date: 2025-02-11
-Status: Closed
-
-### Impact
-
-Frequent follow/unfollow actions in the Top Artists tab triggered Spotify API’s 429 Too Many Requests rate limit, causing temporary errors and failed interactions.
-
-### Root Cause
-
-The Spotify Web API enforces per-user and per-app rate limits. The UI allowed rapid toggling of follow state without throttling or batching requests.
-
-### Actions Taken
-- Batched multiple API calls server-side using short async queues.
-
-### Follow-Up
-- Evaluate caching artist follow state locally to reduce duplicate calls.
-- Track API usage metrics in logs to identify peak load.
-
-## Incident 003 – Restricted Access in Spotify Developer “Development Mode”
-
-Date: 2025-25-10
+Date: 2025-25-11
 Status: Ongoing (Known Limitation)
 
 ### Impact
@@ -510,6 +585,28 @@ Upgrading to “Production Mode” requires Spotify approval and organizational 
 ### Follow-Up
 - Move Spotilytics app to Spotify Verified Org once org-level upgrade is requested from Spotify.
 - Add fallback “Demo Mode” (mock data) for public users to explore app features without Spotify login.
+
+## Incident 003 – Mood Explorer Not Rendering on First Load
+
+Date: 2025-01-12
+Status: Closed
+
+### Impact
+
+Users reported that the Mood Explorer page appeared blank or partially loaded when accessed for the first time. The mood wheel, radar chart, and track cards did not initialize until the page was manually refreshed. This created confusion and made users believe the feature was malfunctioning.
+
+### Root Cause
+
+The interactive components in Mood Explorer relied on DOM elements that were not fully available when JavaScript initialized. Turbo (Rails’ default navigation system) was caching and reusing partial page loads, causing event listeners and Chart.js to attach before the track data was present.
+
+### Actions Taken
+-	Disabled Turbo for the Mood Explorer route (data: { turbo: false }) to force a full page render.
+	-	Added JavaScript guards to prevent initialization when elements are missing and retry when the DOM stabilizes.
+	-	Reworked the track card rendering to ensure JS can safely attach listeners on first load.
+
+### Follow-Up
+-	Evaluate adding Turbo-compatible JS initialization using turbo:load events.
+-	Consider preloading minimal mood metadata server-side for faster perceived load.
 
 ## Incident 004 – Coverage Reports Not Merging in CI
 
@@ -568,13 +665,18 @@ This section provides **useful context for developers** trying to debug issues i
 # Summary
 
 **Spotilytics** lets Spotify users:
-- Explore personalized listening stats and Spotify Wrapped-style insights anytime
-- View top tracks, artists, and genres across different time ranges
-- Get smart recommendations based on your listening patterns
-- Create and save custom playlists directly to your Spotify account
-- Manage your profile — including following and unfollowing artists — all in one place
+- Dive into year-round listening insights, similar to Spotify Wrapped but fully customizable
+-	View top tracks, top artists, and top genres across multiple time ranges (4 Weeks, 6 Months, 1 Year)
+-	Explore moods in depth using the interactive Mood Explorer and Micro-Analysis Radar Panel
+- Get insights highlighting peak listening periods and habits
+-	Get personalized smart recommendations powered by listening history and cached Spotify data
+-	Create and save custom Spotify playlists based on top tracks from any time range
+- Visualizes how a playlist’s energy builds, drops, and flows across the track sequence
+-	Understand your “music personality” based on your listening data
+-	Share playlists and compare music tastes with friends through playlist-based similarity features
 
-# Developed by Team 1 - CSCE 606 (Fall 2025)
+
+# Developed by Team 2 - CSCE 606 (Fall 2025)
 ## Team Members
 - **Spoorthy Kumbashi Raghavendra**
 - **Cameron Yoffe**
