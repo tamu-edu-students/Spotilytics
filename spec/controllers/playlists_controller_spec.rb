@@ -52,20 +52,45 @@ RSpec.describe PlaylistsController, type: :controller do
   end
 
   describe "#normalize_playlist_id" do
-    controller(PlaylistsController) do
-      def fake; render plain: normalize_playlist_id(params[:id]); end
-    end
-
     it "extracts id from spotify url" do
-      allow(controller).to receive(:require_spotify_auth!).and_return(true)
-      get :fake, params: { id: "https://open.spotify.com/playlist/abc123?si=xyz" }
-      expect(response.body).to eq("abc123")
+      expect(controller.send(:normalize_playlist_id, "https://open.spotify.com/playlist/abc123?si=xyz")).to eq("abc123")
     end
 
     it "returns stripped id when raw" do
-      allow(controller).to receive(:require_spotify_auth!).and_return(true)
-      get :fake, params: { id: "  raw123  " }
-      expect(response.body).to eq("raw123")
+      expect(controller.send(:normalize_playlist_id, "  raw123  ")).to eq("raw123")
+    end
+  end
+
+  describe "POST #create" do
+    let(:mock_client) { instance_double(SpotifyClient) }
+
+    before do
+      allow(SpotifyClient).to receive(:new).with(session: anything).and_return(mock_client)
+    end
+
+    it "redirects on invalid range" do
+      post :create, params: { time_range: "bad" }
+      expect(response).to redirect_to(top_tracks_path)
+      expect(flash[:alert]).to eq("Invalid time range.")
+    end
+
+    it "redirects when no tracks returned" do
+      allow(mock_client).to receive(:top_tracks).and_return([])
+      post :create, params: { time_range: "short_term" }
+      expect(response).to redirect_to(top_tracks_path)
+      expect(flash[:alert]).to include("No tracks available")
+    end
+
+    it "creates playlist and adds tracks" do
+      tracks = [ OpenStruct.new(id: "t1"), OpenStruct.new(id: "t2") ]
+      allow(mock_client).to receive(:top_tracks).and_return(tracks)
+      allow(mock_client).to receive(:create_playlist_for).and_return("pl123")
+      allow(mock_client).to receive(:add_tracks_to_playlist).and_return(true)
+
+      post :create, params: { time_range: "short_term" }
+
+      expect(response).to redirect_to(top_tracks_path)
+      expect(flash[:notice]).to include("Playlist created on Spotify")
     end
   end
 end
