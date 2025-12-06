@@ -1,0 +1,68 @@
+<main class="container listening-patterns mt-4">
+  <div class="d-flex justify-content-between align-items-start mb-3">
+    <div>
+      <p class="eyebrow text-uppercase mb-1">Playlist Compatibility</p>
+      <h1 class="text-light mb-1">Do these playlists vibe?</h1>
+      <p class="text-secondary mb-0">We compare overlap and audio features to score compatibility.</p>
+    </div>
+    <div>
+      <%= link_to "Compare another", compare_form_playlists_path, class: "btn btn-outline-light btn-sm" %>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-12 col-lg-4">
+      <div class="spotify-card p-3 h-100">
+        <p class="text-secondary mb-1">Compatibility</p>
+        <% if @compatibility_score.present? %>
+          <% badge_class = @compatibility_score >= 70 ? 'text-success' : @compatibility_score >= 40 ? 'text-warning' : 'text-danger' %>
+          <h2 class="text-light mb-2"><span class="<%= badge_class %>"><%= @compatibility_score %>%</span></h2>
+          <p class="text-secondary small mb-0">Based on playlist audio features.</p>
+        <% else %>
+          <h5 class="text-light mb-1">Not enough audio data</h5>
+          <p class="text-secondary small mb-0">We need at least 5 tracks per playlist with audio features.</p>
+        <% end %>
+      </div>
+    </div>
+
+    <div class="col-12 col-lg-8">
+      <div class="spotify-card p-3 h-100">
+        <p class="text-secondary mb-1">Overlap</p>
+        <h5 class="text-light mb-2">Common tracks: <%= @overlap_count %> (<%= @overlap_pct %>%)</h5>
+        <div class="row">
+          <div class="col-12 col-md-6">
+            <h6 class="text-light">In both playlists</h6>
+            <ul class="list-unstyled text-secondary small">
+              <% @common_tracks.each do |t| %>
+                <li><%= t.name %> — <%= t.artists %></li>
+              <% end %>
+              <% if @common_tracks.empty? %>
+                <li>No overlap</li>
+              <% end %>
+            </ul>
+          </div>
+          <div class="col-12 col-md-6">
+            <h6 class="text-light">Only in first</h6>
+            <ul class="list-unstyled text-secondary small">
+              <% @only_in_a.each do |t| %>
+                <li><%= t.name %> — <%= t.artists %></li>
+              <% end %>
+              <% if @only_in_a.empty? %>
+                <li>None</li>
+              <% end %>
+            </ul>
+            <h6 class="text-light mt-2">Only in second</h6>
+            <ul class="list-unstyled text-secondary small">
+              <% @only_in_b.each do |t| %>
+                <li><%= t.name %> — <%= t.artists %></li>
+              <% end %>
+              <% if @only_in_b.empty? %>
+                <li>None</li>
+              <% end %>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
