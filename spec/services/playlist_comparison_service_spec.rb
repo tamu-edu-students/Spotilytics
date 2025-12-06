@@ -17,8 +17,8 @@ RSpec.describe PlaylistComparisonService do
       expect(client).to receive(:playlist_tracks).with(playlist_id: "a", limit: 200).and_return(tracks_a)
       expect(client).to receive(:playlist_tracks).with(playlist_id: "b", limit: 200).and_return(tracks_b)
 
-      expect(vector_service).to receive(:build_vector).with(tracks_a).and_return({ vector: [1, 0, 0, 0, 0], valid_count: 5, total_tracks: 3 })
-      expect(vector_service).to receive(:build_vector).with(tracks_b).and_return({ vector: [1, 0, 0, 0, 0], valid_count: 5, total_tracks: 3 })
+      expect(vector_service).to receive(:build_vector).with(tracks_a).and_return({ vector: [ 1, 0, 0, 0, 0 ], valid_count: 5, total_tracks: 3 })
+      expect(vector_service).to receive(:build_vector).with(tracks_b).and_return({ vector: [ 1, 0, 0, 0, 0 ], valid_count: 5, total_tracks: 3 })
 
       result = service.compare(source_playlist_id: "a", target_playlist_id: "b")
 
@@ -33,7 +33,7 @@ RSpec.describe PlaylistComparisonService do
       tracks_b = [ track("3"), track("4") ]
 
       allow(client).to receive(:playlist_tracks).and_return(tracks_a, tracks_b)
-      allow(vector_service).to receive(:build_vector).and_return({ vector: [1, 0, 0, 0, 0], valid_count: 2, total_tracks: 2 })
+      allow(vector_service).to receive(:build_vector).and_return({ vector: [ 1, 0, 0, 0, 0 ], valid_count: 2, total_tracks: 2 })
 
       result = service.compare(source_playlist_id: "a", target_playlist_id: "b")
       expect(result.compatibility).to be_nil

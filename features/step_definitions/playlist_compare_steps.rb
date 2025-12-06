@@ -24,8 +24,8 @@ Given("ReccoBeats returns feature vectors for playlists A and B") do
   allow(PlaylistVectorService).to receive(:new).and_return(vector_service)
 
   allow(vector_service).to receive(:build_vector).and_return(
-    { vector: [1, 0, 0, 0, 0], valid_count: 5, total_tracks: 3 },
-    { vector: [1, 0, 0, 0, 0], valid_count: 5, total_tracks: 3 }
+    { vector: [ 1, 0, 0, 0, 0 ], valid_count: 5, total_tracks: 3 },
+    { vector: [ 1, 0, 0, 0, 0 ], valid_count: 5, total_tracks: 3 }
   )
 end
 

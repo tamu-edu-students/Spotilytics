@@ -17,7 +17,7 @@ RSpec.describe PlaylistVectorService do
 
       result = service.build_vector(tracks)
 
-      expect(result[:vector]).to eq([0.75, 0.6, 0.45, 0.3, 0.15])
+      expect(result[:vector]).to eq([ 0.75, 0.6, 0.45, 0.3, 0.15 ])
       expect(result[:valid_count]).to eq(2)
       expect(result[:total_tracks]).to eq(2)
     end
