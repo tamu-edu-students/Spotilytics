@@ -39,7 +39,7 @@ RSpec.describe PlaylistsController, type: :controller do
       expect(assigns(:compatibility_score)).to eq(90)
       expect(assigns(:overlap_count)).to eq(2)
       expect(assigns(:overlap_pct)).to eq(50.0)
-      expect(assigns(:vector_a)).to eq([1, 0, 0, 0, 0])
+      expect(assigns(:vector_a)).to eq([ 1, 0, 0, 0, 0 ])
       expect(assigns(:explanations)).to be_present
     end
 
