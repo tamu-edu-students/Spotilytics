@@ -17,7 +17,8 @@
         <% if @compatibility_score.present? %>
           <% badge_class = @compatibility_score >= 70 ? 'text-success' : @compatibility_score >= 40 ? 'text-warning' : 'text-danger' %>
           <h2 class="text-light mb-2"><span class="<%= badge_class %>"><%= @compatibility_score %>%</span></h2>
-          <p class="text-secondary small mb-0">Based on playlist audio features.</p>
+          <p class="text-secondary small mb-1">Based on playlist audio features.</p>
+          <p class="text-secondary small mb-0">We average energy, danceability, valence, acousticness, and instrumentalness for each playlist, then compute cosine similarity (0–100). Requires at least 5 tracks per playlist with audio data.</p>
         <% else %>
           <h5 class="text-light mb-1">Not enough audio data</h5>
           <p class="text-secondary small mb-0">We need at least 5 tracks per playlist with audio features.</p>
@@ -38,10 +39,22 @@
     <div class="col-12 col-lg-8">
       <div class="spotify-card p-3 h-100">
         <p class="text-secondary mb-1">Overlap</p>
+        <p class="text-secondary small mb-1">
+          Playlist A: <code><%= @source_id %></code>
+          <% if @source_id.present? %>
+            · <a class="text-secondary" href="https://open.spotify.com/playlist/<%= @source_id %>" target="_blank" rel="noopener">Open</a>
+          <% end %>
+        </p>
+        <p class="text-secondary small mb-2">
+          Playlist B: <code><%= @target_id %></code>
+          <% if @target_id.present? %>
+            · <a class="text-secondary" href="https://open.spotify.com/playlist/<%= @target_id %>" target="_blank" rel="noopener">Open</a>
+          <% end %>
+        </p>
         <h5 class="text-light mb-2">Common tracks: <%= @overlap_count %> (<%= @overlap_pct %>%)</h5>
         <div class="row">
           <div class="col-12">
-            <p class="text-secondary small mb-0">Overlap numbers shown above. Track lists hidden for brevity.</p>
+            <p class="text-secondary small mb-0">Overlap numbers shown above.</p>
           </div>
         </div>
       </div>
