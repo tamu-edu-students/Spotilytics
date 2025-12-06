@@ -51,6 +51,36 @@ RSpec.describe SpotifyClient, type: :service do
     end
   end
 
+  describe "#track_audio_features" do
+    before do
+      allow(client).to receive(:cache_for).and_wrap_original { |_m, *_args, &block| block.call }
+      allow(client).to receive(:ensure_access_token!).and_return("valid_token")
+      allow(client).to receive(:current_user_id).and_return("user123")
+    end
+
+    it "fetches audio features for track ids" do
+      body = {
+        audio_features: [
+          {
+            "id" => "t1",
+            "danceability" => 0.8,
+            "energy" => 0.7,
+            "valence" => 0.6,
+            "tempo" => 120,
+            "acousticness" => 0.2,
+            "instrumentalness" => 0.1
+          }
+        ]
+      }
+
+      stub_spotify_get("/audio-features", body: body)
+      result = client.track_audio_features([ "t1" ])
+
+      expect(result["t1"].energy).to eq(0.7)
+      expect(result["t1"].tempo).to eq(120)
+    end
+  end
+
   describe "#recently_played" do
     let(:now) { Time.utc(2025, 1, 1, 12, 0, 0) }
 

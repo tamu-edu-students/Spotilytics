@@ -7,6 +7,7 @@ require "base64"
 require "ostruct"
 require "set"
 require "time"
+require "digest"
 
 class SpotifyClient
   API_ROOT = "https://api.spotify.com/v1"
@@ -98,6 +99,41 @@ class SpotifyClient
       followers: response.dig("followers", "total") || 0,
       spotify_url: response.dig("external_urls", "spotify")
     )
+  end
+
+  def track_audio_features(ids)
+    ids = Array(ids).map(&:to_s).reject(&:blank?).uniq.first(100)
+    return {} if ids.empty?
+
+    key = Digest::SHA1.hexdigest(ids.sort.join("-"))
+
+    cache_for([ "audio_features", key ], expires_in: 2.hours) do
+      access_token = ensure_access_token!
+      features = {}
+
+      ids.each_slice(50) do |slice|
+        begin
+          response = get("/audio-features", access_token, ids: slice.join(","))
+          items = Array(response["audio_features"])
+          items.each do |item|
+            next unless item
+            features[item["id"]] = OpenStruct.new(
+              id: item["id"],
+              danceability: item["danceability"],
+              energy: item["energy"],
+              valence: item["valence"],
+              tempo: item["tempo"],
+              acousticness: item["acousticness"],
+              instrumentalness: item["instrumentalness"]
+            )
+          end
+        rescue Error => e
+          Rails.logger.warn "[Spotify] Skipping audio-features slice due to error: #{e.message}"
+        end
+      end
+
+      features
+    end
   end
 
   def new_releases(limit:, max_age: 1.day)
@@ -210,6 +246,36 @@ end
     end
   end
 
+  def playlist_tracks(playlist_id:, limit: 100)
+    access_token = ensure_access_token!
+    collected = []
+    offset = 0
+
+    while collected.length < limit
+      page_limit = [ 100, limit - collected.length ].min
+      response = get("/playlists/#{playlist_id}/tracks", access_token, limit: page_limit, offset: offset)
+      items = Array(response["items"])
+      break if items.empty?
+
+      items.each do |item|
+        track = item["track"] || {}
+        collected << OpenStruct.new(
+          id: track["id"],
+          name: track["name"],
+          artists: (track["artists"] || []).map { |a| a["name"] }.join(", "),
+          duration_ms: track["duration_ms"],
+          spotify_url: track.dig("external_urls", "spotify")
+        )
+      end
+
+      break if items.length < page_limit
+
+      offset += page_limit
+    end
+
+    collected
+  end
+
   def recently_played(limit:)
     limit = limit.to_i
     limit = 50 if limit <= 0
@@ -257,6 +323,7 @@ end
         OpenStruct.new(
           id: track["id"],
           name: track["name"],
+          duration_ms: track["duration_ms"],
           album_name: track.dig("album", "name"),
           album_image_url: track.dig("album", "images", 0, "url"),
           artists: (track["artists"] || []).map { |a| a["name"] }.join(", "),
@@ -645,21 +712,27 @@ end
   end
 
   def perform_request(uri, request)
-    response = Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == "https") do |http|
-      http.open_timeout = 5
-      http.read_timeout = 5
-      http.request(request)
-    end
+  response = Net::HTTP.start(
+    uri.host,
+    uri.port,
+    use_ssl: uri.scheme == "https",
+    open_timeout: 5,
+    read_timeout: 5,
+    verify_mode: (Rails.env.development? ? OpenSSL::SSL::VERIFY_NONE : OpenSSL::SSL::VERIFY_PEER)
+  ) do |http|
+    http.request(request)
+  end
 
-    body = parse_json(response.body)
+  body = parse_json(response.body)
 
-    if response.code.to_i >= 400
-      message = body["error_description"] || body.dig("error", "message") || response.message
-      raise Error, message
-    end
+  if response.code.to_i >= 400
+    message = body["error_description"] || body.dig("error", "message") || response.message
+    raise Error, message
+  end
 
-    body
-  rescue SocketError, Errno::ECONNREFUSED, Net::OpenTimeout, Net::ReadTimeout => e
+  body
+  rescue SocketError, Errno::ECONNREFUSED, Net::OpenTimeout, Net::ReadTimeout, OpenSSL::SSL::SSLError => e
+    Rails.logger.error "[SpotifyClient] network/SSL error: #{e.class}: #{e.message}"
     raise Error, e.message
   end
 
