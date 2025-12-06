@@ -334,20 +334,6 @@
       </div>
     </div>
 
-      <div class="spotify-card p-3 mt-3">
-        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
-          <div>
-            <h6 class="text-light mb-1">Compare with a friend</h6>
-            <p class="text-secondary small mb-0">Enter two playlist URLs or IDs to see compatibility.</p>
-          </div>
-          <div class="d-flex gap-2 w-100 w-md-auto">
-            <input id="compareSource" type="text" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="My playlist ID">
-            <input id="compareTarget" type="text" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="Friend's playlist ID">
-            <button class="btn btn-spotify btn-sm" type="button" onclick="(function(){var s=document.getElementById('compareSource').value.trim(); var t=document.getElementById('compareTarget').value.trim(); if(!s||!t){return;} window.location = '<%= compare_playlists_path %>?source_id=' + encodeURIComponent(s) + '&target_id=' + encodeURIComponent(t);})();">Compare</button>
-          </div>
-        </div>
-      </div>
-
     <% else %>
       <p class="text-secondary">
         We don't have your top tracks yet. Connect your Spotify account or try again later.
