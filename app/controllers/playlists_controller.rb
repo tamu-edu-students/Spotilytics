@@ -89,6 +89,10 @@ class PlaylistsController < ApplicationController
     @vector_b = result.vector_b
     @valid_a = result.valid_a
     @valid_b = result.valid_b
+    @explanations = PlaylistExplanationService.new(
+      vector_a: @vector_a,
+      vector_b: @vector_b
+    ).explanations
   rescue SpotifyClient::Error => e
     Rails.logger.warn "Playlist compare failed: #{e.message}"
     redirect_to compare_form_playlists_path, alert: "Could not fetch playlist. Ensure it's public."

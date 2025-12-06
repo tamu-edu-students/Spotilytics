@@ -23,6 +23,16 @@
           <p class="text-secondary small mb-0">We need at least 5 tracks per playlist with audio features.</p>
         <% end %>
       </div>
+      <% if @explanations.present? %>
+        <div class="spotify-card p-3 mt-3">
+          <p class="text-secondary mb-1">Why these playlists vibe</p>
+          <ul class="text-secondary mb-0">
+            <% @explanations.each do |line| %>
+              <li><%= line %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
     </div>
 
     <div class="col-12 col-lg-8">
