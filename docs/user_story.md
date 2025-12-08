@@ -227,12 +227,9 @@ And I should see “Why these playlists vibe”
 
 ---
 
-## Sprint 3
-
----
-
 ### **14. Storing of Listening History**
 
+**Points:** 3  
 **Issue:** https://github.com/tamu-edu-students/Spotilytics-project3-team2/issues/29
 
 **User Story:**  
