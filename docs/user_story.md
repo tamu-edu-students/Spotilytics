@@ -224,3 +224,16 @@ And I should see “Common tracks: 2”
 And I should see “Compatibility”
 And I should see “100%”
 And I should see “Why these playlists vibe”
+
+---
+
+## Sprint 3
+
+---
+
+### **14. Storing of Listening History**
+
+**Issue:** https://github.com/tamu-edu-students/Spotilytics-project3-team2/issues/29
+
+**User Story:**  
+As a user I would like the ability to see past listening history aside from the most recent 50 that Spotify can provide to me.
