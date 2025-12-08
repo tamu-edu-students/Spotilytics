@@ -1,7 +1,7 @@
 require "set"
 
 class PagesController < ApplicationController
-  before_action :require_spotify_auth!, only: %i[dashboard top_artists top_tracks view_profile clear]
+  before_action :require_spotify_auth!, only: %i[dashboard top_artists top_tracks view_profile clear playlist_energy]
 
   TOP_ARTIST_TIME_RANGES = [
     { key: "long_term", label: "Past Year" },
@@ -21,35 +21,62 @@ class PagesController < ApplicationController
   end
 
   def dashboard
-    # Top Artists
     @top_artists = fetch_top_artists(limit: 10)
     @primary_artist = @top_artists.first
 
-    # Top Tracks
     @top_tracks = fetch_top_tracks(limit: 10)
     @primary_track = @top_tracks.first
 
-    # Genre Chart
+    spotify_user = session[:spotify_user]
+    if spotify_user && spotify_user["id"].present?
+      journey          = TrackJourney.new(spotify_user_id: spotify_user["id"])
+      @tracks_by_badge = journey.grouped_by_badge || {}
+    else
+      @tracks_by_badge = {}
+    end
+
     build_genre_chart!(@top_artists)
 
-    # Followed Artists
     @followed_artists = fetch_followed_artists(limit: 20)
 
-    # New Releases
     @new_releases = fetch_new_releases(limit: 2)
 
-
   rescue SpotifyClient::UnauthorizedError
-    redirect_to home_path, alert: "You must log in with spotify to access the dashboard." and return
+    redirect_to home_path,
+                alert: "You must log in with spotify to access the dashboard." and return
   rescue SpotifyClient::Error => e
     flash.now[:alert] = "We were unable to load your Spotify data right now. Please try again later."
-    @top_artists = []
-    @primary_artist = nil
-    @top_tracks = []
-    @primary_track = nil
-    @genre_chart = nil
+    @top_artists      = []
+    @primary_artist   = nil
+    @top_tracks       = []
+    @primary_track    = nil
+    @genre_chart      = nil
     @followed_artists = []
-    @new_releases = []
+    @new_releases     = []
+    @tracks_by_badge  = {}
+  end
+
+  def track_journey
+    spotify_user = session[:spotify_user]
+    unless spotify_user && spotify_user["id"].present?
+      redirect_to home_path, alert: "You must log in with Spotify to see your Track Journey."
+      return
+    end
+
+    spotify_user_id = spotify_user["id"]
+    journey         = TrackJourney.new(spotify_user_id: spotify_user_id)
+
+    @time_ranges     = journey.time_ranges
+    @tracks_by_badge = journey.grouped_by_badge(max_per_badge: 3) || {}
+
+    @available_badges = @tracks_by_badge.keys.map(&:to_s)
+
+    requested = params[:selected_badge].to_s.presence
+    if requested && @available_badges.include?(requested)
+      @selected_badge = requested.to_sym
+    else
+      @selected_badge = @tracks_by_badge.keys.first
+    end
   end
 
   def view_profile
@@ -63,6 +90,78 @@ class PagesController < ApplicationController
     flash.now[:alert] = "We were unable to load your Spotify data right now. Please try again later."
 
     @profile = nil
+  end
+
+  def mood_analysis
+    spotify_user = session[:spotify_user]
+    return redirect_to(home_path, alert: "Log in with Spotify first.") unless spotify_user
+
+    client = SpotifyClient.new(session: session)
+
+    top_tracks = client.top_tracks_1(limit: 10)
+
+    track_id = params[:id]
+    @track = top_tracks.find { |t| t.id == track_id }
+
+    Rails.logger.info "[MoodAnalysis] Analyzing track ID #{track_id}"
+    Rails.logger.info "[MoodAnalysis] Found tracks: #{top_tracks.size}"
+
+    if @track.nil?
+      return redirect_to mood_explorer_path,
+        alert: "Track not found in your top 10 tracks."
+    end
+
+    features = ReccoBeatsClient.fetch_audio_features([ track_id ])
+    @features = features.first
+
+    @mood = MoodExplorerService.detect_single(@features)
+
+  rescue => e
+    Rails.logger.error "[MoodAnalysis] #{e.message}"
+    redirect_to mood_explorer_path, alert: "Could not load mood analysis."
+  end
+
+  def mood_explorer
+    spotify_user = session[:spotify_user]
+    return redirect_to(home_path, alert: "Log in with Spotify first.") unless spotify_user
+
+    client = SpotifyClient.new(session: session)
+
+    @top_tracks = client.top_tracks_1(limit: 10)
+
+    spotify_ids = @top_tracks.map(&:id)
+    features = ReccoBeatsClient.fetch_audio_features(spotify_ids) || []
+
+    @clusters = MoodExplorerService.new(@top_tracks, features).clustered
+    Rails.logger.info "[MoodExplorer] Loaded #{spotify_ids.size}, features #{features.size}, top tracks #{@top_tracks.size} into #{@clusters.keys.size} mood clusters."
+
+  rescue => e
+    Rails.logger.error "[MoodExplorer] Error: #{e}"
+    redirect_to dashboard_path, alert: "Could not load mood insights."
+  end
+
+  def playlist_energy
+    @playlist_id = params[:id].to_s.strip
+    if @playlist_id.blank?
+      redirect_to dashboard_path, alert: "Please provide a playlist ID." and return
+    end
+
+    service = PlaylistEnergyService.new(client: spotify_client)
+    @points = service.energy_profile(playlist_id: @playlist_id)
+    @labels = @points.map { |p| p[:position] }
+    @energies = @points.map { |p| p[:energy] }
+
+    if @points.empty?
+      flash.now[:alert] = "No tracks found for that playlist."
+    end
+  rescue SpotifyClient::UnauthorizedError
+    redirect_to home_path, alert: "You must log in with spotify to view playlist energy." and return
+  rescue SpotifyClient::Error => e
+    Rails.logger.warn "Failed to load playlist energy: #{e.message}"
+    flash.now[:alert] = "We couldn't load that playlist right now."
+    @points = []
+    @labels = []
+    @energies = []
   end
 
   def top_artists

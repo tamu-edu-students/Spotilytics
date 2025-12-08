@@ -1,0 +1,149 @@
+@import "partials/default-theme";
+
+.listening-patterns .eyebrow {
+  letter-spacing: 0.08em;
+  font-size: 0.8rem;
+  color: lighten($light-gray, 10%);
+}
+
+.listening-patterns h1 {
+  color: #f8f9fa;
+  font-weight: 700;
+}
+
+.total-chip {
+  background: linear-gradient(135deg, rgba(29, 185, 84, 0.12), rgba(29, 185, 84, 0.04));
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(29, 185, 84, 0.35);
+  min-width: 150px;
+  text-align: center;
+
+  .label {
+    display: block;
+    font-size: 0.8rem;
+  }
+
+  .value {
+    display: block;
+    font-size: 1.4rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+}
+
+.chart-card {
+  min-height: 420px;
+}
+
+.chart-wrapper {
+  position: relative;
+  min-height: 320px;
+}
+
+.stats-card .stat-row {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+
+  &:last-child {
+    border-bottom: 0;
+  }
+}
+
+.stats-card .rank-badge {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: #f8f9fa;
+  width: 34px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+
+.insight {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.25);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+}
+
+.recent-card {
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 0.8rem 0.25rem rgba(29, 185, 84, 0.1);
+  }
+}
+
+.album-thumb {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.preview-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+  background: $spotify-green;
+  box-shadow: 0 0 0 6px rgba(29, 185, 84, 0.15);
+  text-indent: -9999px;
+}
+
+.recent-grid .text-light {
+  color: #f8f9fa !important;
+}
+
+/* Calendar heatmap */
+.heatmap-wrapper {
+  display: flex;
+  justify-content: center;
+  padding: 12px;
+}
+
+.heatmap-grid {
+  display: grid;
+  grid-auto-flow: column;
+  gap: 6px;
+  padding: 10px;
+  justify-content: center;
+}
+
+.heatmap-week {
+  display: grid;
+  grid-template-rows: repeat(7, 22px);
+  gap: 6px;
+}
+
+.heatmap-cell {
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+.heatmap-legend .legend-cell {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  display: inline-block;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.heatmap-cell.level-0,
+.legend-cell.level-0 { background-color: rgba(255, 255, 255, 0.05); }
+.heatmap-cell.level-1,
+.legend-cell.level-1 { background-color: rgba(29, 185, 84, 0.25); }
+.heatmap-cell.level-2,
+.legend-cell.level-2 { background-color: rgba(29, 185, 84, 0.45); }
+.heatmap-cell.level-3,
+.legend-cell.level-3 { background-color: rgba(29, 185, 84, 0.65); }
+.heatmap-cell.level-4,
+.legend-cell.level-4 { background-color: rgba(29, 185, 84, 0.85); }

@@ -326,13 +326,13 @@
                         class: "btn btn-spotify btn-sm" %>
         </div>
 
-        <div class="col-12 col-lg-4 tracks-col">
-          <%= button_to "Create playlist (1 year)",
-                        create_playlist_path(time_range: "long_term"),
-                        method: :post,
-                        class: "btn btn-spotify btn-sm" %>
-        </div>
+      <div class="col-12 col-lg-4 tracks-col">
+        <%= button_to "Create playlist (1 year)",
+                      create_playlist_path(time_range: "long_term"),
+                      method: :post,
+                      class: "btn btn-spotify btn-sm" %>
       </div>
+    </div>
 
     <% else %>
       <p class="text-secondary">

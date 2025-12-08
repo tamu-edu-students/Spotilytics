@@ -6,7 +6,7 @@ RSpec.describe "Home Page Request", type: :request do
         end
         it "displays the names of all page contributors" do
             get "/home"
-            expect(response.body).to include("Aurora Jitrskul", "Pablo Pineda", "Spoorthy Raghavendra", "Aditya Vellampalli")
+            expect(response.body).to include("Charlie Chiu", "Cameron Yoffe", "Spoorthy Raghavendra", "Venkateswarlu Nagineni")
         end
         it "correctly provides a link to login when user is not logged in" do
             get "/home"

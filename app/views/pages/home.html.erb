@@ -19,6 +19,7 @@
     </p>
     <% if current_user %>
       <%= link_to 'My Dashboard', "/dashboard", class: 'home-page-button' %>
+      <%= link_to 'Mood Explorer', "/mood-explorer", data: { turbo: false }, class: 'home-page-button' %>
     <% else %>
       <%= link_to 'Get Started Now', "/auth/spotify", class: 'home-page-button' %>
     <% end %>
@@ -32,7 +33,7 @@
       <div class="col-12 col-sm-6 col-md-3 mb-4">
         <div class="contributor-card text-center p-3">
           <%# image_tag "contributors/user2.jpg", alt: "User 2", class: "contributor-img mb-2" %>
-          <h5 class="contributor-name mb-1">Aurora Jitrskul</h5>
+          <h5 class="contributor-name mb-1">Spoorthy Raghavendra</h5>
           <p class="contributor-role mb-0">Developer</p>
         </div>
       </div>
@@ -41,7 +42,7 @@
       <div class="col-12 col-sm-6 col-md-3 mb-4">
         <div class="contributor-card text-center p-3">
           <%# image_tag "contributors/user2.jpg", alt: "User 2", class: "contributor-img mb-2" %>
-          <h5 class="contributor-name mb-1">Pablo Pineda</h5>
+          <h5 class="contributor-name mb-1">Cameron Yoffe</h5>
           <p class="contributor-role mb-0">Developer</p>
         </div>
       </div>
@@ -50,7 +51,7 @@
       <div class="col-12 col-sm-6 col-md-3 mb-4">
         <div class="contributor-card text-center p-3">
           <%# image_tag "contributors/user3.jpg", alt: "User 3", class: "contributor-img mb-2" %>
-          <h5 class="contributor-name mb-1">Aditya Vellampalli</h5>
+          <h5 class="contributor-name mb-1">Venkateswarlu Nagineni</h5>
           <p class="contributor-role mb-0">Developer</p>
         </div>
       </div>
@@ -59,7 +60,7 @@
       <div class="col-12 col-sm-6 col-md-3 mb-4">
         <div class="contributor-card text-center p-3">
           <%# image_tag "contributors/user4.jpg", alt: "User 4", class: "contributor-img mb-2" %>
-          <h5 class="contributor-name mb-1">Spoorthy Raghavendra</h5>
+          <h5 class="contributor-name mb-1">Charlie Chiu</h5>
           <p class="contributor-role mb-0">Developer</p>
         </div>
       </div>

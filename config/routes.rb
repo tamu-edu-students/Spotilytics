@@ -16,6 +16,19 @@ Rails.application.routes.draw do
   get "/home", to: "pages#home", as: :home
   get "/view-profile", to: "pages#view_profile", as: :view_profile
   get "/clear", to: "pages#clear", as: :clear
+  get "/listening-patterns", to: "listening_patterns#hourly", as: :listening_patterns
+  get "/listening-monthly", to: "listening_patterns#monthly", as: :listening_monthly
+  get "/mood-explorer", to: "pages#mood_explorer"
+  get "/mood-analysis/:id", to: "pages#mood_analysis", as: :mood_analysis
+  get "/listening-heatmap", to: "listening_patterns#calendar", as: :listening_heatmap
+  get "/playlists/:id/energy", to: "pages#playlist_energy", as: :playlist_energy
+  resources :playlists, only: [] do
+    collection do
+      get :compare_form
+      get :compare
+    end
+  end
+  get "/personality", to: "personality#show", as: :personality
   root "pages#home"
 
   # Callback from Spotify
@@ -32,4 +45,13 @@ Rails.application.routes.draw do
 
   # Get Recommendations
   get  "recommendations",        to: "recommendations#recommendations",   as: :recommendations
+
+  get "/search", to: "search#index", as: :search
+  get "/playlist_genres", to: "playlist_genres#index", as: :playlist_genres_index
+
+  get "/playlists/:id/genres", to: "playlist_genres#show", as: :playlist_genres
+  post "/playlists/:id/split_by_genre", to: "playlist_genres#split", as: :split_playlist_by_genre
+
+  get "/stories/:playlist_id", to: "stories#show", as: :stories
+  get "/wrapped", to: "wrapped#index", as: :wrapped
 end

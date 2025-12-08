@@ -35,11 +35,11 @@ Given("Spotify returns recommendation data") do
   stub_spotify_client_with(recommendations_mock)
 
   allow(recommendations_mock).to receive(:top_artists)
-    .with(limit: 20, time_range: 'medium_term')
+    .with(limit: 4, time_range: 'medium_term')
     .and_return(build_artist_seeds(10))
 
   allow(recommendations_mock).to receive(:top_tracks)
-    .with(limit: 20, time_range: 'medium_term')
+    .with(limit: 4, time_range: 'medium_term')
     .and_return(build_track_seeds(10))
 
   allow(recommendations_mock).to receive(:search_tracks)
@@ -50,7 +50,7 @@ Given("Spotify top APIs raise unauthorized for recommendations") do
   stub_spotify_client_with(recommendations_mock)
 
   allow(recommendations_mock).to receive(:top_artists)
-    .with(limit: 20, time_range: 'medium_term')
+    .with(limit: 4, time_range: 'medium_term')
     .and_raise(SpotifyClient::UnauthorizedError.new('expired'))
 end
 
@@ -58,11 +58,11 @@ Given("Spotify recommendations search fails with {string}") do |message|
   stub_spotify_client_with(recommendations_mock)
 
   allow(recommendations_mock).to receive(:top_artists)
-    .with(limit: 20, time_range: 'medium_term')
+    .with(limit: 4, time_range: 'medium_term')
     .and_return(build_artist_seeds(10))
 
   allow(recommendations_mock).to receive(:top_tracks)
-    .with(limit: 20, time_range: 'medium_term')
+    .with(limit: 4, time_range: 'medium_term')
     .and_return(build_track_seeds(10))
 
   allow(recommendations_mock).to receive(:search_tracks)

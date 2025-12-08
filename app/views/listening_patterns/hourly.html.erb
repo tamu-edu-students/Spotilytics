@@ -1,0 +1,221 @@
+<% content_for :extra_css do %>
+  <%= stylesheet_link_tag "listening_patterns", media: "all" %>
+<% end %>
+
+<main class="container listening-patterns mt-4">
+  <div class="page-heading d-flex flex-column flex-lg-row align-items-lg-center justify-content-lg-between">
+    <div>
+      <p class="eyebrow text-uppercase mb-1">Hour-of-Day Listening Pattern</p>
+      <h1 class="text-light mb-2">When you hit play</h1>
+      <p class="text-secondary mb-0">
+        We look at your played tracks (we keep syncing them for you) and chart how often you listen during each hour of the day.
+        Times are shown in <%= Time.zone.name || "UTC" %>.
+      </p>
+    </div>
+
+    <div class="d-flex align-items-center gap-3 mt-3 mt-lg-0">
+      <%= form_with url: listening_patterns_path, method: :get, local: true, class: "d-flex align-items-center gap-2 limit-form" do %>
+        <label class="text-secondary fw-semibold">Use last</label>
+        <%= select_tag :limit,
+              options_for_select([
+                ["50 plays", 50],
+                ["100 plays", 100],
+                ["250 plays", 250],
+                ["500 plays", 500],
+                ["1000 plays", 1000]
+              ], @limit),
+              class: "form-select form-select-sm bg-dark text-white border-secondary",
+              onchange: "this.form.submit();" %>
+        <button class="btn btn-dark btn-sm js-hidden" type="submit">↻</button>
+      <% end %>
+
+      <div class="total-chip text-light">
+        <span class="label text-secondary">Plays analyzed</span>
+        <span class="value text-light"><%= @total_plays %></span>
+      </div>
+    </div>
+  </div>
+
+  <% if @hourly_chart.present? %>
+    <div class="row mt-4">
+      <div class="col-12 col-lg-8 mb-4">
+        <div class="spotify-card p-3 h-100 chart-card">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <div>
+              <h5 class="text-light mb-1">Listens by hour</h5>
+              <% if @history_window.present? %>
+                <% start_time, end_time = @history_window %>
+                <p class="text-secondary small mb-0">
+                  Window: <%= start_time.strftime("%b %-d, %l:%M %p %Z") %> – <%= end_time.strftime("%b %-d, %l:%M %p %Z") %>
+                </p>
+              <% end %>
+            </div>
+            <span class="badge bg-success-subtle text-success-emphasis">
+              Live from your Spotify history
+            </span>
+          </div>
+
+          <div class="chart-wrapper">
+            <canvas id="hourlyChart" width="680" height="340" aria-label="Hourly listening histogram" role="img"></canvas>
+          </div>
+          <p class="text-secondary small mt-2 mb-1">
+            Bars show how many of your last <%= @sample_size %> plays happened during each hour of the day.
+          </p>
+          <p class="text-secondary small mb-0">
+            We keep a running history per account so you can request up to <%= @limit %> plays beyond Spotify's short window.
+          </p>
+        </div>
+      </div>
+
+      <div class="col-12 col-lg-4 mb-4">
+        <div class="spotify-card p-3 h-100 stats-card d-flex flex-column gap-3">
+          <div>
+            <h5 class="text-light mb-2">Your peaks</h5>
+            <% if @top_hours.present? %>
+              <ul class="list-unstyled mb-0">
+                <% @top_hours.each_with_index do |hour_data, idx| %>
+                  <li class="d-flex justify-content-between align-items-center stat-row">
+                    <div class="d-flex align-items-center gap-2">
+                      <span class="badge rank-badge rounded-pill">#<%= idx + 1 %></span>
+                      <span class="text-light fw-semibold"><%= hour_data[:label] %></span>
+                    </div>
+                    <span class="text-secondary"><%= hour_data[:count] %> plays</span>
+                  </li>
+                <% end %>
+              </ul>
+            <% else %>
+              <p class="text-secondary mb-0">No listening peaks yet—play a few tracks and come back.</p>
+            <% end %>
+          </div>
+
+          <div class="insight bg-dark-subtle p-3 rounded">
+            <p class="text-light mb-1 fw-semibold">How this works</p>
+            <p class="text-secondary small mb-0">
+              Spotify only exposes your most recent plays (up to about 150 at a time).
+              We bucket those timestamps by hour to build the histogram above.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <% if @sample_tracks.present? %>
+      <div class="spotify-card p-3 mt-2">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div>
+            <h5 class="text-light mb-1">Recent plays</h5>
+            <p class="text-secondary small mb-0">A quick peek at the tracks powering this chart.</p>
+          </div>
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="#1db954" viewBox="0 0 16 16">
+            <path d="M8 13.5a.5.5 0 0 1-.5-.5V3.707L4.354 6.854a.5.5 0 1 1-.708-.708l4-4a.5.5 0 0 1 .708 0l4 4a.5.5 0 1 1-.708.708L8.5 3.707V13a.5.5 0 0 1-.5.5"/>
+          </svg>
+        </div>
+
+        <div class="recent-grid row">
+          <% @sample_tracks.each do |track| %>
+            <% next unless track %>
+            <div class="col-12 col-md-6 col-lg-4 mb-3">
+              <div class="recent-card p-2 d-flex align-items-start gap-3">
+                <% if track.album_image_url.present? %>
+                  <%= image_tag track.album_image_url, alt: track.name, class: "album-thumb" %>
+                <% end %>
+                <div class="flex-grow-1">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                      <p class="text-light fw-semibold mb-1"><%= track.name %></p>
+                      <p class="text-secondary small mb-1"><%= track.artists %></p>
+                    </div>
+                    <% if track.preview_url.present? %>
+                      <a href="<%= track.preview_url %>" class="preview-dot" title="Play preview" aria-label="Play preview" target="_blank" rel="noopener noreferrer"></a>
+                    <% end %>
+                  </div>
+                  <% if track.played_at.present? %>
+                    <p class="text-secondary small mb-0">
+                      <%= track.played_at.strftime("%b %-d, %l:%M %p") %>
+                      · <%= time_ago_in_words(track.played_at) %> ago
+                    </p>
+                  <% end %>
+                </div>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  <% else %>
+    <div class="spotify-card p-4 mt-4">
+      <h5 class="text-light">No recent plays yet</h5>
+      <p class="text-secondary mb-2">
+        We need a little listening history to build your hourly pattern. Play a few tracks on Spotify,
+        then refresh this page.
+      </p>
+      <%= link_to "Refresh", listening_patterns_path, class: "btn btn-spotify" %>
+    </div>
+  <% end %>
+</main>
+
+<% if @hourly_chart.present? %>
+  <script type="application/json" id="hourlyData"><%= raw(@hourly_chart.to_json) %></script>
+  <script>
+    (function() {
+      function renderHourlyChart() {
+        var canvas = document.getElementById('hourlyChart');
+        if (!canvas) { return; }
+        if (!window.Chart) { return setTimeout(renderHourlyChart, 50); }
+
+        var data = JSON.parse(document.getElementById('hourlyData').textContent);
+        var ctx = canvas.getContext('2d');
+
+        var gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        gradient.addColorStop(0, 'rgba(29, 185, 84, 0.8)');
+        gradient.addColorStop(1, 'rgba(29, 185, 84, 0.2)');
+
+        data.datasets[0].backgroundColor = gradient;
+        data.datasets[0].borderColor = '#1db954';
+        data.datasets[0].borderWidth = 1.5;
+
+        new Chart(ctx, {
+          type: 'bar',
+          data: data,
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: '#181818',
+                borderColor: '#333',
+                borderWidth: 1,
+                titleColor: '#fff',
+                callbacks: {
+                  label: function(ctx) {
+                    return ctx.parsed.y + ' plays';
+                  }
+                }
+              }
+            },
+            scales: {
+              x: {
+                ticks: { color: '#b3b3b3' },
+                grid: { color: 'rgba(255,255,255,0.05)' }
+              },
+              y: {
+                ticks: {
+                  color: '#b3b3b3',
+                  precision: 0
+                },
+                grid: { color: 'rgba(255,255,255,0.08)' }
+              }
+            }
+          }
+        });
+      }
+
+      var script = document.createElement('script');
+      script.src = "https://cdn.jsdelivr.net/npm/chart.js";
+      script.defer = true;
+      script.onload = renderHourlyChart;
+      document.head.appendChild(script);
+    })();
+  </script>
+<% end %>
